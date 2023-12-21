@@ -148,64 +148,64 @@ type data_vec_ap  ! added on 2017.08.31
  real(8),allocatable,dimension(:)         :: error ! error(ndat)
 end type
 
-type data_vec_mt ! 2021.12.27
+type data_vec_mt ! includes dvec_mt and dvec_tiper 2023.12.21
  !# common over MT and tipper 
  integer(4) :: nobs_mt = 0  ! 2022.10.14
  integer(4) :: nfreq_mt = 0 ! 2022.10.14
 
-!# impedance data
-integer(4) :: ndat_mt = 0     ! depends on data_avail 2022.10.14
-!  | zxx real_obs1 (freq1)|
-!  | zxx imag_obs1 (freq1)|
-!  | zxy real_obs1 (freq1)|
-!  | zxy imag_obs1 (freq1)|
-!  | zyx real_obs1 (freq1)|
-!  | zyx imag_obs1 (freq1)|
-!  | zyy real_obs1 (freq1)|
-!d=| zyy imag_obs1 (freq1)|
-!  | zxx real_obs2 (freq1)|
-!  | zxx imag_obs2 (freq1)|
-!  | ...                  |
-!  | zxx real_obs1 (freq2)|
-!  | zxx imag_obs1 (freq2)|
-!  | ...                  |
-!  | zyy real_obsM (freqN)|
-!  | zyy imag_obsM (freqN)|
- integer(4),allocatable,dimension(:,:,:,:) :: idata_mt      !(2,4,nobs_mt,nfreq_mt) 2022.12.12
- !data_avail_mt(2,4,nobs,nfreq) 1:real/img, 2:zxx->zyy added on 2017.08.31; 5 comp added on 2018.10.04
- logical,   allocatable,dimension(:,:,:,:) :: data_avail_mt !(2,4,nobs_mt,nfreq_mt) 2021.12.27
- real(8),allocatable,dimension(:)       :: dvec_mt  ! dvec(ndat_mt)
- real(8),allocatable,dimension(:)       :: error_mt ! error(ndat_mt)
+ !#[1]## impedance data dvec_mt, error_mt
+   integer(4) :: ndat_mt = 0     ! depends on data_avail 2022.10.14
+   !  | zxx real_obs1 (freq1)|
+   !  | zxx imag_obs1 (freq1)|
+   !  | zxy real_obs1 (freq1)|
+   !  | zxy imag_obs1 (freq1)|
+   !  | zyx real_obs1 (freq1)|
+   !  | zyx imag_obs1 (freq1)|
+   !  | zyy real_obs1 (freq1)|
+   !d=| zyy imag_obs1 (freq1)|
+   !  | zxx real_obs2 (freq1)|
+   !  | zxx imag_obs2 (freq1)|
+   !  | ...                  |
+   !  | zxx real_obs1 (freq2)|
+   !  | zxx imag_obs1 (freq2)|
+   !  | ...                  |
+   !  | zyy real_obsM (freqN)|
+   !  | zyy imag_obsM (freqN)|
+   integer(4),allocatable,dimension(:,:,:,:) :: idata_mt      !(2,4,nobs_mt,nfreq_mt) 2022.12.12
+   !data_avail_mt(2,4,nobs,nfreq) 1:real/img, 2:zxx->zyy added on 2017.08.31; 5 comp added on 2018.10.04
+   logical,   allocatable,dimension(:,:,:,:) :: data_avail_mt !(2,4,nobs_mt,nfreq_mt) 2021.12.27
+   real(8),allocatable,dimension(:)       :: dvec_mt  ! dvec(ndat_mt)
+   real(8),allocatable,dimension(:)       :: error_mt ! error(ndat_mt)
 
-!# tipper data 2023.10.04
-integer(4) :: ndat_tipper = 0     ! depends on data_avail_tipper 2022.10.14
-!      | Tx real_obs1 (freq1)|
-!      | Tx imag_obs1 (freq1)|
-!      | Ty real_obs1 (freq1)|
-!      | Ty imag_obs1 (freq1)|
-!      | Tx real_obs2 (freq1)|
-!      | Tx imag_obs2 (freq1)|
-!      | Ty real_obs2 (freq1)|
-!d_tip=| Ty imag_obs2 (freq1)|
-!      | Tx real_obs3 (freq1)|
-!      | Tx imag_obs3 (freq1)|
-!      | ...                 |
-!      | Tx real_obs1 (freq2)|
-!      | Tx imag_obs1 (freq2)|
-!      | ...                 |
-!      | Ty real_obsM (freqN)|
-!      | Ty imag_obsM (freqN)|
- integer(4),allocatable,dimension(:,:,:,:) :: idata_tipper      !(2,2,nobs_mt,nfreq_mt) 2022.12.12
- logical,   allocatable,dimension(:,:,:,:) :: data_avail_tipper !(2,2,nobs_mt,nfreq_mt) real/imag, (Tx,Ty),nfreq_mt)
- real(8),   allocatable,dimension(:)       :: dvec_tipper  ! dvec(ndat_tipper)
- real(8),   allocatable,dimension(:)       :: error_tipper ! error(ndat_mt)
-end type ! 2021.12.27
+ !#[2]## tipper data, dvec_tipper, error_tipper, 2023.10.04
+   integer(4) :: ndat_tipper = 0     ! depends on data_avail_tipper 2022.10.14
+   !      | Tx real_obs1 (freq1)|
+   !      | Tx imag_obs1 (freq1)|
+   !      | Ty real_obs1 (freq1)|
+   !      | Ty imag_obs1 (freq1)|
+   !      | Tx real_obs2 (freq1)|
+   !      | Tx imag_obs2 (freq1)|
+   !      | Ty real_obs2 (freq1)|
+   !d_tip=| Ty imag_obs2 (freq1)|
+   !      | Tx real_obs3 (freq1)|
+   !      | Tx imag_obs3 (freq1)|
+   !      | ...                 |
+   !      | Tx real_obs1 (freq2)|
+   !      | Tx imag_obs1 (freq2)|
+   !      | ...                 |
+   !      | Ty real_obsM (freqN)|
+   !      | Ty imag_obsM (freqN)|
+   integer(4),allocatable,dimension(:,:,:,:) :: idata_tipper      !(2,2,nobs_mt,nfreq_mt) 2022.12.12
+   logical,   allocatable,dimension(:,:,:,:) :: data_avail_tipper !(2,2,nobs_mt,nfreq_mt) real/imag, (Tx,Ty),nfreq_mt)
+   real(8),   allocatable,dimension(:)       :: dvec_tipper  ! dvec(ndat_tipper)
+   real(8),   allocatable,dimension(:)       :: error_tipper ! error(ndat_mt)
+   end type ! 2021.12.27
 
 contains
 
 !############################################# setnec 2022.10.14
 subroutine setnec(ijoint,ACT,MT)
-implicit none
+ implicit none
  integer(4),intent(in) :: ijoint
  logical,   intent(out) :: ACT, MT
  ACT=.false.
@@ -222,6 +222,7 @@ end
 !# 2017.08.31 modified for multisource inversion
 !# 2017.06.08
 subroutine readparaJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_param_mt,g_data_ap,g_data_mt) !2022.10.14
+! declaration
  use caltime      ! 2017.12.22
  implicit none
  type(param_forward),    intent(in)  :: g_param
@@ -247,12 +248,12 @@ subroutine readparaJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_pa
 !#[-1]##
  g_param_joint%ijoint = ijoint ! 1;ACTIVE, 2:MT, 3:Joint
 
-!#[0]## read inversion parameter file 2020.09.29
-write(*,*) "" ! 2020.09.29
-write(*,*) "<Please input the inversion parameter file>" ! 2020.09.29
-read(*,'(a)') paramfile           ! 2020.09.29
-ikeep = 1 !2021.10.04
-call readcontrolfile(paramfile,n,lines,ikeep) ! 2021.10.04 see src/common/m_param.f90
+!#[0]## read ACTIVE inversion parameter file 2020.09.29
+ write(*,*) "" ! 2020.09.29
+ write(*,*) "<Please input the inversion parameter file>" ! 2020.09.29
+ read(*,'(a)') paramfile           ! 2020.09.29
+ ikeep = 1 !2021.10.04
+ call readcontrolfile(paramfile,n,lines,ikeep) ! 2021.10.04 see src/common/m_param.f90
 
 open(input,file="tmp.ctl")
 
@@ -624,13 +625,13 @@ txy(1:2)=(/"Tx","Ty"/)
  open(1,file=trim(g_param_joint%outputfolder)//"dvec_tipper.dat") ! 2022.12.05
  do i=1,nfreq_mt
    do j=1,nobs_mt
-     do k=1,2 ! zxx -> zyy
+     do k=1,2 ! Tx, Ty
        do l=1,2 ! real, imag
          if( data_avail_tipper(l,k,j,i) ) then
            ii=ii+1
            idata_tipper(l,k,j,i) = ii           ! 2022.12.12
            dvec_tipper(ii) = data(l,k,j,i) ! 2023.10.04
-           err_tipper(ii) =  err(l,k,j,i) ! 2023.10.04 
+           err_tipper(ii) =  err(l,k,j,i)  ! 2023.10.04 
            ! write(*,'(i5,2x,a,2x,a,2f15.7,2(a,i3))') ii,z(k),realimag(l),dvec_mt(ii),err_mt(ii),&
            ! & " obs#",j," freq#",i !
            write(1,'(i5,2x,a,2x,a,2f15.7,2(a,i3))') ii,txy(k),realimag(l),dvec_tipper(ii),err_tipper(ii),&
@@ -677,7 +678,7 @@ txy(1:2)=(/"Tx","Ty"/)
  allocate(g_data_mt%dvec_tipper(ndat_tipper))   ! 2023.10.04
  allocate(g_data_mt%error_tipper( ndat_tipper)) ! 2023.10.04
  g_data_mt%dvec_tipper  = dvec_tipper(1:ndat_tipper) ! 2023.10.04
- g_data_mt%error_tipper =  err_tipper(1:ndat_tipper) ! 2023.10.04
+ g_data_mt%error_tipper =  err_tipper(1:ndat_tipper) ! 2023.10.04 (real, imag)*(Tx, Ty)*nobs_mt*nfreq_mt
 
  ! g_param_joint 
    allocate(g_param_joint%data_avail_tipper(2,2,nobs_mt,nfreq_mt)) ! 2023.10.04

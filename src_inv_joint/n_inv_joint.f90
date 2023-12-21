@@ -2,114 +2,114 @@
 ! Coded on 2017.06.08
 ! to use amp and phase of bz
 program inversion_joint
-!
-use param
-use mesh_type
-use line_type
-use face_type
-use matrix
-use modelpart
-use constants        ! added on 2017.05.14
-use iccg_var_takuto  ! added on 2017.05.14
-use outresp
-use jacobian_joint   ! added on 2022.01.05
-use freq_mpi_joint   ! added on 2017.06.07FF
-use caltime          ! added on 2017.09.11
-use spectral         ! added on 2017.12.12
-use modelroughness   ! added on 2017.12.12
-!# Modification for joint inversion from inv_ap 2021.12.25
-use shareformpi_joint! added on 2021.12.25
-use surface_type     ! 2021.12.25
-use param_mt         ! 2021.12.25
-use param_jointinv   ! 2021.12.25
-!
-implicit none
-type(param_forward)    :: g_param      ! see m_param.f90
-type(param_source)     :: sparam       ! see m_param.f90
-type(param_cond)       :: g_cond       ! see m_param.f90 : goal conductivity
-type(param_cond)       :: h_cond       ! see m_param.f90 : initial structure
-type(param_cond)       :: r_cond       ! see m_param.f90 : ref 2017.07.19
-type(param_joint)      :: g_param_joint! see m_param_jointinv.f90 ! 2021.12.25
-type(mesh)             :: g_mesh       ! see m_mesh_type.f90
-type(mesh)             :: h_mesh       ! z file; see m_mesh_type.f90
-type(line_info)        :: g_line       ! see m_line_type.f90
-type(face_info)        :: g_face       ! see m_line_type.f90
-type(modelpara)        :: g_modelpara  ! see m_modelpart.f90
-type(model)            :: g_model_ref  ! see m_modelpart.f90
-type(model)            :: g_model_ini  ! see m_modelpart.f90 2017.08.31
-type(model)            :: h_model      ! see m_modelpart.f90 2017.05.17
-type(model)            :: pre_model    ! see m_modelpart.f90, 2017.08.31
-type(data_vec_ap)      :: g_data       ! observed data  ; see m_param_jointinv.f90
-type(data_vec_ap)      :: h_data       ! calculated data; see m_param_jointinv.f90
-type(data_vec_mt)      :: g_data_mt    ! observed   data 2021.12.27
-type(data_vec_mt)      :: h_data_mt    ! calculated data 2021.12.27
-type(freq_info_joint)  :: g_freq_joint ! see m_freq_mpi_joint.f90  ! 2022.10.20
-type(real_crs_matrix)  :: RTR,CD       ! see m_matrix.f90 20
-type(real_crs_matrix)  :: BMI          ! see m_matrix.f90 2017.12.13
-type(real_crs_matrix)  :: BM           ! see m_matrix.f90 2017.12.25
-type(real_crs_matrix)  :: PT(5)        ! (1:5)[nobs,nlin] ! 2018.10.04, Bx,By,Bz,Ex,Ey
-type(real_crs_matrix)  :: R,RI         ! see m_matrix.f90 2017.12.18
-type(global_matrix)    :: A            ! see m_iccg_var_takuto.f90
-type(real_crs_matrix)  :: coeffobs(2,3)! see m_matrix.f90 ; 1 for edge, 2 for face
-integer(4)                                  :: ijoint ! 1:ACTIVE, 2: MT, 3: Joint 2022.10.14
-logical                                     :: MT, ACT ! 1: if ACTIVE, 2:if MT necessary 2022.10.14
-integer(4)                                  :: ite,i,j,k,errno,node
-integer(4)                                  :: nline, ntet, nobs_act, ndat ! 2017.08.31
-integer(4)                                  :: ndat_mt                 ! 2022.01.04
-integer(4)                                  :: nsr_inv, nmodel         ! 2017.09.04
-integer(4)                                  :: nmodelactive            ! 2018.06.25
-real(8)                                     :: omega, freq_tot_ip
-integer(4)                                  :: nfreq_tot, nfreq_act, nfreq_tot_ip ! 2022.10.20
-integer(4)                                  :: nfreq_act_ip,nfreq_mt_ip ! 2022.10.20
-real(8)                                     :: nrms, nrms0, alpha      ! 2017.09.08
-real(8)                                     :: misfit       ! 2017.12.22
-complex(8),    allocatable,dimension(:,:)   :: fp,fs        ! (nline,nsr_inv) 2017.08.31
-type(obsfiles)                              :: files        ! see m_outresp.f90
-type(respdata),allocatable,dimension(:,:,:) :: resp5        ! 2017.08.31resp5(5,nsr,nfreq_ip)
-type(respdata),allocatable,dimension(:,:,:) :: tresp        ! 2017.08.31 tresp(5,nsr,nfreq)
-integer                                     :: access       ! 2017.05.15
-type(complex_crs_matrix)                    :: ut(5)        ! 2018.10.04, Bx,By,Bz,Ex,Ey
-type(amp_phase_dm),allocatable,dimension(:) :: g_apdm       ! 2017.06.07
-type(amp_phase_dm),allocatable,dimension(:) :: gt_apdm      ! 2017.06.07
-type(real_crs_matrix)                       :: JJ           ! Jacobian matrix, 2017.05.17
-real(8)                                     :: rough1,rough2! 2017.12.13
-integer(4)                                  :: ialpha       ! 2017.07.19
-real(8)                                     :: nrms_init    ! 2017.07.19
-character(50)                               :: head         ! 2017.07.25
-character(1)                                :: num2         ! 2017.09.11
-type(watch)                                 :: t_watch      ! 2017.09.11
-type(watch)                                 :: t_watch0     ! 2018.03.02
-real(8)                                     :: nrms_ini     ! 2018.06.25
-real(8)                                     :: frms         ! 2018.06.25
-!## modification from inv_ap to inv_joint  2021.12.25 ======================================
-complex(8),    allocatable,dimension(:,:)   :: fs_mt        ! (nline,2) 2021.12.30
-integer(4)                                  :: nfreq_mt     ! 2022.10.20
-type(param_forward_mt)                      :: g_param_mt   ! 2021.12.25
-type(surface)                               :: g_surface(6) ! 2021.12.25
-type(param_cond)                            :: i_cond       ! see m_param.f90 2021.12.25
-integer(4),    allocatable,dimension(:,:)   :: n4           ! 2021.12.27
-type(real_crs_matrix)                       :: CD_mt        ! 2021.12.29
-type(complex_crs_matrix)                    :: ut_mt(4)     ! [nobs_mt,nline]*4 2021.12.30
-type(real_crs_matrix)                       :: PT_mt(4)     ! [nobs_mt,nline]*4 Bx,By,Ex,Ey
-type(real_crs_matrix)                       :: coeffobs_mt(2,3)! see m_matrix.f90 2021.12.30
-type(respdata),allocatable,dimension(:,:,:) :: resp5_mt     ! 2021.12.30
-type(respdata),allocatable,dimension(:,:,:) :: tresp_mt     ! 2022.01.02
-type(respmt),  allocatable,dimension(:)     ::  imp_mt      ! 2021.12.30
-type(respmt),  allocatable,dimension(:)     :: timp_mt      ! 2022.01.02
-integer(4)                                  :: nsr_mt=2     ! 2021.12.30
-character(1) :: num
-real(8)      :: nrms_mt   ! 2022.01.04
-real(8)      :: misfit_mt ! 2022.01.04
-real(8)      :: nrms_mt_ini     ! 2018.06.25
-type(mt_dm),   allocatable,dimension(:)     :: g_mtdm  ! 2022.01.05
-type(mt_dm),   allocatable,dimension(:)     :: gt_mtdm ! 2022.01.05
-integer(4)                                  :: nobs_mt ! 2022.01.05
-type(real_crs_matrix)                       :: JJ_mt   ! Jacobian matrix, 2022.01.05
-!##===========================================================================
-integer(4) :: ip,np, itemax = 20, iflag, ierr=0, i_act,i_mt
-integer(4) :: kmax ! maximum lanczos procedure 2017.12.13
-integer(4) :: nalpha, ialphaflag  ! 2017.09.08
-integer(4) :: itype_roughness     ! 2017.12.13
+! modules
+ use param
+ use mesh_type
+ use line_type
+ use face_type
+ use matrix
+ use modelpart
+ use constants        ! added on 2017.05.14
+ use iccg_var_takuto  ! added on 2017.05.14
+ use outresp
+ use jacobian_joint   ! added on 2022.01.05
+ use freq_mpi_joint   ! added on 2017.06.07FF
+ use caltime          ! added on 2017.09.11
+ use spectral         ! added on 2017.12.12
+ use modelroughness   ! added on 2017.12.12
+ !# Modification for joint inversion from inv_ap 2021.12.25
+ use shareformpi_joint! added on 2021.12.25
+ use surface_type     ! 2021.12.25
+ use param_mt         ! 2021.12.25
+ use param_jointinv   ! 2021.12.25
+! declaration
+ implicit none
+ type(param_forward)    :: g_param      ! see m_param.f90
+ type(param_source)     :: sparam       ! see m_param.f90
+ type(param_cond)       :: g_cond       ! see m_param.f90 : goal conductivity
+ type(param_cond)       :: h_cond       ! see m_param.f90 : initial structure
+ type(param_cond)       :: r_cond       ! see m_param.f90 : ref 2017.07.19
+ type(param_joint)      :: g_param_joint! see m_param_jointinv.f90 ! 2021.12.25
+ type(mesh)             :: g_mesh       ! see m_mesh_type.f90
+ type(mesh)             :: h_mesh       ! z file; see m_mesh_type.f90
+ type(line_info)        :: g_line       ! see m_line_type.f90
+ type(face_info)        :: g_face       ! see m_line_type.f90
+ type(modelpara)        :: g_modelpara  ! see m_modelpart.f90
+ type(model)            :: g_model_ref  ! see m_modelpart.f90
+ type(model)            :: g_model_ini  ! see m_modelpart.f90 2017.08.31
+ type(model)            :: h_model      ! see m_modelpart.f90 2017.05.17
+ type(model)            :: pre_model    ! see m_modelpart.f90, 2017.08.31
+ type(data_vec_ap)      :: g_data       ! observed data  ; see m_param_jointinv.f90
+ type(data_vec_ap)      :: h_data       ! calculated data; see m_param_jointinv.f90
+ type(data_vec_mt)      :: g_data_mt    ! observed   data 2021.12.27
+ type(data_vec_mt)      :: h_data_mt    ! calculated data 2021.12.27
+ type(freq_info_joint)  :: g_freq_joint ! see m_freq_mpi_joint.f90  ! 2022.10.20
+ type(real_crs_matrix)  :: RTR,CD       ! see m_matrix.f90 20
+ type(real_crs_matrix)  :: BMI          ! see m_matrix.f90 2017.12.13
+ type(real_crs_matrix)  :: BM           ! see m_matrix.f90 2017.12.25
+ type(real_crs_matrix)  :: PT(5)        ! (1:5)[nobs,nlin] ! 2018.10.04, Bx,By,Bz,Ex,Ey
+ type(real_crs_matrix)  :: R,RI         ! see m_matrix.f90 2017.12.18
+ type(global_matrix)    :: A            ! see m_iccg_var_takuto.f90
+ type(real_crs_matrix)  :: coeffobs(2,3)! see m_matrix.f90 ; 1 for edge, 2 for face
+ integer(4)                                  :: ijoint ! 1:ACTIVE, 2: MT, 3: Joint 2022.10.14
+ logical                                     :: MT, ACT ! 1: if ACTIVE, 2:if MT necessary 2022.10.14
+ integer(4)                                  :: ite,i,j,k,errno,node
+ integer(4)                                  :: nline, ntet, nobs_act, ndat ! 2017.08.31
+ integer(4)                                  :: ndat_mt                 ! 2022.01.04
+ integer(4)                                  :: nsr_inv, nmodel         ! 2017.09.04
+ integer(4)                                  :: nmodelactive            ! 2018.06.25
+ real(8)                                     :: omega, freq_tot_ip
+ integer(4)                                  :: nfreq_tot, nfreq_act, nfreq_tot_ip ! 2022.10.20
+ integer(4)                                  :: nfreq_act_ip,nfreq_mt_ip ! 2022.10.20
+ real(8)                                     :: nrms, nrms0, alpha      ! 2017.09.08
+ real(8)                                     :: misfit       ! 2017.12.22
+ complex(8),    allocatable,dimension(:,:)   :: fp,fs        ! (nline,nsr_inv) 2017.08.31
+ type(obsfiles)                              :: files        ! see m_outresp.f90
+ type(respdata),allocatable,dimension(:,:,:) :: resp5        ! 2017.08.31resp5(5,nsr,nfreq_ip)
+ type(respdata),allocatable,dimension(:,:,:) :: tresp        ! 2017.08.31 tresp(5,nsr,nfreq)
+ integer                                     :: access       ! 2017.05.15
+ type(complex_crs_matrix)                    :: ut(5)        ! 2018.10.04, Bx,By,Bz,Ex,Ey
+ type(amp_phase_dm),allocatable,dimension(:) :: g_apdm       ! 2017.06.07
+ type(amp_phase_dm),allocatable,dimension(:) :: gt_apdm      ! 2017.06.07
+ type(real_crs_matrix)                       :: JJ           ! Jacobian matrix, 2017.05.17
+ real(8)                                     :: rough1,rough2! 2017.12.13
+ integer(4)                                  :: ialpha       ! 2017.07.19
+ real(8)                                     :: nrms_init    ! 2017.07.19
+ character(50)                               :: head         ! 2017.07.25
+ character(1)                                :: num2         ! 2017.09.11
+ type(watch)                                 :: t_watch      ! 2017.09.11
+ type(watch)                                 :: t_watch0     ! 2018.03.02
+ real(8)                                     :: nrms_ini     ! 2018.06.25
+ real(8)                                     :: frms         ! 2018.06.25
+ !## modification from inv_ap to inv_joint  2021.12.25 ======================================
+ complex(8),    allocatable,dimension(:,:)   :: fs_mt        ! (nline,2) 2021.12.30
+ integer(4)                                  :: nfreq_mt     ! 2022.10.20
+ type(param_forward_mt)                      :: g_param_mt   ! 2021.12.25
+ type(surface)                               :: g_surface(6) ! 2021.12.25
+ type(param_cond)                            :: i_cond       ! see m_param.f90 2021.12.25
+ integer(4),    allocatable,dimension(:,:)   :: n4           ! 2021.12.27
+ type(real_crs_matrix)                       :: CD_mt        ! 2021.12.29
+ type(complex_crs_matrix)                    :: ut_mt(4)     ! [nobs_mt,nline]*4 2021.12.30
+ type(real_crs_matrix)                       :: PT_mt(4)     ! [nobs_mt,nline]*4 Bx,By,Ex,Ey
+ type(real_crs_matrix)                       :: coeffobs_mt(2,3)! see m_matrix.f90 2021.12.30
+ type(respdata),allocatable,dimension(:,:,:) :: resp5_mt     ! 2021.12.30
+ type(respdata),allocatable,dimension(:,:,:) :: tresp_mt     ! 2022.01.02
+ type(respmt),  allocatable,dimension(:)     ::  imp_mt      ! 2021.12.30
+ type(respmt),  allocatable,dimension(:)     :: timp_mt      ! 2022.01.02
+ integer(4)                                  :: nsr_mt=2     ! 2021.12.30
+ character(1) :: num
+ real(8)      :: nrms_mt   ! 2022.01.04
+ real(8)      :: misfit_mt ! 2022.01.04
+ real(8)      :: nrms_mt_ini     ! 2018.06.25
+ type(mt_dm),   allocatable,dimension(:)     :: g_mtdm  ! 2022.01.05
+ type(mt_dm),   allocatable,dimension(:)     :: gt_mtdm ! 2022.01.05
+ integer(4)                                  :: nobs_mt ! 2022.01.05
+ type(real_crs_matrix)                       :: JJ_mt   ! Jacobian matrix, 2022.01.05
+ !##===========================================================================
+ integer(4) :: ip,np, itemax = 20, iflag, ierr=0, i_act,i_mt
+ integer(4) :: kmax ! maximum lanczos procedure 2017.12.13
+ integer(4) :: nalpha, ialphaflag  ! 2017.09.08
+ integer(4) :: itype_roughness     ! 2017.12.13
 !#[Explanation]---------------------------------------------------------
  !# Algorithm
  !# Phi(m) = F(m) + alpha*R(m)
@@ -165,9 +165,9 @@ if ( ip .eq. 0) then !################################################# ip = 0
   read(*,'(i5)') ijoint ! 1: only active, 2: only MT, 3: both active and MT data 2022.10.14
   call declareinversiontype(ijoint,ierr) ! 2022.10.14
   if ( ierr .ne. 0 ) goto 998
-  call setnec(ijoint,ACT,MT) ! 2022.10.14
+  call setnec(ijoint,ACT,MT) ! see m_param_joint.f90 2022.10.14
 
-!#[0]## read parameters
+!#[0]## read parameters, g_param, g_param_mt, g_param_joint,s_param, gen g_data,g_data_mt
   if(ACT) CALL READPARAM(g_param,sparam,g_cond) ! include READCOND for initial model 2022.10.14
   if(MT ) CALL READPARAM_MT(g_param_mt,i_cond) ! read MT param 2022.10.14 (i_cond is not used)
   CALL READPARAJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_param_mt,g_data,g_data_mt)
@@ -222,7 +222,7 @@ if ( ip .eq. 0) then !################################################# ip = 0
   g_model_ini = g_model_ref                          ! 2017.08.31
   CALL assignmodelrho(h_cond,g_model_ini)            ! 2017.08.31
 
-!#[6]## cal BMI for SM
+!#[6]## cal BMI for SM or MSG for data-space inversion
   itype_roughness = g_param_joint%itype_roughness  ! 2017.12.25 see m_param_jointinv.f90
   if     ( itype_roughness == 1 )  then  ! SM: smoothest model
     CALL GENBMI_SM(BM,BMI,g_face,g_mesh,g_model_ref)  ! 2017.06.14 m_modelroughenss.f90
@@ -1729,45 +1729,66 @@ end subroutine
 !############################################## subroutine GENCD_AP
 ! Modified on 2017.09.04
 ! Coded on May 13, 2017
-subroutine GENCD(g_data_ap,g_data_mt,CD,CD_mt) ! 2021.12.29
-use matrix
-use param_jointinv ! 2017.09.04
-implicit none
-type(data_vec_ap),      intent(in)  :: g_data_ap
-type(data_vec_mt),      intent(in)  :: g_data_mt ! 2021.12.29
-type(real_crs_matrix),  intent(out) :: CD, CD_mt ! 2021.12.29
-real(8),allocatable,dimension(:)    :: error,error_mt ! 2021.12.29
-integer(4) :: ndat,i
-integer(4) :: ndat_mt
+! Tipper is added on 2023.12.21
+subroutine GENCD(g_data_ap,g_data_mt,CD,CD_mt,CD_tipper) ! 2021.12.29
+ use matrix
+ use param_jointinv ! 2017.09.04
+ implicit none
+ type(data_vec_ap),      intent(in)  :: g_data_ap
+ type(data_vec_mt),      intent(in)  :: g_data_mt ! 2021.12.29
+ type(real_crs_matrix),  intent(out) :: CD, CD_mt, CD_tipper ! 2021.12.29
+ real(8),allocatable,dimension(:)    :: error,error_mt,error_tipper ! 2023.12.21
+ integer(4) :: ndat,i
+ integer(4) :: ndat_mt,ndat_tipper ! 2023.12.21
 
 !#[1]# set
-ndat    = g_data_ap%ndat
-ndat_mt = g_data_mt%ndat_mt
-write(*,*) "ndat_active=",ndat,"ndat_mt=",ndat_mt ! 2021.12.29
-allocate(error(ndat),error_mt(ndat_mt)) ! 2021.12.29
-error    = g_data_ap%error
-error_mt = g_data_mt%error_mt ! 2021.12.29
+ ndat    = g_data_ap%ndat
+ ndat_mt = g_data_mt%ndat_mt
+ ndat_tipper = g_data_mt%ndat_tipper ! 2023.12.21
+ write(*,*) "ndat_active=",ndat
+ write(*,*) "ndat_mt    =",ndat_mt ! 2021.12.29
+ write(*,*) "ndat_tipper=",ndat_tipper ! 2023.12.21
+ allocate(error(ndat),error_mt(ndat_mt),error_tipper(ndat_tipper)) ! 2021.12.29
+ error        = g_data_ap%error
+ error_mt     = g_data_mt%error_mt     ! 2021.12.29
+ error_tipper = g_data_mt%error_tipper ! 2023.12.21
 
 !#[2]## gen Cd : diagonal matrix
-CD%nrow  = ndat   ; CD_mt%nrow  = ndat_mt  
-CD%ncolm = ndat   ; CD_mt%ncolm = ndat_mt   
-CD%ntot  = ndat   ; CD_mt%ntot  = ndat_mt   
-allocate(CD%stack(0:ndat),CD%item(ndat),CD%val(ndat))
-allocate(CD_mt%stack(0:ndat_mt),CD_mt%item(ndat_mt),CD_mt%val(ndat_mt)) ! 2021.12.29
-CD%stack(0)=0
-do i=1,ndat
- CD%val(i)   = (error(i))**2.d0
- CD%stack(i) = i
- CD%item(i)  = i
-end do
-!
-CD_mt%stack(0)=0
-do i=1,ndat_mt
-  CD_mt%val(i)   = (error_mt(i))**2.d0
-  CD_mt%stack(i) = i
-  CD_mt%item(i)  = i
+ CD%nrow  = ndat   ; CD_mt%nrow  = ndat_mt  
+ CD%ncolm = ndat   ; CD_mt%ncolm = ndat_mt   
+ CD%ntot  = ndat   ; CD_mt%ntot  = ndat_mt
+ CD_tipper%nrow  = ndat_tipper ! 2023.12.21 
+ CD_tipper%ncolm = ndat_tipper ! 2023.12.21    
+ CD_tipper%ntot  = ndat_tipper ! 2023.12.21
+     
+ allocate(CD%stack(0:ndat),CD%item(ndat),CD%val(ndat))
+ CD%stack(0)=0
+ do i=1,ndat
+   CD%val(i)   = (error(i))**2.d0
+   CD%stack(i) = i
+   CD%item(i)  = i
  end do
- 
+
+!#[3]## gen Cd_mt
+ allocate(CD_mt%stack(0:ndat_mt),CD_mt%item(ndat_mt),CD_mt%val(ndat_mt)) ! 2021.12.29
+ CD_mt%stack(0)=0
+ do i=1,ndat_mt
+   CD_mt%val(i)   = (error_mt(i))**2.d0
+   CD_mt%stack(i) = i
+   CD_mt%item(i)  = i
+ end do
+
+!#[3]## gen Cd_mt
+ allocate(CD_tipper%stack(0:ndat_tipper),CD_tipper%item(ndat_tipper),CD_tipper%val(ndat_tipper)) ! 2023.12.21
+ CD_tipper%stack(0)=0
+ do i=1,ndat_tipper ! ndat_tipper = (real,imag)*(Tx,Ty)*nobs_mt*nfreq_mt, error is given directly for real and imag
+   CD_tipper%val(i)   = error_tipper(i)
+   CD_tipper%stack(i) = i
+   CD_tipper%item(i)  = i
+ end do
+
+
+
 write(*,*) "### GENCD END!! ###" ! 2021.12.29
 return
 end

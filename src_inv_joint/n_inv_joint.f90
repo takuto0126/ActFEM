@@ -318,6 +318,9 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
 !#[15]## initialize data vector
   if (ACT) CALL initializedatavec(g_param_joint,h_data)      ! m_param_joint.f90, 2017.08.31
   if (MT)  CALL initializedatavecmt(g_param_joint,h_data_mt) ! m_param_joint.f90 2022.01.04
+  if (MT .and. g_param_joint%iflag_tipper == 1) then
+           CALL initializedatavectipper(g_param_joint,h_data_tipper) ! m_param_joint.f890 2023.12.23
+  end if
   ndat     = g_data%ndat                                     ! 2017.08.31
   ndat_mt  = g_data_mt%ndat_mt                               ! 2022.01.04
 

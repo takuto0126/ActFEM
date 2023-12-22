@@ -80,9 +80,6 @@ subroutine ALLOCATERESPMT(nobs,resp_mt)
  allocate(resp_mt%phaxy(nobs))
  allocate(resp_mt%phayx(nobs))
  allocate(resp_mt%phayy(nobs))
- !# tipper 2023.12.22
- allocate(resp_mt%tx(nobs)) ! 2023.12.22
- allocate(resp_mt%ty(nobs)) ! 2023.12.22
 
  return
  end subroutine

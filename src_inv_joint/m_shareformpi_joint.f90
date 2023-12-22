@@ -34,7 +34,7 @@ type(model),          intent(inout) :: g_model
   CALL SHAREFORWARD(g_param,sparam,g_cond,ip) ! see m_shareformpi.f90
   CALL SHAREMESHLINE(g_mesh,g_line,ip)        ! see m_shareformpi.f90
 !  CALL SHAREFACE(g_face,ip)                  ! see m_shareformpi.f90 2017.08.31
-  CALL SHAREINVPARAJOINT(g_param_joint,ip)       ! 2017.08.31 see below
+  CALL SHAREINVPARAJOINT(g_param_joint,ip)    ! 2017.08.31 see below
   CALL SHAREMODEL(g_model,ip)                 ! see m_shareformpi.f90
 return
 end

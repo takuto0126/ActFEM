@@ -38,6 +38,14 @@ implicit none
   type(complex_crs_matrix) :: dzyydm ! 
  end type
 
+ !# 2023.12.22 Jacoain for tipper
+ type tip_dm
+  integer(4) :: nobs_mt             ! for each freqency
+  integer(4) :: nmodelactive        ! 2023.12.22
+  type(complex_crs_matrix) :: dtxdm ! [nobs,nmodelactive]  
+  type(complex_crs_matrix) :: dtydm ! 
+ end type
+
 contains
 
 !###########################

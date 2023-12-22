@@ -6,7 +6,7 @@ use param_mt ! 2021.12.15
 use matrix
 use line_type    ! see m_line_tyoe.f90
 use iccg_var_takuto
-use outresp
+use outresp      ! see ../common/m_outresp.f90 for respdata,respmt
 use surface_type ! see src_2D/m_surface_type.f90
 use obs_type     ! see m_obs_type.f90
 use constants, only: pi,dmu
@@ -15,7 +15,7 @@ implicit none
 type(param_forward_mt)  :: g_param_mt ! 2021.12.15
 type(param_cond)        :: g_cond  ! see src/common/m_param.f90
 type(mesh)              :: g_mesh  ! see src/common/m_mesh_type.f90
-type(mesh)              :: h_mesh     ! topography file
+type(mesh)              :: h_mesh  ! topography file
 type(line_info)         :: g_line  ! m_line_type.f90
 type(global_matrix)     :: A       ! see m_iccg_var_takuto.f90
 type(real_crs_matrix)   :: coeffobs(2,3) !m_matrix.f90; 1:edge,
@@ -27,7 +27,7 @@ integer(4)              :: i,j,iresfile,i_surface,k
 integer(4)              :: ixyflag
 real(8)                 :: omega,freq
 type(respdata),allocatable,dimension(:,:,:) :: resp5  ! 2018.02.22
-type(respmt),  allocatable,dimension(:)     :: resp_mt ! 2021.09.14
+type(respmt),  allocatable,dimension(:)     :: resp_mt !see m_outresp.f90
 integer(4),    allocatable,dimension(:,:)   :: n4
 complex(8),    allocatable,dimension(:,:)   :: al_MT ! 2021.09.14
 integer(4)                                  :: ip=0,iele

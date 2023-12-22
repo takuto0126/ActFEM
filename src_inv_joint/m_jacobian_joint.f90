@@ -1148,7 +1148,7 @@ subroutine getnewmodel_joint(JJ_ac,JJ_mt,g_model_ref,h_model,g_data,h_data,&
   integer(4)                          :: icheck = 1
   type(model)                         :: ki,kiref
   type(model)                         :: m0,m_ref
-  logical                             :: MT, ACT ! 2022.10.14
+  logical                             :: MT, ACT,TIPPER ! 2023.12.23
   type(watch) :: t_watch ! 2017.12.22
   type(watch) :: t_watch1 ! 2018.01.23
   
@@ -1158,7 +1158,7 @@ subroutine getnewmodel_joint(JJ_ac,JJ_mt,g_model_ref,h_model,g_data,h_data,&
   !#[0]## set
     call watchstart(t_watch1)
     ijoint       = g_param_joint%ijoint     ! 2022.10.14 1:ACTIVE,2:MT,3:Joint
-    call setnec(ijoint,ACT,MT)                     ! 2022.10.14 see m_param_joint.f90
+    call setnec(ijoint,g_param_joint,ACT,MT,TIPPER) ! 2023.12.23 see m_param_joint.f90
     ioutlevel    = g_param_joint%ioutlevel  ! 2022.10.14
     ndat_ac      = g_data%ndat              !            2022.01.05
     ndat_mt      = g_data_mt%ndat_mt        !            2022.01.05

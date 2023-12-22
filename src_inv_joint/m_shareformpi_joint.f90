@@ -254,7 +254,7 @@ end
 subroutine SHAREINVPARAJOINT(g_param_joint,ip) ! 2017.08.31
 implicit none
 integer(4),             intent(in)    :: ip
-type(param_joint),intent(inout) :: g_param_joint   ! 2017.08.31
+type(param_joint),      intent(inout) :: g_param_joint   ! 2017.08.31
 integer(4)                            :: i,j,nobs,nfreq,errno
 integer(4)                            :: nsr_inv, nobs_s ! 2017.07.13
 integer(4)                            :: icomp           ! 2018.10.05
@@ -270,7 +270,9 @@ integer(4)                            :: icomp           ! 2018.10.05
  nobs     = g_param_joint%nobs    ! 2017.08.31
  nfreq    = g_param_joint%nfreq   ! 2017.08.31
  nsr_inv  = g_param_joint%nsr_inv ! 2017.07.13
-
+ !# Tipper
+ call MPI_BCAST(g_param_joint%iflag_tipper,  1, MPI_INTEGER4,0,MPI_COMM_WORLD,errno)! 2023.12.23
+ 
  if ( ip .ne. 0) then
   allocate(g_param_joint%srcindex(nsr_inv) ) ! 2017.08.31
   allocate(g_param_joint%obsinfo( nsr_inv) ) ! 2017.08.31

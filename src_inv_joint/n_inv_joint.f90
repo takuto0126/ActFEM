@@ -110,9 +110,11 @@ program inversion_joint
   integer(4)                                  :: nobs_mt ! 2022.01.05
   type(real_crs_matrix)                       :: JJ_mt   ! Jacobian matrix, 2022.01.05
 !## addition of declaration for tipper data 2023.12.22
+  integer(4)                                  :: ndat_tipper  ! 2023.12.23
   type(real_crs_matrix)                       :: CD_tipper    ! 2023.12.21 
   type(resptip), allocatable,dimension(:)     :: tip_mt       ! 2023.12.23 MT imp
   type(resptip), allocatable,dimension(:)     :: ttip_mt      ! 2023.12.23 see ../common/m_outresp.f90
+  logical                                     :: TIP          ! 2023.12.23
 !## Declaration for global integers ==================================================
  integer(4) :: ip,np, itemax = 20, iflag, ierr=0, i_act,i_mt
  integer(4) :: kmax ! maximum lanczos procedure 2017.12.13
@@ -173,7 +175,7 @@ if ( ip .eq. 0) then !################################################# ip = 0
   read(*,'(i5)') ijoint ! 1: only active, 2: only MT, 3: both active and MT data 2022.10.14
   call declareinversiontype(ijoint,ierr) ! 2022.10.14
   if ( ierr .ne. 0 ) goto 998
-  call setnec(ijoint,ACT,MT) ! see m_param_joint.f90 2022.10.14
+  call setnec(ijoint,g_param_joint,ACT,MT,TIP) ! see m_param_joint.f90 2023.12.23
 
 !#[0]## read parameters, g_param, g_param_mt, g_param_joint,s_param, gen g_data,g_data_mt
   if(ACT) CALL READPARAM(g_param,sparam,g_cond) ! include READCOND for initial model 2022.10.14
@@ -261,7 +263,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
 
 !#[11]## Preparation for global stiff matrix
   ijoint       = g_param_joint%ijoint           ! 2022.10.14
-  call setnec(ijoint,ACT,MT)                    ! 2022.10.14 see m_param_joint.f90
+  call setnec(ijoint,g_param_joint,ACT,MT,TIP)  ! 2022.12.23 see m_param_joint.f90
   if (ip == 0) write(*,'(a)') "  ip  |  ACT   MT" ! 2022.12.05
   CALL MPI_BARRIER(mpi_comm_world, errno)       ! 2022.12.05
   write(*,'(i4,1x,2l6)') ip,ACT,MT                          ! 2022.12.05
@@ -318,12 +320,10 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
 !#[15]## initialize data vector
   if (ACT) CALL initializedatavec(g_param_joint,h_data)      ! m_param_joint.f90, 2017.08.31
   if (MT)  CALL initializedatavecmt(g_param_joint,h_data_mt) ! m_param_joint.f90 2022.01.04
-  if (MT .and. g_param_joint%iflag_tipper == 1) then
-           CALL initializedatavectipper(g_param_joint,h_data_tipper) ! m_param_joint.f890 2023.12.23
-  end if
-  ndat     = g_data%ndat                                     ! 2017.08.31
-  ndat_mt  = g_data_mt%ndat_mt                               ! 2022.01.04
-
+  if (TIP) CALL initializedatavectipper(g_param_joint,h_data_mt) ! m_param_joint.f90 2023.12.23
+  ndat        = g_data%ndat                                     ! 2017.08.31
+  ndat_mt     = g_data_mt%ndat_mt                               ! 2022.01.04
+  ndat_tipper = g_data_mt%ndat_tipper                            ! 2023.12.23
   if (ACT) then ! 2022.12.05
          allocate(g_apdm(nfreq_act_ip))
          call allocateapdm(nobs_act,nfreq_act_ip,nmodelactive,nsr_inv,g_apdm ) ! 2018.06.25
@@ -467,7 +467,7 @@ if (ip .eq. 0 .and. MT  ) then ! 2022.10.14
   end if
 
 !============================================================= freq loop end
-  call setnec(ijoint,ACT,MT) ! ip where freq is not assigned is also necessary for MPI share
+  call setnec(ijoint,g_param_joint,ACT,MT,TIP) ! 2023.12.23
 
 !#[26]## GATHER ACTIVE and MT results to ip = 0
   if(ACT)CALL SENDRECVRESULT(resp5,tresp,ip,np,nfreq_act,nfreq_act_ip,g_freq_joint,nsr_inv) 
@@ -622,7 +622,7 @@ end do ! alpha loop end! 2017.09.08
 end program inversion_joint ! 2021.12.25
 
 !############################################# LINKglobalmodel2surface
- subroutine linkglobalmodel2surface(g_model,g_surface)
+subroutine linkglobalmodel2surface(g_model,g_surface)
   use surface_type
   use modelroughness
   use modelpart
@@ -672,13 +672,13 @@ subroutine calrespmt(resp5,resp_mt,omega,ip) ! 2022.12.05
   !# set bxyzexy_ex and bxyzexy_ey
   write(*,*) "nobs",nobs,"ip",ip
   do i=1,5
-!    write(*,*) "allocated(resp5(i,1)%ftobs)",allocated(resp5(i,1)%ftobs)
-!    write(*,*) "allocated(resp5(i,2)%ftobs)",allocated(resp5(i,2)%ftobs)
-!    write(*,'(a,i3,i8,a,i3)') "i,size(resp5(i,1)%ftobs)",i,size(resp5(i,1)%ftobs),"ip",ip
-!    write(*,'(a,i3,i8,a,i3)') "i,size(resp5(i,2)%ftobs)",i,size(resp5(i,2)%ftobs),"ip",ip
+   !    write(*,*) "allocated(resp5(i,1)%ftobs)",allocated(resp5(i,1)%ftobs)
+   !    write(*,*) "allocated(resp5(i,2)%ftobs)",allocated(resp5(i,2)%ftobs)
+   !    write(*,'(a,i3,i8,a,i3)') "i,size(resp5(i,1)%ftobs)",i,size(resp5(i,1)%ftobs),"ip",ip
+   !    write(*,'(a,i3,i8,a,i3)') "i,size(resp5(i,2)%ftobs)",i,size(resp5(i,2)%ftobs),"ip",ip
    do j=1,nobs
-    be5_ex(i,j)=resp5(i,1)%ftobs(j) ! ex polarization
-    be5_ey(i,j)=resp5(i,2)%ftobs(j) ! ey plarization
+     be5_ex(i,j)=resp5(i,1)%ftobs(j) ! ex polarization
+     be5_ey(i,j)=resp5(i,2)%ftobs(j) ! ey plarization
    end do
   end do
   
@@ -718,7 +718,7 @@ subroutine calrespmt(resp5,resp_mt,omega,ip) ! 2022.12.05
   end
 
 !#############################################
-  subroutine declareinversiontype(ijoint,ierr) ! 2022.10.14
+subroutine declareinversiontype(ijoint,ierr) ! 2022.10.14
   implicit none
   integer(4),intent(in)  :: ijoint
   integer(4),intent(inout) :: ierr
@@ -736,8 +736,8 @@ subroutine calrespmt(resp5,resp_mt,omega,ip) ! 2022.12.05
   return
   end
 !#############################################
-!# copied from ../src_3DMT/n_ebfem_3DMT.f90
 subroutine CALOBSEBCOMP_MT(fs,nline,nsr,omega,coeffobs,resp5,ip) ! 2022.12.05
+  !# copied from ../src_3DMT/n_ebfem_3DMT.f90
   use matrix
   use outresp
   implicit none
@@ -1561,8 +1561,8 @@ subroutine CALRMS_MT(g_data_mt,h_data_mt,Cd_mt,misfit_mt,nrms_mt)
   use matrix
   use caltime ! 2017.12.22
   type(real_crs_matrix),intent(in)     :: Cd_mt
-  type(data_vec_mt),    intent(in)     :: g_data_mt ! obs
-  type(data_vec_mt),    intent(in)     :: h_data_mt ! cal 
+  type(data_vec_mt),    intent(in)     :: g_data_mt ! obs tmp and tipper
+  type(data_vec_mt),    intent(in)     :: h_data_mt ! cal tmp and tipper
   real(8),              intent(out)    :: misfit_mt,nrms_mt
   real(8),allocatable,dimension(:)     :: dvec_mt1,dvec_mt2,dvec_mt
   integer(4)                           :: ndat_mt,ndat_mt1,ndat_mt2,i

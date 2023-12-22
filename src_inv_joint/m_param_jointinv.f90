@@ -149,12 +149,13 @@ type data_vec_ap  ! added on 2017.08.31
  real(8),allocatable,dimension(:)         :: error ! error(ndat)
  end type
 
-!#[1]## impedance data dvec_mt, error_mt
 type data_vec_mt ! includes dvec_mt and dvec_tiper 2023.12.21
  !# common over MT and tipper 
  integer(4) :: nobs_mt = 0  ! 2022.10.14
  integer(4) :: nfreq_mt = 0 ! 2022.10.14
- integer(4) :: ndat_mt = 0     ! depends on data_avail 2022.10.14
+
+ !#[1]## impedance data dvec_mt, error_mt
+   integer(4) :: ndat_mt = 0     ! depends on data_avail 2022.10.14
    !  | zxx real_obs1 (freq1)|
    !  | zxx imag_obs1 (freq1)|
    !  | zxy real_obs1 (freq1)|
@@ -176,12 +177,8 @@ type data_vec_mt ! includes dvec_mt and dvec_tiper 2023.12.21
    logical,   allocatable,dimension(:,:,:,:) :: data_avail_mt !(2,4,nobs_mt,nfreq_mt) 2021.12.27
    real(8),allocatable,dimension(:)          :: dvec_mt  ! dvec(ndat_mt)
    real(8),allocatable,dimension(:)          :: error_mt ! error(ndat_mt)
- end type
 
-!#[2]## tipper data, dvec_tipper, error_tipper, 2023.12.22
-type data_vec_tipper 
-   integer(4) :: nobs_tipper  = 0  ! 2022.12.22 = nobs_mt
-   integer(4) :: nfreq_tipper = 0  ! 2022.12.22 = nfreq_mt
+  !#[2]## tipper data, dvec_tipper, error_tipper, 2023.12.22 
    integer(4) :: ndat_tipper  = 0  ! depends on data_avail_tipper 2022.10.14
    !      | Tx real_obs1 (freq1)|
    !      | Tx imag_obs1 (freq1)|
@@ -203,22 +200,28 @@ type data_vec_tipper
    logical,   allocatable,dimension(:,:,:,:) :: data_avail_tipper !(2,2,nobs_mt,nfreq_mt) real/imag, (Tx,Ty),nfreq_mt)
    real(8),   allocatable,dimension(:)       :: dvec_tipper  ! dvec(ndat_tipper)
    real(8),   allocatable,dimension(:)       :: error_tipper ! error(ndat_mt)
-  end type ! 2021.12.27
+end type ! 2021.12.27
+
 contains
 
 !#################################################### setnec 2022.10.14
-subroutine setnec(ijoint,ACT,MT)
+subroutine setnec(ijoint,g_param_joint,ACT,MT,TIPPER) ! 2023.12.23 TIPPER added
  implicit none
- integer(4),intent(in) :: ijoint
- logical,   intent(out) :: ACT, MT
+ integer(4),       intent(in)  :: ijoint
+ type(param_joint),intent(in)  :: g_param_joint  ! 2023.12.23
+ logical,          intent(out) :: ACT, MT,TIPPER ! 2023.12.23
  ACT=.false.
  MT=.false.
+ TIPPER=.false. ! 2023.12.23
  if ( ijoint == 1 ) ACT = .true.  ! only ACTIVE
  if ( ijoint == 2 ) MT  = .true.  ! only MT
  if ( ijoint == 3 ) then
    ACT = .true. ! ACTIVE and MT
    MT  = .true. 
    end if
+ if (MT .and. g_param_joint%iflag_tipper == 1) then ! 2023.12.23
+   TIPPER =.true. ! 2023.12.23
+   end if         ! 2023.12.23
  return
  end
 !#################################################### readparam
@@ -247,7 +250,7 @@ subroutine readparaJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_pa
 
  call watchstart(t_watch) ! 2017.12.22
 
- !#[-1]##
+ !#[-1]## set ijoint 
    g_param_joint%ijoint = ijoint ! 1;ACTIVE, 2:MT, 3:Joint
 
  !#[0]## read ACTIVE inversion parameter file 2020.09.29
@@ -510,9 +513,9 @@ subroutine readparaJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_pa
    !#[5]## read mt tipper data 2023.10.04
    read(input,'(20x,i5)') g_param_joint%iflag_tipper ! 2023.10.04
    write(*,*) "iflag_tipper = ",g_param_joint%iflag_tipper ! 2023.10.05
-   if ( g_param_joint%iflag_tipper .eq. 1) then      ! 2023.10.04
+   if ( g_param_joint%iflag_tipper == 1 ) then      ! 2023.10.04
      call readdata_tipper(g_param_joint,g_param_mt,g_data_mt,input) ! see below 2023.10.04
-   end if   ! 2023.10.04
+     end if   ! 2023.10.04
 
  end if ! MT data read end ! 2022.10.14
 
@@ -1130,30 +1133,29 @@ subroutine initializedatavecmt(g_param_joint,h_data_mt)
   end subroutine
 
 !#################################################### initializedatavectipper
-subroutine initializedatavectipper(g_param_joint,h_data_tipper)
+subroutine initializedatavectipper(g_param_joint,h_data_mt)
+  ! initialize tipper data vector for calculation
   !# 2023.12.22
   implicit none
   type(param_joint),    intent(in)       :: g_param_joint     ! 2023.12.22
-  type(data_vec_tipper),intent(out)      :: h_data_tipper     ! 2023.12.22
-  integer(4)                             :: nfreq_tipper,nobs_tipper  ! 2023.12.22
+  type(data_vec_mt),    intent(inout)    :: h_data_mt     ! 2023.12.22
+  integer(4)                             :: nfreq_mt,nobs_mt  ! 2023.12.22
   logical,allocatable,dimension(:,:,:,:) :: data_avail_tipper ! 2023.12.22
   integer(4)                             :: i,j,k,ndat_tipper
   
   !#[0]## set
-   ndat_tipper  = g_param_joint%ndat_tipper    ! 2017.08.31
-   nobs_tipper  = g_param_joint%nobs_tipper    ! 2017.08.31
-   nfreq_tipper = g_param_joint%nfreq_tipper   ! 2017.08.31
-   allocate(data_avail_tipper(2,4,nobs_tipper,nfreq_tipper)) ! 2018.10.05
+   nobs_mt      = g_param_joint%nobs_mt      ! 2023.12.23
+   nfreq_mt     = g_param_joint%nfreq_mt     ! 2023.12.23
+   ndat_tipper  = g_param_joint%ndat_tipper  ! 2023.12.23
+   allocate(data_avail_tipper(2,2,nobs_mt,nfreq_mt)) ! 2018.10.05
    data_avail_tipper = g_param_joint%data_avail_tipper ! 2017.08.31
   
   !#[1]## output
-  h_data_tipper%nobs_tipper  = nobs_tipper     ! 2022.01.04
-  h_data_tipper%nfreq_tipper = nfreq_tipper    ! 2022.01.04
-  h_data_tipper%ndat_tipper  = ndat_tipper     ! 2022.01.04
-  allocate(h_data_tipper%dvec_tipper(ndat_tipper) ) ! 2022.01.04
-  allocate(h_data_tipper%error_tipper(ndat_tipper)) ! 2022.01.04
-  allocate(h_data_tipper%data_avail_tipper(2,2,nobs_tipper,nfreq_tipper)) ! 2018.10.05
-  h_data_tipper%data_avail_tipper = data_avail_tipper
+   h_data_mt%ndat_tipper  = ndat_tipper     ! 2022.01.04
+   allocate(h_data_mt%dvec_tipper(ndat_tipper) ) ! 2022.01.04
+   allocate(h_data_mt%error_tipper(ndat_tipper)) ! 2022.01.04
+   allocate(h_data_mt%data_avail_tipper(2,2,nobs_mt,nfreq_mt)) ! 2018.10.05
+   h_data_mt%data_avail_tipper = data_avail_tipper
   
   return
   end subroutine

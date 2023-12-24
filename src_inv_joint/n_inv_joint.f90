@@ -110,11 +110,13 @@ program inversion_joint
   integer(4)                                  :: nobs_mt ! 2022.01.05
   type(real_crs_matrix)                       :: JJ_mt   ! Jacobian matrix, 2022.01.05
 !## addition of declaration for tipper data 2023.12.22
-  integer(4)                                  :: ndat_tipper  ! 2023.12.23
-  type(real_crs_matrix)                       :: CD_tipper    ! 2023.12.21 
-  type(resptip), allocatable,dimension(:)     :: tip_mt       ! 2023.12.23 MT imp
-  type(resptip), allocatable,dimension(:)     :: ttip_mt      ! 2023.12.23 see ../common/m_outresp.f90
-  logical                                     :: TIP          ! 2023.12.23
+  integer(4)                                  :: ndat_tipper ! 2023.12.23
+  type(real_crs_matrix)                       :: CD_tip      ! 2023.12.21 
+  type(resptip), allocatable,dimension(:)     :: tip_mt      ! 2023.12.23 MT imp
+  type(resptip), allocatable,dimension(:)     :: ttip_mt     ! 2023.12.23 ../common/m_outresp.f90
+  logical                                     :: TIP         ! 2023.12.23
+  real(8)                                     :: nrms_tip    ! 2023.12.25
+  real(8)                                     :: mitsfit_tip ! 2023.12.25
 !## Declaration for global integers ==================================================
  integer(4) :: ip,np, itemax = 20, iflag, ierr=0, i_act,i_mt
  integer(4) :: kmax ! maximum lanczos procedure 2017.12.13
@@ -239,7 +241,7 @@ if ( ip .eq. 0) then !################################################# ip = 0
   end if
 
 !#[7]## cal Cd : ACTIVE -> CD, MT -> CD_mt
- CALL GENCD(g_data,g_data_mt,CD,CD_mt,CD_tipper)            ! see below 2023.12.21
+ CALL GENCD(g_data,g_data_mt,CD,CD_mt,CD_tip)            ! see below 2023.12.21
 
 998 continue
 end if !################################################################# ip = 0 end
@@ -490,8 +492,9 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
      if(TIP)CALL GENDVEC_TIPPER(g_param_joint,ttip_mt,nfreq_mt,h_data_mt) !2023.12.25[h_data_mt]
 
    !#[29]## cal rms and misfit term ! 2022.01.02
-     if(ACT)CALL CALRMS_AP(g_data,h_data,Cd,misfit,nrms)   ! cal rms, 2017.09.08
-     if(MT )CALL CALRMS_MT(g_data_mt,h_data_mt,Cd_mt,misfit_mt,nrms_mt)   !2022.01.04
+     if(ACT)CALL CALRMS_AP( g_data,h_data,Cd,misfit,nrms)   ! cal rms, 2017.09.08
+     if(MT )CALL CALRMS_MT( g_data_mt,h_data_mt,Cd_mt,misfit_mt,nrms_mt)   !2022.01.04
+     if(TIP)CALL CALRMS_TIP(g_data_mt,h_data_mt,Cd_tip,misfit_tip,nrms_tip)!2023.12.25
      if ( ACT .and. ite .eq. 1 ) nrms_ini    = nrms    ! 2022.10.14
      if ( MT  .and. ite .eq. 1 ) nrms_mt_ini = nrms_mt ! 2022.10.14
 
@@ -1723,6 +1726,62 @@ subroutine CALRMS_MT(g_data_mt,h_data_mt,Cd_mt,misfit_mt,nrms_mt)
   stop
   
   end subroutine
+!############################################## CALRMS_TIP !2023.12.25
+subroutine CALRMS_TIP(g_data_mt,h_data_mt,Cd_tip,misfit_tip,nrms_tip)
+  use param_jointinv
+  use matrix
+  use caltime ! 2017.12.22
+  type(real_crs_matrix),intent(in)     :: Cd_mt
+  type(data_vec_mt),    intent(in)     :: g_data_mt ! obs tmp and tipper
+  type(data_vec_mt),    intent(in)     :: h_data_mt ! cal tmp and tipper
+  real(8),              intent(out)    :: misfit_tip,nrms_tip
+  real(8),allocatable,dimension(:)     :: dvec_tip1,dvec_tip2,dvec_tip
+  integer(4)                           :: ndat_tip,ndat_tip1,ndat_tip2,i
+  real(8)                              :: d ! 2017.09.06
+  type(watch) :: t_watch ! 2017.12.22
+  
+  call watchstart(t_watch) ! 2017.12.22
+  !#[0]## set
+  ndat_tip  = g_data_mt%ndat_tipper
+  ndat_tip1 = h_data_mt%ndat_tipper
+  ndat_tip2 = Cd_tip%ntot
+  if (ndat_tip .ne. ndat_tip1 .or. ndat_tip .ne. ndat_tip2 ) goto 99
+  allocate(dvec_tip1(ndat_tip),dvec_tip2(ndat_tip),dvec_tip(ndat_tip))
+  dvec_tip1 = g_data_mt%dvec_tipper
+  dvec_tip2 = h_data_mt%dvec_tipper
+  dvec_tip  = dvec_tip2 - dvec_tip1
+  
+  !# check
+  if (.false.) then
+   write(*,'(5x,a)') " obs          |  cal         | d^2           | d^2/e^2"
+   write(*,*) "ndat1"
+   do i=1,ndat_tip1
+    d = dvec_tip2(i)-dvec_tip1(i)
+    write(*,'(i5,4g15.7)') i,dvec_tip1(i),dvec_tip2(i),d**2.d0,d**2.d0/Cd_tip%val(i)
+   end do
+  end if
+  
+  !#[1]## cal rms
+  misfit_tip = 0.d0
+  do i=1,ndat_tip
+   misfit_tip = misfit_tip + dvec_tip(i)**2.d0 / Cd_tip%val(i) ! dvec(i)**2/err(i)**2
+  end do
+  nrms_tip = sqrt(misfit_tip/dble(ndat_tip)) ! 2017.12.22
+  misfit_tip = 0.5d0 * misfit_tip ! 2017.12.22
+  
+  write(*,'(a,g15.7)') "            RMS_TIPPER =",misfit_tip ! 2020.09.18
+  write(*,'(a,g15.7)') " Normarized RMS_TIPPER =",nrms_tip   ! 2020.09.18
+  call watchstop(t_watch) ! 2017.12.22
+
+  write(*,'(a)') " ### CALRMS_TIP END!! ###" ! Time=",t_watch%time," [min]"! 2020.09.29
+  
+  return
+  99 continue
+  write(*,*) "GEGEGE! ndat_tip",ndat_tip,".ne. ndat_tip1",ndat_tip1,"or .ne. ndat_tip2",ndat_tip2
+  stop
+  
+  end subroutine
+
 !############################################## GENDVEC_MT
 subroutine GENDVEC_MT(g_param_joint,timp_mt,nfreq_mt,h_data_mt) !2018.10.08
   use param_jointinv ! 2016.06.08

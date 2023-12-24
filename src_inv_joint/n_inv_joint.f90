@@ -432,7 +432,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
   if(MT ) CALL CALOBSEBCOMP_MT(fs_mt,nline,2,omega,coeffobs_mt,resp5_mt(:,:,i_mt),ip) !see below
   !# cal MT impedance
   if(MT ) CALL CALRESPMT(    resp5_mt(:,1:2,i_mt),imp_mt(i_mt),omega,ip) ! 2022.12.05
-  if(TIP) CALL CALRESPTIPPER(resp5_mt(:,1:2,i_mt),imp_mt(i_mt),omega,ip) ! 2023.12.23
+  if(TIP) CALL CALRESPTIPPER(resp5_mt(:,1:2,i_mt),tip_mt(i_mt),omega,ip) ! 2023.12.23
 
 !#[25]## generate d|amp|dm and d(pha)dm for jacobian
   if(ACT) then
@@ -718,7 +718,7 @@ subroutine calrespmt(resp5,resp_mt,omega,ip) ! 2022.12.05
   return
   end
 !#############################################
-subroutine calresptipper(resp5,resp_tip,omega,ip) ! 2022.12.05
+subroutine calresptipper(resp5,resp_tip,omega,ip) ! 2023.12.23
   ! coded on 2023.12.23
   use outresp
   use constants ! dmu,pi

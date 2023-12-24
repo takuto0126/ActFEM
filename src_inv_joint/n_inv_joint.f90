@@ -487,6 +487,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
    !#[28]## gen dvec
      if(ACT)CALL GENDVEC_AP(g_param_joint,nsr_inv,tresp,nfreq_act,h_data,g_data) ! 2018.10.08 [h_data]
      if(MT )CALL GENDVEC_MT(g_param_joint,timp_mt,nfreq_mt,h_data_mt) ! 2022.01.04 [h_data_mt]
+     if(TIP)CALL GENDVEC_TIPPER(g_param_joint,ttip_mt,nfreq_mt,h_data_mt) !2023.12.25[h_data_mt]
 
    !#[29]## cal rms and misfit term ! 2022.01.02
      if(ACT)CALL CALRMS_AP(g_data,h_data,Cd,misfit,nrms)   ! cal rms, 2017.09.08
@@ -1769,6 +1770,52 @@ subroutine GENDVEC_MT(g_param_joint,timp_mt,nfreq_mt,h_data_mt) !2018.10.08
   write(*,*) "### GENDVEC_MT END!! ###"
   return
   end subroutine
+!############################################## GENDVEC_TIPPER
+subroutine GENDVEC_TIPPER(g_param_joint,ttip_mt,nfreq_mt,h_data_mt) !2023.12.25
+  use param_jointinv ! 2016.06.08
+  use outresp     ! 2016.06.08
+  implicit none
+  integer(4),             intent(in)     :: nfreq_mt
+  type(param_joint),      intent(in)     :: g_param_joint ! 2017.09.04
+  type(respmt),           intent(in)     :: timp_mt(nfreq_mt) ! 2022.01.04
+  type(data_vec_mt),      intent(inout)  :: h_data_mt         ! cal data
+  logical,allocatable, dimension(:,:,:,:):: data_avail_tipper ! 2018.10.05
+  integer(4) :: iobs,i1,i2,ii,ifreq,i,isr,icomp,l,nobs_mt     ! 2017.09.03
+  complex(8) :: c
+  !#[0]## set amp and phase of bz
+    nobs_mt       = g_param_joint%nobs_mt               ! 2022.01.04
+    allocate(data_avail_mt(2,2,nobs_mt,nfreq_mt))       ! 2022.01.04
+    data_avail_tipper = g_param_joint%data_avail_tipper ! 2023.12.25
+    
+  !#[1]## cal g_data
+  ii=0
+  do ifreq=1,nfreq_mt
+    do iobs=1,nobs_mt
+     do icomp =1,2  ! tx, ty
+      if (icomp .eq. 1) c=ttip_mt(ifreq)%tx(iobs)
+      if (icomp .eq. 2) c=ttip_mt(ifreq)%ty(iobs)
+      do l=1,2   ! real,phase
+       if ( data_avail_tipper(l,icomp,iobs,ifreq) ) then ! 2023.12.25
+        ii = ii + 1
+        if ( l .eq. 1) h_data_mt%dvec_tipper(ii)  = real(c) ! 2023.12.25
+        if ( l .eq. 2) h_data_mt%dvec_tipper(ii)  = imag(c) ! 2023.12.25
+       end if
+      end do ! l loop
+     end do ! icomp     2018.10.05
+    end do  ! nobs
+  end do    ! nfreq     2017.09.03
+  
+  !#[2]## out
+  if (.false.) then
+   do i=1,h_data_mt%ndat_tipper
+    write(*,*) i,"h_data_mt%dvec=",h_data_mt%dvec_tipper(i)
+   end do
+  end if
+  
+  write(*,*) "### GENDVEC_TIPPER END!! ###"
+  return
+  end subroutine
+
 !############################################## subroutine GENDVEC_AP
 subroutine GENDVEC_AP(g_param_joint,nsr_inv,tresp,nfreq,g_data_ap,g_data) 
  !#  modified for multiple component on 2018.10.05

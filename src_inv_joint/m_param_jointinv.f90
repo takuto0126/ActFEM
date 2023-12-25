@@ -763,8 +763,8 @@ subroutine readdata_mt(g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
  allocate( err_mt(2*4*nobs_mt*nfreq_mt))
  ii       = 0
  idata_mt = 0      ! 2022.12.12
- coef = 1.d0          ! Case for input in [mV/km/nT] for Nakaya 2022.12.13
- !coef = 1./dmu*1.e-3 ! case for input in [V/A]=[Ohm],coef is used for conversion from [Ohm]=[V/A] -> [mV/km/nT]
+ !coef = 1.d0          ! Case for input in [mV/km/nT] for Nakaya 2022.12.13
+ coef = 1./dmu*1.e-3 ! case for input in [V/A]=[Ohm],coef is used for conversion from [Ohm]=[V/A] -> [mV/km/nT]
  open(1,file=trim(g_param_joint%outputfolder)//"dvec_mt.dat") ! 2022.12.05
  do i=1,nfreq_mt
    do j=1,nobs_mt

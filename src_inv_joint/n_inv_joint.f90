@@ -115,8 +115,8 @@ program inversion_joint
   type(resptip), allocatable,dimension(:)     :: tip_mt      ! 2023.12.23 MT imp
   type(resptip), allocatable,dimension(:)     :: ttip_mt     ! 2023.12.23 ../common/m_outresp.f90
   logical                                     :: TIP         ! 2023.12.23
-  real(8)                                     :: nrms_tip    ! 2023.12.25
-  real(8)                                     :: mitsfit_tip ! 2023.12.25
+  real(8)                                     :: nrms_tip,nrms_tip_ini  ! 2023.12.25
+  real(8)                                     :: misfit_tip ! 2023.12.25
 !## Declaration for global integers ==================================================
  integer(4) :: ip,np, itemax = 20, iflag, ierr=0, i_act,i_mt
  integer(4) :: kmax ! maximum lanczos procedure 2017.12.13
@@ -366,6 +366,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
   end if
   if (ACT) open(21,file=head(1:len_trim(head))//"rms.dat")    ! 2022.10.14
   if (MT)  open(22,file=head(1:len_trim(head))//"rms_mt.dat") ! 2022.10.14
+  if (TIP) open(23,file=head(1:len_trim(head))//"rms_tip.dat")! 2023.12.25
 
  end if ! ip = 0 end
 
@@ -433,8 +434,8 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
   !# cal E and B at obs
   if(MT ) CALL CALOBSEBCOMP_MT(fs_mt,nline,2,omega,coeffobs_mt,resp5_mt(:,:,i_mt),ip) !see below
   !# cal MT impedance
-  if(MT ) CALL CALRESPMT(    resp5_mt(:,1:2,i_mt),imp_mt(i_mt),omega,ip) ! 2022.12.05
-  if(TIP) CALL CALRESPTIPPER(resp5_mt(:,1:2,i_mt),tip_mt(i_mt),omega,ip) ! 2023.12.23
+  if(MT ) CALL CALRESPMT( resp5_mt(:,1:2,i_mt),imp_mt(i_mt),omega,ip) ! 2022.12.05
+  if(TIP) CALL CALRESPTIP(resp5_mt(:,1:2,i_mt),tip_mt(i_mt),omega,ip) ! 2023.12.23
 
 !#[25]## generate d|amp|dm and d(pha)dm for jacobian
   if(ACT) then
@@ -443,7 +444,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
   end if
   if(MT ) then
      write(*,'(a,i2)') " ### genjacobian1_mt st main ###  ip =",ip
-     if ( ip == 4 .or. ip == 1 ) then
+     if ( ip == 4 .or. ip == 1  .and. .false. ) then
        write(*,'(2(a,i8))')     "    nobs_mt",nobs_mt,    " | ip =",ip
        write(*,'(2(a,i8))')     "      nline",nline,      " | ip =",ip
        write(*,'(2(a,i8))')     "size(fs_mt)",size(fs_mt)," | ip =",ip
@@ -452,7 +453,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
        write(*,'(a,f8.3,a,i8)') "      omega",omega,      " | ip =",ip
        write(*,'(2(a,i8))')     "       i_mt",i_mt,       " | ip =",ip
        write(*,'(2(a,i2),a,i8)')     "ip",ip,"np",np," | ip =",ip
-     end if
+       end if
      CALL genjacobian1_mt(nobs_mt,nline,ut_mt,fs_mt,PT_mt,h_model,g_mesh,&
                   &g_line,omega,g_mtdm(i_mt),g_param_joint,ip,np) !2022.10.20
      write(*,'(a,i2)') " ### genjacobian1_mt en main ###  ip =",ip
@@ -478,26 +479,27 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
   if(ACT)CALL SENDBZAPRESULT_AP(g_apdm,gt_apdm,nobs_act,nfreq_act,nfreq_act_ip,g_freq_joint,nsr_inv,ip,np,g_param_joint)
   if(MT) CALL SENDRECVIMP(imp_mt,timp_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)! 2022.01.02
   if(MT) CALL SENDRESULTINV_MT(g_mtdm,gt_mtdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_joint,ip,np,g_param_joint) ! 2022.01.05
-
+  if(TIP) CALL SENDRECVTIP(tip_mt,ttip_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)!2023.12.25
+  if(TIP) call SENDRESULTINV_TIP(g_tipdm,gt_tipdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_joint,ip,np,g_param_joint)
   CALL MPI_BARRIER(mpi_comm_world, errno) ! 2017.09.03
 
 !#[27]## OUTPUT ACTIVE and MT responsed for ite==================  ip=0 start
  if ( ip .eq. 0 ) then
    if(ACT)CALL OUTOBSFILESINV(g_param,g_param_joint,nsr_inv,sparam,tresp,nfreq_act,ite,ialpha)!2017.09.11
    if(MT )CALL OUTOBSFILESINV_MT(g_param_mt,g_param_joint,timp_mt,nfreq_mt,ite,ialpha)
-   if(TIP)CALL OUTOBSFILESINV_TIPPER(g_param_mt,g_param_joint,ttip_mt,nfreq_mt,ite,ialpha) ! 2023.12.25
+   if(TIP)CALL OUTOBSFILESINV_TIP(g_param_mt,g_param_joint,ttip_mt,nfreq_mt,ite,ialpha) ! 2023.12.25
    !#[28]## gen dvec
      if(ACT)CALL GENDVEC_AP(g_param_joint,nsr_inv,tresp,nfreq_act,h_data,g_data) ! 2018.10.08 [h_data]
      if(MT )CALL GENDVEC_MT(g_param_joint,timp_mt,nfreq_mt,h_data_mt) ! 2022.01.04 [h_data_mt]
-     if(TIP)CALL GENDVEC_TIPPER(g_param_joint,ttip_mt,nfreq_mt,h_data_mt) !2023.12.25[h_data_mt]
+     if(TIP)CALL GENDVEC_TIP(g_param_joint,ttip_mt,nfreq_mt,h_data_mt) !2023.12.25[h_data_mt]
 
    !#[29]## cal rms and misfit term ! 2022.01.02
      if(ACT)CALL CALRMS_AP( g_data,h_data,Cd,misfit,nrms)   ! cal rms, 2017.09.08
      if(MT )CALL CALRMS_MT( g_data_mt,h_data_mt,Cd_mt,misfit_mt,nrms_mt)   !2022.01.04
      if(TIP)CALL CALRMS_TIP(g_data_mt,h_data_mt,Cd_tip,misfit_tip,nrms_tip)!2023.12.25
-     if ( ACT .and. ite .eq. 1 ) nrms_ini    = nrms    ! 2022.10.14
-     if ( MT  .and. ite .eq. 1 ) nrms_mt_ini = nrms_mt ! 2022.10.14
-
+     if ( ACT .and. ite .eq. 1 ) nrms_ini     = nrms    ! 2022.10.14
+     if ( MT  .and. ite .eq. 1 ) nrms_mt_ini  = nrms_mt ! 2022.10.14
+     if ( TIP .and. ite .eq. 1 ) nrms_tip_ini = nrms_tip! 2023.12.25
    !#[30]## cal roughness 2018.01.22
      call CALROUGHNESS(g_param_joint,h_model,g_model_ref,rough1,rough2,BM,R) !m_modelroughenss
 
@@ -508,10 +510,12 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
     if ( nrms .lt. frms ) then     ! 2018.06.25
      if (ACT) call OUTRMS(21,ite,nrms,misfit,alpha,rough1,rough2,1) !Converged  2017.09.08
      if (MT)  call OUTRMS(22,ite,nrms_mt,misfit_mt,alpha,rough1,rough2,1)!converged  2017.09.08
+     if (TIP) call OUTRMS(23,ite,nrms_tip,misfit_tip,alpha,rough1,rough2,1)!2023.12.25
      iflag = 1 ;  goto 80                           ! iflag = 1 means "end" 2017.12.20
     else
      if (ACT) call OUTRMS(21,ite,nrms,misfit,alpha,rough1,rough2,0) ! Not converged  2017.09.08
      if (MT ) call OUTRMS(22,ite,nrms_mt,misfit_mt,alpha,rough1,rough2,0)!Not converged22.01.04
+     if (TIP )call OUTRMS(23,ite,nrms_tip,misfit_tip,alpha,rough1,rough2,0)!Not converged
     end if
     if ( ite .ge. 2 .and. nrms_ini .lt. nrms ) then ! 2018.01.25 stop when nrms is larger
      write(*,*) "GEGEGE, rms exceeded the initial rms under the current inversion setting "!2022.10.31
@@ -610,7 +614,11 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
 end do ! iteration loop============================================  iteration end!
 
  100 continue
- if ( ip .eq. 0 ) close(21) ! 2017.05.18
+ if ( ip .eq. 0 ) then ! 2023.12.25
+   if (ACT) close(21)
+   if (MT)  close(22)
+   if (TIP) close(23)
+ end if
  if ( ip .eq. 0 ) then
   call watchstop(t_watch)   ! 2017.09.11
   write(*,'(a,g15.7,a,f15.7,a)') "### END alpha=",alpha," Time=",t_watch%time," [min]" !2022.1.2
@@ -723,7 +731,7 @@ subroutine calrespmt(resp5,resp_mt,omega,ip) ! 2022.12.05
   return
   end
 !#############################################
-subroutine calresptipper(resp5,resp_tip,omega,ip) ! 2023.12.23
+subroutine calresptip(resp5,resp_tip,omega,ip) ! 2023.12.23
   ! coded on 2023.12.23
   use outresp
   use constants ! dmu,pi
@@ -734,11 +742,11 @@ subroutine calresptipper(resp5,resp_tip,omega,ip) ! 2023.12.23
   type(resptip),  intent(inout) :: resp_tip
   complex(8),    allocatable    :: be5_ex(:,:),be5_ey(:,:) ! be5 = bx,by,bz,ex,ey
   complex(8)                    :: a,b,c,d,iunit=(0.d0,1.d0)
-  complex(8)                    :: det,txy(2),bi(2,2),e(2,1)
+  complex(8)                    :: det,txy(2,1),bi(2,2),e(2,1)
   integer(4)                    :: i,j,nobs
   real(8)                       :: coef,amp,phase
   
-  nobs = resp_mt%nobs
+  nobs = resp_tip%nobs
   allocate(be5_ex(5,nobs),be5_ey(5,nobs))
   ! calculate tipper Txy = Bz/(Bx, By)
   ! (Bz_ex) = (Bx_ex By_ex) (Tx)
@@ -770,11 +778,11 @@ subroutine calresptipper(resp5,resp_tip,omega,ip) ! 2023.12.23
    e(1,1)= be5_ex(3,j) ! (bz_ex)
    e(2,1)= be5_ey(3,j) ! (bz_ey)
    txy = matmul(bi,e)
-   resp_tip%tx(j) = txy(1) ! [nT]/[nT]
-   resp_tip%ty(j) = txy(2)
+   resp_tip%tx(j) = txy(1,1) ! [nT]/[nT]
+   resp_tip%ty(j) = txy(2,1)
   end do
   
-  write(*,'(a,i2)') " ### CALRESPTIPPER     END !! ###  ip =",ip  ! 2023.12.23
+  write(*,'(a,i2)') " ### CALRESPTIP     END !! ###  ip =",ip  ! 2023.12.23
   return
   end
 
@@ -1038,7 +1046,7 @@ subroutine OUTRMS(idev,ite,nrms,misfit,alpha,rough1,rough2,icflag)
  end if
  return
  end
-!########################################### OUTRMS
+!########################################### OUTRMS_MT
 subroutine OUTRMS_MT(idev,ite,nrms_mt,misfit_mt,alpha,rough1,rough2,icflag)
  !# rms -> misfit on 2017.12.22
  !# coded on 2017.09.08
@@ -1218,7 +1226,7 @@ subroutine OUTOBSFILESINV_MT(g_param,g_param_joint,resp_mt,nfreq,ite,ialpha)!
  return
  end
 !########################################### OUTOBSFILESINV_TIPPER 2023.12.25
-subroutine OUTOBSFILESINV_TIPPER(g_param,g_param_joint,resp_tip,nfreq,ite,ialpha)
+subroutine OUTOBSFILESINV_TIP(g_param,g_param_joint,resp_tip,nfreq,ite,ialpha)
  !# coded on 2023.12.25
  !# declaration
    use param_jointinv ! 2017.09.03
@@ -1226,7 +1234,7 @@ subroutine OUTOBSFILESINV_TIPPER(g_param,g_param_joint,resp_tip,nfreq,ite,ialpha
    use outresp
    implicit none
    integer(4),                intent(in)    :: ite,nfreq,ialpha! 2017.09.11
-   type(respmt),              intent(in)    :: resp_tip(nfreq) ! 2023.12.25
+   type(resptip),              intent(in)    :: resp_tip(nfreq) ! 2023.12.25
    type(param_forward_mt),    intent(in)    :: g_param         ! 2022.01.02
    type(param_joint),         intent(in)    :: g_param_joint   ! 2017.07.14
    real(8)                                  :: freq            ! 2017.07.14
@@ -1268,7 +1276,7 @@ subroutine OUTOBSFILESINV_TIPPER(g_param,g_param_joint,resp_tip,nfreq,ite,ialpha
      close(31)
    end do
 
- write(*,*) "### OUTOBSFILESINV_TIPPER END!! ###"  
+ write(*,*) "### OUTOBSFILESINV_TIP END!! ###"  
  110 format(g15.7,i5,g15.7)
  return
  end
@@ -1396,6 +1404,42 @@ subroutine SENDRESULTINV_MT(g_mtdm,gt_mtdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_j
   
   return
   end
+!############################################ SENDRESULTINV_TIP
+subroutine SENDRESULTINV_TIP(g_tipdm,gt_tipdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_joint,ip,np,g_param_joint)
+ !# modified on 2017.09.03 for multiple sources
+ !# coded on 2017.06.05
+  use matrix
+  use shareformpi_joint ! 2021.12.25
+  use jacobian_joint    ! 2017.06.08
+  use param_jointinv    ! 2018.10.08
+  use freq_mpi_joint    ! 2022.10.20
+  implicit none
+  integer(4),        intent(in)    :: nobs_mt,nfreq_mt,nfreq_mt_ip,ip,np ! 2022.10.20
+  type(freq_info_joint),intent(in) :: g_freq_joint
+  type(param_joint), intent(in)    :: g_param_joint         ! 2018.10.08
+  type(tip_dm),      intent(in)    :: g_tipdm(nfreq_mt_ip)      ! 2023.12.25
+  type(tip_dm),      intent(inout) :: gt_tipdm(nfreq_mt)        ! 2023.12.25
+  integer(4)                      :: i,ifreq,ip_from,errno
+  integer(4)                            :: k                     ! 2017.09.03
+    
+  !#[1]## share ampbz
+   do i=1,nfreq_mt
+     ip_from  = g_freq_joint%ip_from_mt(i) ! 2022.10.20
+     ifreq    = g_freq_joint%if_g2l_mt(i)  ! 2022.10.20
+      
+     if ( ip .eq. ip_from )  gt_tipdm(i)%dtxdm = g_mtdm(ifreq)%dzxxdm!2023.12.25
+     if ( ip .eq. ip_from )  gt_tipdm(i)%dtydm = g_mtdm(ifreq)%dzxydm!2023.12.25
+  
+    call sharecomplexcrsmatrix(gt_tipdm(i)%dtxdm,ip_from,ip) ! m_shareformpi_joint.f90
+    call sharecomplexcrsmatrix(gt_tipdm(i)%dtydm,ip_from,ip) ! m_shareformpi_joint.f90
+  
+   end do
+  
+  !#[2]##
+    if (ip .eq. 0) write(*,*) "### SENDRESULTINV_TIP END!! ###"
+  
+  return
+  end
   
 !############################################# SENDRECVRESULT
 subroutine SENDRECVRESULT(resp5,tresp,ip,np,nfreq_act,nfreq_act_ip,g_freq_joint,nsr) !
@@ -1442,7 +1486,6 @@ subroutine SENDRECVRESULT(resp5,tresp,ip,np,nfreq_act,nfreq_act_ip,g_freq_joint,
  end
 !############################################# SENDRECVIMP
 subroutine SENDRECVIMP(imp_mt,timp_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint) 
- !2017.09.03
  !2022.10.20
   use outresp
   use shareformpi_joint ! 2021.12.25
@@ -1453,50 +1496,45 @@ subroutine SENDRECVIMP(imp_mt,timp_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)
   type(freq_info_joint),intent(in) :: g_freq_joint  ! 2022.10.20
   type(respmt),  intent(in)    ::  imp_mt(nfreq_mt_ip) ! 2022.10.20
   type(respmt),  intent(inout) :: timp_mt(nfreq_mt)    ! 2022.10.20
-  integer(4)                   :: errno,i,j,k,l,ip_from,ifreq             ! 2020.08.06
+  integer(4)                   :: errno,i,j,k,l,ip_from,ifreq ! 2020.08.06
   
   !#[1]##
    do i=1,nfreq_mt
- !    if (mod(i,np) .eq. 1 ) ip_from = -1
- !    ip_from = ip_from + 1 ; ifreq = (i-1)/np + 1
-
-  ip_from  = g_freq_joint%ip_from_mt(i) ! 2022.10.20
-  ifreq    = g_freq_joint%if_g2l_mt(i)  ! 2022.10.20
-
-  
-  if ( ip .eq. ip_from ) then
-      timp_mt(i) = imp_mt(ifreq) ! 20200807
-    end if
-  
-  
- !  do j=1,5
- !     do k=1,nsr ! 2017.09.03
-  
-  !if ( ip .eq. ip_from .and. j .eq. 3 ) then ! 20200806
-  !  write(*,*) "-- before sharing --SENDRECVRESULT --"
-  !  write(*,*)"ip_from",ip_from,"tresp i",i,"k",k,"j",j
-  !  write(*,'(a,4g15.7)') "resp5 amp",(resp5(j,k,ifreq)%ftobsamp(l),l=1,resp5(j,k,ifreq)%nobs) ! 20200807
-  !  write(*,'(a,4g15.7)') "resp5 phase",(resp5(j,k,ifreq)%ftobsphase(l),l=1,resp5(j,k,ifreq)%nobs) ! 20200807
-  !  write(*,'(a,4g15.7)') "tresp amp",(tresp(j,k,i)%ftobsamp(l),l=1,tresp(j,k,i)%nobs)
-  !  write(*,'(a,4g15.7)') "tresp phase",(tresp(j,k,i)%ftobsphase(l),l=1,tresp(j,k,i)%nobs)
-  !  write(*,*) "--"
-  ! end if
-  
+     ip_from  = g_freq_joint%ip_from_mt(i) ! 2022.10.20
+     ifreq    = g_freq_joint%if_g2l_mt(i)  ! 2022.10.20
+     if ( ip .eq. ip_from ) then
+       timp_mt(i) = imp_mt(ifreq) ! 20200807
+     end if
      call shareimpdata(timp_mt(i),ip_from) ! see m_shareformpi_ap 2022.01.02
-  
-  !if ( ip .eq. 0 .and. j .eq. 3 ) then ! 20200806
-  ! write(*,*) "-- after sharing --SENDRECVRESULT --"
-  ! write(*,*)"ip=0 tresp i",i,"k",k,"j",j
-  ! write(*,'(a,4g15.7)') "tresp amp",(tresp(j,k,i)%ftobsamp(l),l=1,tresp(j,k,i)%nobs)
-  ! write(*,'(a,4g15.7)') "tresp phase",(tresp(j,k,i)%ftobsphase(l),l=1,tresp(j,k,i)%nobs)
-  ! write(*,*) "--"
-  !end if
-  
- !    end do     ! 2017.09.03
- !   end do
    end do
+   if ( ip .eq. 0 ) write(*,*) "### SENDRECVIMP END!! ###" ! 2022.01.02
   
-  if ( ip .eq. 0 ) write(*,*) "### SENDRECVIMP END!! ###" ! 2022.01.02
+  return
+  end
+!############################################# SENDRECVTIP
+subroutine SENDRECVTIP(tip_mt,ttip_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint) 
+ !2023.12.25
+  use outresp
+  use shareformpi_joint ! 2021.12.25
+  use freq_mpi_joint    ! 2022.10.20
+  implicit none
+  !include 'mpif.h'
+  integer(4),    intent(in)    :: ip,np,nfreq_mt,nfreq_mt_ip
+  type(freq_info_joint),intent(in) :: g_freq_joint  ! 2022.10.20
+  type(resptip),  intent(in)    ::  tip_mt(nfreq_mt_ip) ! 2022.10.20
+  type(resptip),  intent(inout) :: ttip_mt(nfreq_mt)    ! 2022.10.20
+  integer(4)                   :: errno,i,j,k,l,ip_from,ifreq ! 2020.08.06
+  
+  !#[1]##
+   do i=1,nfreq_mt
+     ip_from  = g_freq_joint%ip_from_mt(i) ! 2022.10.20
+     ifreq    = g_freq_joint%if_g2l_mt(i)  ! 2022.10.20
+     if ( ip .eq. ip_from ) then
+       ttip_mt(i) = tip_mt(ifreq) ! 20200807
+     end if
+     call sharetipdata(ttip_mt(i),ip_from) ! see m_shareformpi_ap 2022.01.02
+   end do
+   if ( ip .eq. 0 ) write(*,*) "### SENDRECVTIP END!! ###"
   
   return
   end
@@ -1727,11 +1765,11 @@ subroutine CALRMS_MT(g_data_mt,h_data_mt,Cd_mt,misfit_mt,nrms_mt)
   
   end subroutine
 !############################################## CALRMS_TIP !2023.12.25
-subroutine CALRMS_TIP(g_data_mt,h_data_mt,Cd_tip,misfit_tip,nrms_tip)
+subroutine CALRMS_TIP(g_data_mt,h_data_mt,Cd_tip,misfit_tip,nrms_tip)!2023.12.25
   use param_jointinv
   use matrix
   use caltime ! 2017.12.22
-  type(real_crs_matrix),intent(in)     :: Cd_mt
+  type(real_crs_matrix),intent(in)     :: Cd_tip
   type(data_vec_mt),    intent(in)     :: g_data_mt ! obs tmp and tipper
   type(data_vec_mt),    intent(in)     :: h_data_mt ! cal tmp and tipper
   real(8),              intent(out)    :: misfit_tip,nrms_tip
@@ -1829,21 +1867,21 @@ subroutine GENDVEC_MT(g_param_joint,timp_mt,nfreq_mt,h_data_mt) !2018.10.08
   write(*,*) "### GENDVEC_MT END!! ###"
   return
   end subroutine
-!############################################## GENDVEC_TIPPER
-subroutine GENDVEC_TIPPER(g_param_joint,ttip_mt,nfreq_mt,h_data_mt) !2023.12.25
+!############################################## GENDVEC_TIP
+subroutine GENDVEC_TIP(g_param_joint,ttip_mt,nfreq_mt,h_data_mt) !2023.12.25
   use param_jointinv ! 2016.06.08
   use outresp     ! 2016.06.08
   implicit none
   integer(4),             intent(in)     :: nfreq_mt
   type(param_joint),      intent(in)     :: g_param_joint ! 2017.09.04
-  type(respmt),           intent(in)     :: timp_mt(nfreq_mt) ! 2022.01.04
+  type(resptip),          intent(in)     :: ttip_mt(nfreq_mt) ! 2022.01.04
   type(data_vec_mt),      intent(inout)  :: h_data_mt         ! cal data
   logical,allocatable, dimension(:,:,:,:):: data_avail_tipper ! 2018.10.05
   integer(4) :: iobs,i1,i2,ii,ifreq,i,isr,icomp,l,nobs_mt     ! 2017.09.03
   complex(8) :: c
   !#[0]## set amp and phase of bz
     nobs_mt       = g_param_joint%nobs_mt               ! 2022.01.04
-    allocate(data_avail_mt(2,2,nobs_mt,nfreq_mt))       ! 2022.01.04
+    allocate(data_avail_tipper(2,2,nobs_mt,nfreq_mt))       ! 2022.01.04
     data_avail_tipper = g_param_joint%data_avail_tipper ! 2023.12.25
     
   !#[1]## cal g_data
@@ -1867,11 +1905,11 @@ subroutine GENDVEC_TIPPER(g_param_joint,ttip_mt,nfreq_mt,h_data_mt) !2023.12.25
   !#[2]## out
   if (.false.) then
    do i=1,h_data_mt%ndat_tipper
-    write(*,*) i,"h_data_mt%dvec=",h_data_mt%dvec_tipper(i)
+    write(*,*) i,"h_data_mt%dvec_tipper=",h_data_mt%dvec_tipper(i)
    end do
   end if
   
-  write(*,*) "### GENDVEC_TIPPER END!! ###"
+  write(*,*) "### GENDVEC_TIP END!! ###"
   return
   end subroutine
 

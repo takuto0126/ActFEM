@@ -1373,8 +1373,8 @@ subroutine SENDRESULTINV_MT(g_mtdm,gt_mtdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_j
   integer(4),       intent(in)    :: nobs_mt,nfreq_mt,nfreq_mt_ip,ip,np ! 2022.10.20
   type(freq_info_joint),intent(in) :: g_freq_joint
   type(param_joint),intent(in)    :: g_param_joint         ! 2018.10.08
-  type(mt_dm),      intent(in)    :: g_mtdm(nfreq_mt_ip)      ! 2017.09.03
-  type(mt_dm),      intent(inout) :: gt_mtdm(nfreq_mt)        ! 2017.09.03
+  type(mt_dm),      intent(in)    :: g_mtdm(nfreq_mt_ip)   !m_jacobian_joint.f90
+  type(mt_dm),      intent(inout) :: gt_mtdm(nfreq_mt)     ! 
   integer(4)                      :: i,ifreq,ip_from,errno
   integer(4)                            :: k                     ! 2017.09.03
     
@@ -1404,10 +1404,9 @@ subroutine SENDRESULTINV_MT(g_mtdm,gt_mtdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_j
   
   return
   end
-!############################################ SENDRESULTINV_TIP
+!############################################ SENDRESULTINV_TIP 2023.12.25
 subroutine SENDRESULTINV_TIP(g_tipdm,gt_tipdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_joint,ip,np,g_param_joint)
  !# modified on 2017.09.03 for multiple sources
- !# coded on 2017.06.05
   use matrix
   use shareformpi_joint ! 2021.12.25
   use jacobian_joint    ! 2017.06.08
@@ -1417,18 +1416,17 @@ subroutine SENDRESULTINV_TIP(g_tipdm,gt_tipdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_fre
   integer(4),        intent(in)    :: nobs_mt,nfreq_mt,nfreq_mt_ip,ip,np ! 2022.10.20
   type(freq_info_joint),intent(in) :: g_freq_joint
   type(param_joint), intent(in)    :: g_param_joint         ! 2018.10.08
-  type(tip_dm),      intent(in)    :: g_tipdm(nfreq_mt_ip)      ! 2023.12.25
-  type(tip_dm),      intent(inout) :: gt_tipdm(nfreq_mt)        ! 2023.12.25
-  integer(4)                      :: i,ifreq,ip_from,errno
-  integer(4)                            :: k                     ! 2017.09.03
+  type(tip_dm),      intent(in)    :: g_tipdm(nfreq_mt_ip)  !
+  type(tip_dm),      intent(inout) :: gt_tipdm(nfreq_mt)    ! m_jacobian_joint.f90
+  integer(4)                       :: i,k,ifreq,ip_from,errno
     
   !#[1]## share ampbz
    do i=1,nfreq_mt
      ip_from  = g_freq_joint%ip_from_mt(i) ! 2022.10.20
      ifreq    = g_freq_joint%if_g2l_mt(i)  ! 2022.10.20
       
-     if ( ip .eq. ip_from )  gt_tipdm(i)%dtxdm = g_mtdm(ifreq)%dzxxdm!2023.12.25
-     if ( ip .eq. ip_from )  gt_tipdm(i)%dtydm = g_mtdm(ifreq)%dzxydm!2023.12.25
+     if ( ip .eq. ip_from )  gt_tipdm(i)%dtxdm = g_tipdm(ifreq)%dtxdm!2023.12.26
+     if ( ip .eq. ip_from )  gt_tipdm(i)%dtydm = g_tipdm(ifreq)%dtydm!2023.12.26
   
     call sharecomplexcrsmatrix(gt_tipdm(i)%dtxdm,ip_from,ip) ! m_shareformpi_joint.f90
     call sharecomplexcrsmatrix(gt_tipdm(i)%dtydm,ip_from,ip) ! m_shareformpi_joint.f90
@@ -1511,18 +1509,18 @@ subroutine SENDRECVIMP(imp_mt,timp_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)
   
   return
   end
-!############################################# SENDRECVTIP
+!############################################# SENDRECVTIP ! 2023.12.26
 subroutine SENDRECVTIP(tip_mt,ttip_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint) 
- !2023.12.25
+  ! gather tip_mt info as ttip_mt
   use outresp
   use shareformpi_joint ! 2021.12.25
   use freq_mpi_joint    ! 2022.10.20
   implicit none
   !include 'mpif.h'
-  integer(4),    intent(in)    :: ip,np,nfreq_mt,nfreq_mt_ip
-  type(freq_info_joint),intent(in) :: g_freq_joint  ! 2022.10.20
-  type(resptip),  intent(in)    ::  tip_mt(nfreq_mt_ip) ! 2022.10.20
-  type(resptip),  intent(inout) :: ttip_mt(nfreq_mt)    ! 2022.10.20
+  integer(4),           intent(in)    :: ip,np,nfreq_mt,nfreq_mt_ip
+  type(freq_info_joint),intent(in)    :: g_freq_joint  ! 2022.10.20
+  type(resptip),        intent(in)    ::  tip_mt(nfreq_mt_ip) ! 2022.10.20
+  type(resptip),        intent(inout) :: ttip_mt(nfreq_mt)    ! 2022.10.20
   integer(4)                   :: errno,i,j,k,l,ip_from,ifreq ! 2020.08.06
   
   !#[1]##
@@ -1532,7 +1530,7 @@ subroutine SENDRECVTIP(tip_mt,ttip_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)
      if ( ip .eq. ip_from ) then
        ttip_mt(i) = tip_mt(ifreq) ! 20200807
      end if
-     call sharetipdata(ttip_mt(i),ip_from) ! see m_shareformpi_ap 2022.01.02
+     call sharetipdata(ttip_mt(i),ip_from) ! m_shareformpi_joint 2023.12.26
    end do
    if ( ip .eq. 0 ) write(*,*) "### SENDRECVTIP END!! ###"
   

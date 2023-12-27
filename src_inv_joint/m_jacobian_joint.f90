@@ -419,79 +419,89 @@ stop
 
 end
 
-!########################### gen jacobian
-!# nmodelactive is introduced on 2018.06.22
-!# Modified on 2017.09.03
-!# Coded on 2017.05.16
+!##################################################### gen jacobian
 subroutine genjacobian1_mt(nobs_mt,nline,ut_mt,bs_mt,PT_mt,g_model,h_mesh,&
-&                          l_line,omega,g_mtdm,g_param_joint,ip,np) !2020.09.18
-  use matrix            ! see m_matrix.f90
-  use modelpart         ! see m_modelpart.f90
-  use line_type         ! see m_line_type.f90
-  use constants         ! see m_constants.f90
-  use outerinnerproduct ! see m_outerinnerproduct.f90
-  use fem_util          ! for volume, intv, (see m_fem_utiil.f90 )
-  use fem_edge_util     ! see fem_edge_util.f90
-  use mesh_type         ! see m_mesh_type.f90
-  use caltime           ! see m_caltime.f90 2017.09.06
-  use param_jointinv       ! see m_param_jointinv.f90  2018.10.05
-  implicit none
-  integer(4),              intent(in)     :: ip,np          ! 2020.09.18
-  type(param_joint),       intent(in)     :: g_param_joint  ! 2018.10.05
-  integer(4),              intent(in)     :: nobs_mt,nline
-  type(complex_crs_matrix),intent(in)     :: ut_mt(4)       ! [nobs,nline]  
-  complex(8),              intent(in)     :: bs_mt(nline,2) !  2017.09.03
-  type(real_crs_matrix),   intent(in)     :: PT_mt(4)       ! [nobs,nline] 2018.10.05
-  type(model),             intent(in)     :: g_model
-  type(line_info),         intent(in)     :: l_line
-  type(mesh),              intent(in)     :: h_mesh
-  real(8),                 intent(in)     :: omega
-  type(mt_dm),             intent(inout)  :: g_mtdm           ! 2022.01.05
-!============================  internal variables =============================
-  type(complex_crs_matrix)                :: utt            ! 2018.10.05
-  type(complex_crs_matrix)                :: dzxx  ! 2017.09.03 (->g_mtdm)
-  type(complex_crs_matrix)                :: dzxy  ! 2017.09.03 (->g_mtdm)
-  type(complex_crs_matrix)                :: dzyx  ! 2017.09.03 (->g_mtdm)
-  type(complex_crs_matrix)                :: dzyy  ! 2017.09.03 (->g_mtdm)
-  complex(8),    dimension(nobs_mt,2)       :: be               ! 2022.01.05
-  integer(4)                              :: nmodel,nphys2
-  integer(4)                              :: imodel,i,j,k,l,m,n,ii,jj,kk!2018.06.21
-  integer(4)                              :: iele,idirection(6),n6line(6)
-  integer(4),allocatable,dimension(:)     :: stack,item
-  real(8),   allocatable,dimension(:)     :: logrho_model
-  complex(8),allocatable,dimension(:,:)   :: AAL,dbeobs       ! 2017.09.03
-  complex(8),allocatable,dimension(:,:)   :: dzxxdm       ! 2017.09.03
-  complex(8),allocatable,dimension(:,:)   :: dzxydm       ! 2017.09.03
-  complex(8),allocatable,dimension(:,:)   :: dzyxdm       ! 2017.09.03
-  complex(8),allocatable,dimension(:,:)   :: dzyydm       ! 2017.09.03
-  real(8)                                 :: threshold =1.d-10
-  integer(4)                              :: nmodelactive     ! 2018.06.21
-  integer(4),allocatable,dimension(:)     :: iactive          ! 2018.06.21
-  integer(4),            dimension(5)     :: iflag_comp       ! 2018.10.05
-  integer(4)                              :: icomp            ! 2018.10.05
-  !# for dA/dm
-  complex(8)                              :: S1(6,6)
-  real(8)                                 :: elm_xyz(3,4),yy,gn(3,4),v
-  real(8)                                 :: RM,sigma         ! model = log10(rho)
-  complex(8)                              :: dBBdm, iunit=(0.d0,1.d0)
-  real(8),   parameter                    :: L0=1.d+3         ! [m]  scale length
-  complex(8),allocatable,dimension(:,:)   :: utfull           ! 2017.09.03
-  complex(8)                              :: z                ! 2017.09.03
-  type(watch)                             :: t_watch          ! see m_caltime.f90
-  complex(8) :: D,Dinv,Dinv2,hx1,hx2,hy1,hy2,ex1,ex2,ey1,ey2 ! 2022.01.05
-  complex(8) :: dhx1,dhx2,dhy1,dhy2,dex1,dex2,dey1,dey2
-  complex(8),dimension(nobs_mt,2 )        :: exo,eyo,hxo,hyo
-  complex(8),allocatable,dimension(:,:,:) :: dexo,deyo,dhxo,dhyo ! 2022.12.06
-  integer(4),parameter :: nsr_mt=2
+ &                         l_line,omega,g_mtdm,g_tipdm,g_param_joint,ip,np) !2023.12.26
+ !# g_tipdm is added on 2023.12.26
+ !# Explanation
+   !#  Ax = f
+   !#  dA/dm*x + Adx/dm = 0
+   !#  dx/dm =  - A^-1 [dA/dm*x]
+   !#  p^T dx/dm = - u^T [dA/dm*x] (Au = p)
+ !# modules
+   use matrix            ! see m_matrix.f90
+   use modelpart         ! see m_modelpart.f90
+   use line_type         ! see m_line_type.f90
+   use constants         ! see m_constants.f90
+   use outerinnerproduct ! see m_outerinnerproduct.f90
+   use fem_util          ! for volume, intv, (see m_fem_utiil.f90 )
+   use fem_edge_util     ! see fem_edge_util.f90
+   use mesh_type         ! see m_mesh_type.f90
+   use caltime           ! see m_caltime.f90 2017.09.06
+   use param_jointinv       ! see m_param_jointinv.f90  2018.10.05
+   implicit none
+ !# declaration
+   integer(4),              intent(in)     :: ip,np          ! 2020.09.18
+   type(param_joint),       intent(in)     :: g_param_joint  ! 2018.10.05
+   integer(4),              intent(in)     :: nobs_mt,nline
+   type(complex_crs_matrix),intent(in)     :: ut_mt(4)       ! [nobs,nline]  
+   complex(8),              intent(in)     :: bs_mt(nline,2) !  2017.09.03
+   type(real_crs_matrix),   intent(in)     :: PT_mt(4)       ! [nobs,nline] 2018.10.05
+   type(model),             intent(in)     :: g_model
+   type(line_info),         intent(in)     :: l_line
+   type(mesh),              intent(in)     :: h_mesh
+   real(8),                 intent(in)     :: omega
+   type(mt_dm),             intent(inout)  :: g_mtdm          ! 2022.01.05
+   type(tip_dm),            intent(inout)  :: g_tipdm         ! 2023.12.25
+ !# declaration for internal variables 
+   type(complex_crs_matrix)                :: utt   ! 2018.10.05
+   type(complex_crs_matrix)                :: dzxx  ! 2017.09.03 (->g_mtdm)
+   type(complex_crs_matrix)                :: dzxy  ! 2017.09.03 (->g_mtdm)
+   type(complex_crs_matrix)                :: dzyx  ! 2017.09.03 (->g_mtdm)
+   type(complex_crs_matrix)                :: dzyy  ! 2017.09.03 (->g_mtdm)
+   complex(8),    dimension(nobs_mt,2)       :: be               ! 2022.01.05
+   integer(4)                              :: nmodel,nphys2
+   integer(4)                              :: imodel,i,j,k,l,m,n,ii,jj,kk!2018.06.21
+   integer(4)                              :: iele,idirection(6),n6line(6)
+   integer(4),allocatable,dimension(:)     :: stack,item
+   real(8),   allocatable,dimension(:)     :: logrho_model
+   complex(8),allocatable,dimension(:,:)   :: AAL,dbeobs       ! 2017.09.03
+   complex(8),allocatable,dimension(:,:)   :: dzxxdm       ! 2017.09.03
+   complex(8),allocatable,dimension(:,:)   :: dzxydm       ! 2017.09.03
+   complex(8),allocatable,dimension(:,:)   :: dzyxdm       ! 2017.09.03
+   complex(8),allocatable,dimension(:,:)   :: dzyydm       ! 2017.09.03
+   real(8)                                 :: threshold =1.d-10
+   integer(4)                              :: nmodelactive     ! 2018.06.21
+   integer(4),allocatable,dimension(:)     :: iactive          ! 2018.06.21
+   integer(4),            dimension(5)     :: iflag_comp       ! 2018.10.05
+   integer(4)                              :: icomp            ! 2018.10.05
+ !# declaration for dA/dm
+   complex(8)                              :: S1(6,6)
+   real(8)                                 :: elm_xyz(3,4),yy,gn(3,4),v
+   real(8)                                 :: RM,sigma         ! model = log10(rho)
+   complex(8)                              :: dBBdm, iunit=(0.d0,1.d0)
+   real(8),   parameter                    :: L0=1.d+3         ! [m]  scale length
+   complex(8),allocatable,dimension(:,:)   :: utfull           ! 2017.09.03
+   complex(8)                              :: z                ! 2017.09.03
+   type(watch)                             :: t_watch          ! see m_caltime.f90
+   complex(8) :: D,Dinv,Dinv2,hx1,hx2,hy1,hy2,ex1,ex2,ey1,ey2 ! 2022.01.05
+   complex(8) :: dhx1,dhx2,dhy1,dhy2,dex1,dex2,dey1,dey2
+   complex(8),dimension(nobs_mt,2 )        :: exo,eyo,hxo,hyo
+   complex(8),allocatable,dimension(:,:,:) :: dexo,deyo,dhxo,dhyo ! 2022.12.06
+   integer(4),parameter :: nsr_mt=2
+ !# for addition of Tip
+   logical                                 :: TIP=.false.      ! 2023.12.26
+   integer(4)                              :: ncomp
 
-  call watchstart(t_watch) ! see m_caltime.f90 2017.12.22
-allocate(dexo(nobs_mt,2,g_model%nmodelactive)) ! 2022.12.06
-allocate(deyo(nobs_mt,2,g_model%nmodelactive)) ! 2022.12.06
-allocate(dhxo(nobs_mt,2,g_model%nmodelactive)) ! 2022.12.06
-allocate(dhyo(nobs_mt,2,g_model%nmodelactive)) ! 2022.12.06
-write(*,*) "ok0 ip",ip
+ !#[-1]## allocation and watch start
+   call watchstart(t_watch) ! see m_caltime.f90 2017.12.22
+   allocate(dexo(nobs_mt,2,g_model%nmodelactive)) ! 2022.12.06
+   allocate(deyo(nobs_mt,2,g_model%nmodelactive)) ! 2022.12.06
+   allocate(dhxo(nobs_mt,2,g_model%nmodelactive)) ! 2022.12.06
+   allocate(dhyo(nobs_mt,2,g_model%nmodelactive)) ! 2022.12.06
+   if ( g_param_joint%iflag_tipper .eq. 1 ) TIP=.true. ! 2023.12.26
 
-  !#[0]## set and allocate
+ !#[0]## set integers and allocate
    nmodel       = g_model%nmodel
    nmodelactive = g_model%nmodelactive ! 2018.06.21
    allocate( iactive(nmodel) )         ! 2018.06.21
@@ -510,118 +520,107 @@ write(*,*) "ok0 ip",ip
    allocate( dzyxdm(nobs_mt,nmodelactive) ) ! 2018.06.22
    allocate( dzyydm(nobs_mt,nmodelactive) ) ! 2018.06.22
 
-!#  Ax = f
-!#  dA/dm*x + Adx/dm = 0
-!#  dx/dm =  - A^-1 [dA/dm*x]
-!#  p^T dx/dm = - u^T [dA/dm*x] (Au = p)
+ !#[1]## cal bx,by,ex,ey
+ ncomp = 4 ! bx,by,ex,ey       2023.12.26
+ if (TIP) ncomp = 5 ! 5 is bz  2023.12.26
+ do icomp = 1,4 
+   utt    = ut_mt(icomp)                 ! 2018.10.05
+   utfull = 0.d0                         ! 2017.09.03
+   do   i = 1,utt%nrow                   ! 2017.09.03
+     do j=utt%stack(i-1)+1,utt%stack(i)  ! 2017.09.03
+       utfull(utt%item(j),i) = utt%val(j)! 2017.09.03
+     end do                              ! 2017.09.03
+   end do                                ! 2017.09.03
+   if ( icomp .ge. 3 ) utfull = -iunit*omega*utfull ! only for Ex, Ey
 
-!#[1]## cal bx,by,ex,ey
-!write(*,*) "ok1 ip",ip
-do icomp = 1,4 ! bx,by,ex,ey
-  utt    = ut_mt(icomp)                 ! 2018.10.05
-  utfull = 0.d0                      ! 2017.09.03
-  do   i = 1,utt%nrow                ! 2017.09.03
-    do j=utt%stack(i-1)+1,utt%stack(i)! 2017.09.03
-     utfull(utt%item(j),i) = utt%val(j) ! 2017.09.03
-    end do                            ! 2017.09.03
-  end do                             ! 2017.09.03
-  if ( icomp .ge. 3 ) utfull = -iunit*omega*utfull ! only for Ex, Ey
-
-!  write(*,*) "ok2 icomp",icomp,"ip",ip
-  !#[1]## cal either of bx,by,ex,ey dependent on icomp
-  be = 0.d0
-  do i=1,nsr_mt                     ! nsr_mt = 2 2022.01.12
-     call mul_matcrs_cv(PT_mt(icomp),bs_mt(:,i),nline,be(:,i))!be[nobs_mt,2] 2018.10.05
-  end do
-  if ( icomp .ge. 3 ) be    = -iunit*omega*be        ! only for electric field
+   !#[1-1]## cal either of bx,by,ex,ey dependent on icomp
+     be = 0.d0
+     do i=1,nsr_mt                     ! nsr_mt = 2 2022.01.12
+       call mul_matcrs_cv(PT_mt(icomp),bs_mt(:,i),nline,be(:,i))!be[nobs_mt,2] 2018.10.05
+     end do
+     if ( icomp .ge. 3 ) be    = -iunit*omega*be        ! only for electric field
   
-  !#[2]## cal ut*dA/dm*Al
+   !#[1-2]## cal ut*dA/dm*Al
+     kk=0
+     do imodel=1,nmodel
+       if ( iactive(imodel) .ne. 1 ) cycle ! 2018.06.22
+       kk = kk + 1                         ! 2018.06.22
+       AAL    = 0.d0                       ! 2017.09.03
+       dbeobs = 0.d0                       ! 2018.10.05 either of bx,by,bz,ex,ey
+       do jj=stack(imodel-1)+1,stack(imodel) ! element loop for i-th model
+         iele=item(jj)
 
-!write(*,*) "ok3 icomp",icomp,"ip",ip
+         !#[1-2-1]## ! check the direction of edge, compared to the defined lines
+           idirection(1:6)=1
+           n6line(1:6) = l_line%n6line(iele,1:6)
+           do j=1,6
+             if ( n6line(j) .lt. 0 ) idirection(j)=-1
+             n6line(j) = n6line(j)*idirection(j)
+           end do
+           do j=1,4
+             elm_xyz(1:3,j)=h_mesh%xyz(1:3,h_mesh%n4(iele,j)) ! [km]
+           end do
+           call gradnodebasisfun(elm_xyz,gn,v) ! see fem_util.f90
 
-  kk=0 ! 2018.06.21
-  do imodel=1,nmodel
-    if ( iactive(imodel) .ne. 1 ) cycle ! 2018.06.22
-    kk = kk + 1                         ! 2018.06.22
-    AAL    = 0.d0                       ! 2017.09.03
-    dbeobs = 0.d0                       ! 2018.10.05 either of bx,by,bz,ex,ey
-    do jj=stack(imodel-1)+1,stack(imodel) ! element loop for i-th model
-      iele=item(jj)
+         !#[1-2-2]## Second term from i * omega * mu * sigma * int{ sigma w cdot w }dv {Bsl}
+           !# [4-1] ## assemble coefficient for i * omega*
+           if ( h_mesh%n4flag(iele,1) .lt. 2 ) goto 99 ! in the case of not in land
+           RM    = g_model%logrho_model(imodel) ! log10(rho)
+           sigma = 10**(-RM) ! sigma = 1/10**(log10(rho)) = 10**(-M)
+           !   write(*,*) "imodel=",imodel,"sigma=",sigma,"RM=",RM
   
-     !#[2-1]## ! check the direction of edge, compared to the defined lines
-     idirection(1:6)=1
-     n6line(1:6) = l_line%n6line(iele,1:6)
-     do j=1,6
-       if ( n6line(j) .lt. 0 ) idirection(j)=-1
-       n6line(j) = n6line(j)*idirection(j)
-     end do
-     do j=1,4
-       elm_xyz(1:3,j)=h_mesh%xyz(1:3,h_mesh%n4(iele,j)) ! [km]
-     end do
-     call gradnodebasisfun(elm_xyz,gn,v) ! see fem_util.f90
+         !#[1-2-3]## dBB/dm
+           !# BB     = iunit*omega*dmu*10^(-M)  (where M=log10(rho))
+           !# dBB/dm = iunit*omega*dmu*{10^-M)}*(-log10)
+           dBBdm =iunit*omega*dmu*sigma*L0**2.d0*(-log(10.d0))
 
-     !#[2-2]## Second term from i * omega * mu * sigma * int{ sigma w cdot w }dv {Bsl}
-     !# [4-1] ## assemble coefficient for i * omega*
-     if ( h_mesh%n4flag(iele,1) .lt. 2 ) goto 99 ! in the case of not in land
-     RM    = g_model%logrho_model(imodel) ! log10(rho)
-     sigma = 10**(-RM) ! sigma = 1/10**(log10(rho)) = 10**(-M)
-     !   write(*,*) "imodel=",imodel,"sigma=",sigma,"RM=",RM
-  
-     !#[2-3]##
-     !# BB     = iunit*omega*dmu*10^(-M)  (where M=log10(rho))
-     !# dBB/dm = iunit*omega*dmu*{10^-M)}*(-log10)
-     dBBdm =iunit*omega*dmu*sigma*L0**2.d0*(-log(10.d0))
+         !#[2-4] ## assemble scheme No.2 ( analytical assembly)
+           S1(:,:)=(0.d0,0.d0)
+           do i=1,6
+             do j=1,6
+               k=kl(i,1);l=kl(i,2) ; m=kl(j,1) ; n=kl(j,2) ! gn*gn [km^-2], intv [km^3], yy[km]
+               yy =      intv(k,m,v)*inner(gn(:,l), gn(:,n))   & ! first term
+               &	    -  intv(k,n,v)*inner(gn(:,l), gn(:,m))   & ! second term
+               &      -  intv(l,m,v)*inner(gn(:,k), gn(:,n))   & ! third term
+               &      +  intv(l,n,v)*inner(gn(:,k), gn(:,m))     ! forth term
+               S1(i,j)= yy*idirection(i)*idirection(j)*dBBdm  ! S1 [km*rad/s*S/m]
+             end do
+           end do
+           AAL = 0.d0  ! 2017.09.03
+           do i=1,6
+             ii = n6line(i)
+             do j=1,6
+               do k=1,nsr_mt    ! 2017.09.03
+                 AAL(i,k)=AAL(i,k) + S1(i,j)*bs_mt(n6line(j),k) ! (dA/dm)*Al 2017.09.03
+               end do            ! 2017.09.03
+             end do
+           end do
+           !# uT * (-AAL)
+           do i=1,utt%nrow  ! 2018.10.05 obs loop
+             do k=1,nsr_mt  ! 2022.01.05  src loop
+               do j=1,6        ! 2017.09.03  inside tetrahedron
+                 ii = n6line(j) ! 2017.09.03
+                 dbeobs(i,k) = dbeobs(i,k) + utfull(ii,i)*(-AAL(j,k)) ! i: obs, k: MT pol. for model kk
+               end do          ! 2017.09.03
+             end do          ! 2017.09.03
+           end do           ! 2017.09.03           
+       end do ! element loop (iele) for i-thmodel elemnt loop
 
-     !#[2-4] ## assemble scheme No.2 ( analytical assembly)
-     S1(:,:)=(0.d0,0.d0)
-     do i=1,6
-       do j=1,6
-         k=kl(i,1);l=kl(i,2) ; m=kl(j,1) ; n=kl(j,2) ! gn*gn [km^-2], intv [km^3], yy[km]
-         yy =      intv(k,m,v)*inner(gn(:,l), gn(:,n))   & ! first term
-         &	    -  intv(k,n,v)*inner(gn(:,l), gn(:,m))   & ! second term
-         &      -  intv(l,m,v)*inner(gn(:,k), gn(:,n))   & ! third term
-         &      +  intv(l,n,v)*inner(gn(:,k), gn(:,m))     ! forth term
-         S1(i,j)= yy*idirection(i)*idirection(j)*dBBdm  ! S1 [km*rad/s*S/m]
-       end do
-     end do
-     AAL = 0.d0  ! 2017.09.03
-     do i=1,6
-       ii = n6line(i)
-       do j=1,6
-         ! write(*,101) "iele",iele,"i,j,",i,j,"bs(n6line)=",bs(n6line(j)),"S1(i,j)",S1(i,j)
-         do k=1,nsr_mt    ! 2017.09.03
-           AAL(i,k)=AAL(i,k) + S1(i,j)*bs_mt(n6line(j),k) ! (dA/dm)*Al 2017.09.03
-         end do            ! 2017.09.03
-       end do
-     end do
-     !# uT * (-AAL)
-     do i=1,utt%nrow  ! 2018.10.05 obs loop
-       do k=1,nsr_mt  ! 2022.01.05  src loop
-         do j=1,6        ! 2017.09.03  inside tetrahedron
-           ii = n6line(j) ! 2017.09.03
-           dbeobs(i,k) = dbeobs(i,k) + utfull(ii,i)*(-AAL(j,k)) ! i: obs, k: MT pol. for model kk
-         end do          ! 2017.09.03
-       end do          ! 2017.09.03
-     end do           ! 2017.09.03
-   end do ! element loop (iele) for i-thmodel elemnt loop
-
-    if (     icomp .eq. 1) then ! bx, dbx
-      hxo(:,1:2)     = be(:,1:2) 
-      dhxo(:,1:2,kk) = dbeobs(:,1:2)
-    else if (icomp .eq. 2) then ! by, dby
-      hyo(:,1:2)     = be(:,1:2)
-      dhyo(:,1:2,kk) = dbeobs(:,1:2)
-    else if (icomp .eq. 3) then ! ex, dex
-      exo(:,1:2)     = be(:,1:2)
-      dexo(:,1:2,kk) = dbeobs(:,1:2)
-    else if (icomp .eq. 4) then ! ey, dey
-      eyo(:,1:2)     = be(:,1:2)
-      deyo(:,1:2,kk) = dbeobs(:,1:2)
-    end if
-  end do ! model loop end
-end do ! icomp end
-
-!write(*,*) "ok4 ip",ip
+       if (     icomp .eq. 1) then ! bx, dbx
+         hxo(:,1:2)     = be(:,1:2) 
+         dhxo(:,1:2,kk) = dbeobs(:,1:2)
+       else if (icomp .eq. 2) then ! by, dby
+         hyo(:,1:2)     = be(:,1:2)
+         dhyo(:,1:2,kk) = dbeobs(:,1:2)
+       else if (icomp .eq. 3) then ! ex, dex
+         exo(:,1:2)     = be(:,1:2)
+         dexo(:,1:2,kk) = dbeobs(:,1:2)
+       else if (icomp .eq. 4) then ! ey, dey
+         eyo(:,1:2)     = be(:,1:2)
+         deyo(:,1:2,kk) = dbeobs(:,1:2)
+       end if
+     end do ! model loop end
+ end do ! icomp end
 
  call watchstart(t_watch) ! 2017.09.06
 
@@ -638,89 +637,85 @@ end do ! icomp end
   end do
  end if
 
-kk=0
-do imodel = 1,nmodel
-  if ( iactive(imodel) .ne. 1 ) cycle ! 2018.06.22
-  kk = kk + 1                         ! 2018.06.22
-  do i=1,nobs_mt
-   hx1 = hxo(i,1) ; hy1 = hyo(i,1)
-   hx2 = hxo(i,2) ; hy2 = hyo(i,2)
-   ex1 = exo(i,1) ; ey1 = eyo(i,1)
-   ex2 = exo(i,2) ; ey2 = eyo(i,2)
-   dhx1 = dhxo(i,1,kk) ; dhy1 = dhyo(i,1,kk)
-   dhx2 = dhxo(i,2,kk) ; dhy2 = dhyo(i,2,kk)
-   dex1 = dexo(i,1,kk) ; dey1 = deyo(i,1,kk)
-   dex2 = dexo(i,2,kk) ; dey2 = deyo(i,2,kk)
-   if ( i .eq. 1 .and. imodel .eq. 1 .and. ip .eq. 4) then
-   !write(*,*) "hx1",hx1 ! 0
-   write(*,*) "hx2",hx2 !
-   write(*,*) "hy1",hy1 !
-   !write(*,*) "hy1",hy1 ! 0
-   write(*,*) "ex1",ex1
-   !write(*,*) "ex2",ex2 ! 0
-   !write(*,*) "ey1",ey1 ! 0
-   write(*,*) "ey2",ey2
-   write(*,*) "Zxy",ex1/hy1
-   write(*,*) "Zyx",ey2/hx2
-   write(*,*) ""
-   !write(*,*) "dhx1",dhx1 ! 0
-   write(*,*) "dhx2",dhx2
-   write(*,*) "dhy1",dhy1
-   !write(*,*) "dhy2",dhy2 ! 0
-   write(*,*) "dex1",dex1
-   !write(*,*) "dex2",dex2 ! 0
-   !write(*,*) "dey1",dey1 ! 0
-   write(*,*) "dey2",dey2
-   end if
-   !# generate dzxx, dzxy, dzyx, dzyy
+ kk=0
+ do imodel = 1,nmodel
+   if ( iactive(imodel) .ne. 1 ) cycle ! 2018.06.22
+   kk = kk + 1                         ! 2018.06.22
+   do i=1,nobs_mt
+     hx1 = hxo(i,1) ; hy1 = hyo(i,1)
+     hx2 = hxo(i,2) ; hy2 = hyo(i,2)
+     ex1 = exo(i,1) ; ey1 = eyo(i,1)
+     ex2 = exo(i,2) ; ey2 = eyo(i,2)
+     dhx1 = dhxo(i,1,kk) ; dhy1 = dhyo(i,1,kk)
+     dhx2 = dhxo(i,2,kk) ; dhy2 = dhyo(i,2,kk)
+     dex1 = dexo(i,1,kk) ; dey1 = deyo(i,1,kk)
+     dex2 = dexo(i,2,kk) ; dey2 = deyo(i,2,kk)
+     if ( i .eq. 1 .and. imodel .eq. 1 .and. ip .eq. 4 .and. .false. ) then
+       !write(*,*) "hx1",hx1 ! 0
+       write(*,*) "hx2",hx2 !
+       write(*,*) "hy1",hy1 !
+       !write(*,*) "hy1",hy1 ! 0
+       write(*,*) "ex1",ex1
+       !write(*,*) "ex2",ex2 ! 0
+       !write(*,*) "ey1",ey1 ! 0
+       write(*,*) "ey2",ey2
+       write(*,*) "Zxy",ex1/hy1
+       write(*,*) "Zyx",ey2/hx2
+       write(*,*) ""
+       !write(*,*) "dhx1",dhx1 ! 0
+       write(*,*) "dhx2",dhx2
+       write(*,*) "dhy1",dhy1
+       !write(*,*) "dhy2",dhy2 ! 0
+       write(*,*) "dex1",dex1
+       !write(*,*) "dex2",dex2 ! 0
+       !write(*,*) "dey1",dey1 ! 0
+       write(*,*) "dey2",dey2
+     end if
+     !# generate dzxx, dzxy, dzyx, dzyy
 
-   D = hx1*hy2-hx2*hy1
-  !   write(*,*) "D",D,"hx1",hx1,"hy2",hy2
-   Dinv=1./D
-   Dinv2=Dinv**2.
+     D = hx1*hy2-hx2*hy1
+     !   write(*,*) "D",D,"hx1",hx1,"hy2",hy2
+     Dinv=1./D
+     Dinv2=Dinv**2.
 
-   dzxxdm(i,kk)     =    Dinv*(hy2*dex1 + ex1*dhy2 - hy1*dex2 - ex2*dhy1) &
-   & -(ex1*hy2-ex2*hy1)*Dinv2*(hy2*dhx1 + hx1*dhy2 - hy1*dhx2 - hx2*dhy1) ! ok
+     dzxxdm(i,kk)     =    Dinv*(hy2*dex1 + ex1*dhy2 - hy1*dex2 - ex2*dhy1) &
+     & -(ex1*hy2-ex2*hy1)*Dinv2*(hy2*dhx1 + hx1*dhy2 - hy1*dhx2 - hx2*dhy1) ! ok
 
-   dzxydm(i,kk)     =    Dinv*(hx1*dex2 + ex2*dhx1 - hx2*dex1 - ex1*dhx2) &
-   & -(ex2*hx1-ex1*hx2)*Dinv2*(hy2*dhx1 + hx1*dhy2 - hy1*dhx2 - hx2*dhy1) ! ok
+     dzxydm(i,kk)     =    Dinv*(hx1*dex2 + ex2*dhx1 - hx2*dex1 - ex1*dhx2) &
+     & -(ex2*hx1-ex1*hx2)*Dinv2*(hy2*dhx1 + hx1*dhy2 - hy1*dhx2 - hx2*dhy1) ! ok
 
-   dzyxdm(i,kk)     =     Dinv*(hy2*dey1 + ey1*dhy2 - hy1*dey2 - ey2*dhy1)&
-   & -(ey1*hy2-ey2*hy1)*Dinv2*(hy2*dhx1 + hx1*dhy2 - hy1*dhx2 - hx2*dhy1) ! ok
+     dzyxdm(i,kk)     =     Dinv*(hy2*dey1 + ey1*dhy2 - hy1*dey2 - ey2*dhy1)&
+     & -(ey1*hy2-ey2*hy1)*Dinv2*(hy2*dhx1 + hx1*dhy2 - hy1*dhx2 - hx2*dhy1) ! ok
 
-   dzyydm(i,kk)     =     Dinv*(hx1*dey2 + ey2*dhx1 - hx2*dey1 - ey1*dhx2) &
-   & -(ey2*hx1-ey1*hx2)*Dinv2*(hy2*dhx1 + hx1*dhy2 - hy1*dhx2 - hx2*dhy1) ! ok
+     dzyydm(i,kk)     =     Dinv*(hx1*dey2 + ey2*dhx1 - hx2*dey1 - ey1*dhx2) &
+     & -(ey2*hx1-ey1*hx2)*Dinv2*(hy2*dhx1 + hx1*dhy2 - hy1*dhx2 - hx2*dhy1) ! ok
    
-  end do
-end do ! imodel loop
+    if (TIP) then
 
-!write(*,*) "ok 5 ip",ip
+    end if
 
-if ( ip .eq. 4 .and. .false.) then
-  do i=1,1
-  write(*,*) "i",i
-  write(*,'(4g15.7)') dzxxdm(i,1:2)
-  write(*,'(4g15.7)') dzxydm(i,1:2)
-  write(*,'(4g15.7)') dzyxdm(i,1:2)
-  write(*,'(4g15.7)') dzyydm(i,1:2)
-  end do
-end if
+   end do
+ end do ! imodel loop
 
+ !#[3]## full to complex_crs_matrix
+   call conv_full2crs_complex(dzxxdm(:,:),nobs_mt,nmodelactive,dzxx,threshold)!2022.01.05
+   call conv_full2crs_complex(dzxydm(:,:),nobs_mt,nmodelactive,dzxy,threshold)!2022.01.05
+   call conv_full2crs_complex(dzyxdm(:,:),nobs_mt,nmodelactive,dzyx,threshold)!2022.01.05
+   call conv_full2crs_complex(dzyydm(:,:),nobs_mt,nmodelactive,dzyy,threshold)!2022.01.05
+   if (TIP) then !2023.12.26
+     call conv_full2crs_complex(dtxdm(:,:),nobs_mt,nmodelactive,dtx,threshold)!2023.12.26
+     call conv_full2crs_complex(dtydm(:,:),nobs_mt,nmodelactive,dty,threshold)!2023.12.26
+   end if        !2023.12.26
 
-!#[3]## full to complex_crs_matrix
- call conv_full2crs_complex(dzxxdm(:,:),nobs_mt,nmodelactive,dzxx,threshold)!2022.01.05
- call conv_full2crs_complex(dzxydm(:,:),nobs_mt,nmodelactive,dzxy,threshold)!2022.01.05
- call conv_full2crs_complex(dzyxdm(:,:),nobs_mt,nmodelactive,dzyx,threshold)!2022.01.05
- call conv_full2crs_complex(dzyydm(:,:),nobs_mt,nmodelactive,dzyy,threshold)!2022.01.05
-
-!write(*,*) "ok 7 ip",ip
-
-!#[4]## set output
- g_mtdm%nobs_mt = nobs_mt
- g_mtdm%dzxxdm = dzxx
- g_mtdm%dzxydm = dzxy
- g_mtdm%dzyxdm = dzyx
- g_mtdm%dzyydm = dzyy
+ !#[4]## set output
+   g_mtdm%nobs_mt = nobs_mt
+   g_mtdm%dzxxdm = dzxx
+   g_mtdm%dzxydm = dzxy
+   g_mtdm%dzyxdm = dzyx
+   g_mtdm%dzyydm = dzyy
+   if (TIP) then              ! 2023.12.26
+    g_tipdm%nobs_mt = nobs_mt ! 2023.12.26
+   end if                     ! 2023.12.26
 
  call watchstop(t_watch)
 
@@ -736,11 +731,11 @@ end if
  do j=1,4
   write(*,*) "node=",h_mesh%n4(iele,j),"elm_xyz=",elm_xyz(1:3,j)
  end do
-stop
+ stop
 
-!# format #
-100 format(a,i3,a,i3,a,2g15.7,a,2g15.7,a,g15.7)
-101 format(a,i3,a,2i3,a,2g15.7,a,2g15.7)
+ !# format #
+   100 format(a,i3,a,i3,a,2g15.7,a,2g15.7,a,g15.7)
+   101 format(a,i3,a,2i3,a,2g15.7,a,2g15.7)
 
  end
 !############################################################# genjacobian2

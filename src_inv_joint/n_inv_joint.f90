@@ -483,7 +483,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
   if(TIP) call SENDRESULTINV_TIP(g_tipdm,gt_tipdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_joint,ip,np,g_param_joint)
   CALL MPI_BARRIER(mpi_comm_world, errno) ! 2017.09.03
 
-!#[27]## OUTPUT ACTIVE and MT responsed for ite==================  ip=0 start
+!#[27]## OUTPUT ACTIVE and MT responses for ite==================  ip=0 start
  if ( ip .eq. 0 ) then
    if(ACT)CALL OUTOBSFILESINV(g_param,g_param_joint,nsr_inv,sparam,tresp,nfreq_act,ite,ialpha)!2017.09.11
    if(MT )CALL OUTOBSFILESINV_MT(g_param_mt,g_param_joint,timp_mt,nfreq_mt,ite,ialpha)
@@ -562,23 +562,23 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
     end if
 
    !#[35]# Initial alpha
-   if ( ite == 1 ) then   ! 2017.12.13
-     if ( ialphaflag .eq. 1 ) alpha = g_param_joint%alpha(ialpha)! 2017.12.13
-     if ( ialphaflag .eq. 2 ) alpha = g_param_joint%alpha_init   ! 2017.12.13
-     if ( ialphaflag .eq. 3 ) then  ! 2017.12.13 Minami et al. (2018) cooling
-       kmax = 30
-       ! call alphaspectralradius_v1(Cd,JJ,BM,alpha,kmax)   ! 2017.12.25 m_spectral.f90
-       if (      itype_roughness .eq. 3 ) then            ! MSG 2018.01.18
-         call alphaspectralradius_v2(Cd,JJ,RI,alpha,kmax)  ! 2018.01.18 m_spectral.f90
-       else if ( itype_roughness .eq. 2 ) then            ! MS  2018.02.04
-         call alphaspectralradius_v2(Cd,JJ,BMI,alpha,kmax) ! 2018.01.18 m_spectral.f90
-         alpha = alpha * (g_param_joint%beta**2.)          ! 2018.02.04
-       else                                               ! 2018.02.04
-         call alphaspectralradius_v2(Cd,JJ,BMI,alpha,kmax) ! 2017.12.24 m_spectral.f90
-	     end if
-       alpha = g_param_joint%gamma*alpha                   ! 2017.12.21
-     end if                                               ! 2017.12.11
-   end if
+     if ( ite == 1 ) then   ! 2017.12.13
+       if ( ialphaflag .eq. 1 ) alpha = g_param_joint%alpha(ialpha)! 2017.12.13
+       if ( ialphaflag .eq. 2 ) alpha = g_param_joint%alpha_init   ! 2017.12.13
+       if ( ialphaflag .eq. 3 ) then  ! 2017.12.13 Minami et al. (2018) cooling
+         kmax = 30
+         ! call alphaspectralradius_v1(Cd,JJ,BM,alpha,kmax)   ! 2017.12.25 m_spectral.f90
+         if (      itype_roughness .eq. 3 ) then            ! MSG 2018.01.18
+           call alphaspectralradius_v2(Cd,JJ,RI,alpha,kmax)  ! 2018.01.18 m_spectral.f90
+         else if ( itype_roughness .eq. 2 ) then            ! MS  2018.02.04
+           call alphaspectralradius_v2(Cd,JJ,BMI,alpha,kmax) ! 2018.01.18 m_spectral.f90
+           alpha = alpha * (g_param_joint%beta**2.)          ! 2018.02.04
+         else                                               ! 2018.02.04
+           call alphaspectralradius_v2(Cd,JJ,BMI,alpha,kmax) ! 2017.12.24 m_spectral.f90
+	       end if
+         alpha = g_param_joint%gamma*alpha                   ! 2017.12.21
+       end if                                               ! 2017.12.11
+     end if
 
    !#[36]## New alpha for cooling strategies
      if ( ite .ge. 2 ) then   ! 2017.12.13
@@ -1406,7 +1406,7 @@ subroutine SENDRESULTINV_MT(g_mtdm,gt_mtdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_j
   end
 !############################################ SENDRESULTINV_TIP 2023.12.25
 subroutine SENDRESULTINV_TIP(g_tipdm,gt_tipdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_joint,ip,np,g_param_joint)
- !# modified on 2017.09.03 for multiple sources
+  ! coded on 2023.12.25
   use matrix
   use shareformpi_joint ! 2021.12.25
   use jacobian_joint    ! 2017.06.08

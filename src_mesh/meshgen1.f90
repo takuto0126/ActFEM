@@ -156,6 +156,7 @@ inum_water_level = g_param_water%inum_water_level
 
 !# topo/lake surface geo file
 geofile=trim(header2d)//".geo"
+ write(*,*) "Start write geo file", trim(geofile)
  open(1,file=geofile,status='replace')
  jj=0
  write(1,*) "lc=",sb,";" ! lc is the characteristic length for element size

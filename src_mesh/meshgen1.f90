@@ -17,26 +17,27 @@ use horizontalresolution
 use water_level ! 2023.08.31
 use topo_tool   ! 2023.08.31
 implicit none
-type(param_forward)    :: g_param
-type(param_source)     :: s_param
+type(param_forward)          :: g_param
+type(param_source)           :: s_param
 type(coast_data),allocatable :: g_coast(:),h_coast(:)  ! 2023.08.31
-type(poly_data)        :: i_poly    ! see m_topo_tool.f90
-type(poly_data),allocatable :: g_poly(:),h_poly(:) ! 2023.09.04
-type(bound_data)       :: g_bound    ! ncmax, zlabel(ncmax), ibelong(ncmax)
-real(8),dimension(2)   :: xy1, xy2, xy, v12, v0, dv
-integer(4)             :: ifile=1, ndat,iline
-integer(4)             :: ipoint,i,ii,j,ishift, ispline, ilineloop
-character(50)          :: posfile,header2d ! 2017.09.28
-real(8)                :: elev  ! size of triangles [km], elev is water level hight [km]
-real(8),dimension(4,2) :: lonlat4
-logical,allocatable,dimension(:) :: iflag_coast_required ! 2023.08.31
-integer(4),allocatable,dimension(:,:) :: line12
-type(param_water_level) :: g_param_water ! 2023.08.31
-integer(4)             :: node0,lpmax,ncmax,inum_water_level
-integer(4),            dimension(0:3) :: iflg,ilflg ! 2023.09.01 copied from TMTGEMv1.3
-type(grid_data)        :: g_grd
-real(8),dimension(0:3) :: xcorner,ycorner ! 2019.02.20
-
+type(poly_data)              :: i_poly    ! see m_topo_tool.f90
+type(poly_data), allocatable :: g_poly(:),h_poly(:) ! 2023.09.04
+type(bound_data)             :: g_bound    ! ncmax, zlabel(ncmax), ibelong(ncmax)
+real(8),dimension(2)         :: xy1, xy2, xy, v12, v0, dv
+integer(4)                   :: ifile=1, ndat,iline
+integer(4)                   :: ipoint,i,ii,j,ishift, ispline, ilineloop
+character(50)                :: posfile,header2d ! 2017.09.28
+real(8)                      :: elev  ! size of triangles [km], elev is water level hight [km]
+real(8),dimension(4,2)       :: lonlat4
+integer(4),allocatable       :: line12(:,:)
+type(param_water_level)      :: g_param_water ! 2023.08.31
+integer(4)                   :: node0,ncmax,inum_water_level=0,inwl
+integer(4),   dimension(0:3) :: iflg,ilflg ! 2023.09.01 copied from TMTGEMv1.3
+type(grid_data)              :: g_grd
+real(8),dimension(0:3)       :: xcorner,ycorner ! 2019.02.20
+integer(4),parameter         :: lpmax=30 ! max total number of polygons 2024.08.27
+! iflag_coast_required: true -> ocean-land boundary,flase -> lake boundary in land
+logical                      :: iflag_coast_required(lpmax) ! 2023.08.31
 
 ![0]## read param
  call readparam(g_param,s_param) ! 2018.06.14
@@ -44,60 +45,58 @@ real(8),dimension(0:3) :: xcorner,ycorner ! 2019.02.20
 !#[1]# set
  header2d = g_param%header2d
 
-
 !#[1]## [water level option]# 2023.08.31
-open(1,file="water_level.ctl",status='old',err=100)
-
 !#[1-1]# Case for water_level.ctl exist
- call readwaterlevelctl(g_param,g_param_water,iunit=1)
- write(*,*) " 'water_level.ctl' exists!"
- write(*,*) " water_level_elev(1)",g_param_water%water_level_elev(1),"[km]"
+ open(1,file="water_level.ctl",status='old',err=100)
+   call readwaterlevelctl(g_param,g_param_water,iunit=1)
+   write(*,*) " 'water_level.ctl' exists!"
+   write(*,*) " water_level_elev(1)",g_param_water%water_level_elev(1),"[km]"
  close(1)
- !#[1-1-1]# read topo file # the followings are copied from coastline.f90 in TMTGEMv1.3 2023.08.31
- CALL topo2grdxyz(g_param,g_grd,g_param_water) ! 2023.08.31
- !# make lake outline
-  ncmax = g_grd%node / 10 ! 2023.09.01
-  inum_water_level = g_param_water%inum_water_level
-  write(*,*) "inum_water_level =", inum_water_level
-  allocate(g_poly( inum_water_level)) ! 2023.09.04
-  allocate(h_poly( inum_water_level)) ! 2023.09.04
-  allocate(g_coast(inum_water_level))
-  allocate(h_coast(inum_water_level))
-  allocate (iflag_coast_required(lpmax)) ! true: ocean-land boundary, flase -> lake boundary in land
-  lpmax=30 ! max total number of polygons
 
-  do i=1,inum_water_level
-   elev = g_param_water%water_level_elev(i)
-   write(*,*) "loop for water level =",elev
+ !#[1-1-1]# read topo # the followings are copied from coastline.f90 in TMTGEMv1.3 2023.08.31
+   CALL topo2grdxyz(g_param,g_grd,g_param_water) ! 2023.08.31
+   !# make lake outline
+   ncmax = g_grd%node / 10 ! 2023.09.01
+   inum_water_level = g_param_water%inum_water_level
+   write(*,*) "inum_water_level =", inum_water_level
+   inwl = inum_water_level ! 2024.08.27
+   allocate(g_poly(inwl),h_poly(inwl),g_coast(inwl),h_coast(inwl)) ! sometime, inwl=0 2024.08.27
 
-   CALL allocatecoast(g_coast(i),ncmax) ! ncmax is max # of points on coastlines
-   CALL makecoast5(g_grd,g_coast(i),elev)    ! make coast nodes and output coastfile
-
+ do i=1,inum_water_level
    !#[1-1-2]## compose polygon for land and oceans
-   write(*,*) "a0"
-   call allocatepoly(g_poly(i),lpmax,ncmax,lpmax)  ! nclose for g_poly is unknow here
-   call makepolygon7(g_coast(i),g_grd,g_poly(i),elev) ! lpoly0= # of polygons
-   call outpolygon8( g_poly(i),g_coast(i),header2d,0)  ! [for check] commented out on2019.03.07
+     elev = g_param_water%water_level_elev(i)
+     write(*,*) "loop for water level =",elev
+     CALL allocatecoast(g_coast(i),ncmax)               ! ncmax is max # of points on coastlines
+     CALL makecoast5(g_grd,g_coast(i),elev)             ! make coast nodes and output coastfile
+     call allocatepoly(g_poly(i),lpmax,ncmax,lpmax)     ! nclose for g_poly is unknow here
+     call makepolygon7(g_coast(i),g_grd,g_poly(i),elev) ! lpoly0= # of polygons
+     call outpolygon8( g_poly(i),g_coast(i),header2d,0) ! [for check] commented out on2019.03.07
 
    !#[1-1-3]## 
-   call identifycraterlakepolygon(iflag_coast_required,g_grd,g_coast(i),g_poly(i),g_param_water,lpmax,ncmax)
-   call landpolygon10(iflag_coast_required,g_poly(i),g_coast(i),lpmax) ! ind_r is modified
-   !   call outpolygon8(g_poly,g_coast,header2d,1) ! [for check] commented out on 2019.03.07
+     call identifycraterlake(iflag_coast_required,g_grd,g_coast(i),g_poly(i),g_param_water,lpmax,ncmax)
+     call landpolygon10(iflag_coast_required,g_poly(i),g_coast(i),lpmax) ! ind_r is modified
+     !   call outpolygon8(g_poly,g_coast,header2d,1) ! [for check] commented out on 2019.03.07
 
    !#[1-1-4]## smoothen the coastlines by spline and background size information
-   !#[4]## output background mesh
-   call smoothen10_5(g_poly(i),h_poly(i),g_coast(i),h_coast(i),g_param) ! h_poly is generated
-     call deallocatecoast(g_coast(i))
-     call deallocatecoast(h_coast(i))
-     call deallocatepoly(g_poly(i))
+     call smoothen10_5(g_poly(i),h_poly(i),g_coast(i),h_coast(i),g_param) ! h_poly is generated
+     call deallocatecp(g_coast(i),h_coast(i),g_poly(i))
 
-  end do
-  
-  if (inum_water_level .gt. 1) call integratepoly(h_poly,g_param,inum_water_level,i_poly)
-!   call outpolygon8(i_poly,h_coast(1),header2d,1) ! [for check] commented out on 2019.03.07
+ end do
+  write(*,*) "loop end"
+
+ !#[1-2]# Case for no water lake 
+  goto 101
+  100 continue
+   write(*,*) " 'water_level.ctl' doesn't exist!"
+   write(*,*) " No lake surface will be generated"
+  101 continue
+
+  !#[2]## Finalize polygons
+  call integratepoly(h_poly,g_param,inum_water_level,i_poly,ncmax) ! 2024.08.27
+  ! call outpolygon8(i_poly,h_coast(1),header2d,1) ! [for check] commented out on 2019.03.07
    call outpolygon12(i_poly,header2d,1)           ! commented out 2018.11.09
 
-call outpolygeo13(i_poly,g_param,g_param_water)
+  call outpolygeo13(i_poly,g_param,g_param_water)
 
 ! call avoidintersections(h_poly)                ! m_intersection.f90
 ! call avoidintersections_interpolygons(h_poly)  ! m_intersection.f90 2019.02.27
@@ -108,15 +107,6 @@ call outpolygeo13(i_poly,g_param,g_param_water)
 ! call addcorner11(h_poly,i_poly,g_grd,g_bound,iflg,ilflg,xcorner,ycorner) ! i_poly is generated
 ! call outpolygon12(i_poly,header2d,4) ! [for check] commented out on2019.03.07
 
- goto 101
-
-!#[1-2]# Case for no water lake 
- 100 continue
- write(*,*) " 'water_level.ctl' doesn't exist!"
- write(*,*) " No lake surface will be generated"
-
- 101 continue
-
 ![3]## generate .pos file
  posfile=trim(header2d)//".pos"
  call calobsr(s_param,g_param) ! calculate sigma_r, A_r, nobsr
@@ -124,6 +114,17 @@ call outpolygeo13(i_poly,g_param,g_param_water)
 ! call outbgfield2d(g_param) ! outbgfield2d.f90 2017.09.28
 
 end program meshgen1
+!###########################################################
+subroutine deallocatecp(g_coast,h_coast,g_poly) ! 2024.08.27
+use topo_tool   ! 2023.08.31
+implicit none
+type(coast_data),intent(inout) :: g_coast,h_coast  ! 2023.08.31
+type(poly_data), intent(inout) :: g_poly    ! see m_topo_tool.f90
+     call deallocatecoast(g_coast)
+     call deallocatecoast(h_coast)
+     call deallocatepoly(g_poly)
+return
+end
 !###########################################################
 subroutine outpolygeo13(i_poly,g_param,g_param_water)
 use param
@@ -203,21 +204,23 @@ geofile=trim(header2d)//".geo"
    end do
 close(1)
 
+write(*,*) "### OUTPOLYGEO13 END!! ###" ! 2024.08.27
+
 return
 end
 !###########################################################
-subroutine integratepoly(h_poly,g_param,inum_water_level,i_poly)
+subroutine integratepoly(h_poly,g_param,inum_water_level,i_poly,ncmax)
 use topo_tool
 use param
 implicit none
 type(param_forward), intent(in)    :: g_param
-type(poly_data),     intent(inout) :: h_poly(inum_water_level)
-integer(4),          intent(in)    :: inum_water_level
+type(poly_data),     intent(inout) :: h_poly(inum_water_level) ! sometimes inum_water_level=0 
+integer(4),          intent(in)    :: inum_water_level,ncmax
 type(poly_data),     intent(out)   :: i_poly
-integer(4) :: i,nclose,lpmax,ncmax,jj
-real(8)       :: x1,x2,y1,y2,x01,x02,y01,y02, x0,y0, z0,lc
+integer(4) :: i,nclose,lpmax,jj
+real(8)    :: x1,x2,y1,y2,x01,x02,y01,y02, x0,y0, z0,lc
 
-x01 = g_param%xbound(1)
+ x01 = g_param%xbound(1)
  x1  = g_param%xbound(2)
  x2  = g_param%xbound(3)
  x02 = g_param%xbound(4)
@@ -229,37 +232,34 @@ x01 = g_param%xbound(1)
 
 nclose = 0 ! # number of unclosed polygon
 lpmax = inum_water_level + 1
-ncmax = h_poly(1)%ncmax
 
 i_poly%lpmax  = inum_water_level + 1
 i_poly%ncmax  = ncmax
 i_poly%lpoly0 = inum_water_level + 1 ! # of polygon including calculation boundary polygon
 i_poly%nclose = 0 
 
+!# allocate output polygon i_poly
 allocate(i_poly%lpoly(lpmax))
 allocate(i_poly%xypoly(2,lpmax,ncmax))
-!allocate(i_poly%ind2(nclose,2,2))! not used
-!allocate(i_poly%loc(nclose,2))   ! not used 2023.09.04
 
 !# calculation boundary polygon
- i_poly%lpoly(1) = 4
+ i_poly%lpoly(1) = 4 ! land polygon
  i_poly%xypoly(1:2,1,1) = (/x02,y02/) ! top right
  i_poly%xypoly(1:2,1,2) = (/x02,y01/) ! top left
  i_poly%xypoly(1:2,1,3) = (/x01,y01/) ! bottom left
  i_poly%xypoly(1:2,1,4) = (/x01,y02/) ! bottom right
 
-!# 2 to inum_water_level + 1 polygons
-do i=1,inum_water_level
+!# 2 to (inum_water_level + 1) polygons
+do i=1,inum_water_level   ! skipped when inum_water_level = 0
   i_poly%lpoly(i+1) = h_poly(i)%lpoly(1)
   i_poly%xypoly(1:2,i+1,1:ncmax) = h_poly(i)%xypoly(1:2,1,1:ncmax)
 end do
 
-!# 
-
-!# deallocate h_poly
-do i=1,inum_water_level
+!# deallocate h_poly     
+do i=1,inum_water_level ! skipped when inum_water_level = 0
   call deallocatepoly(h_poly(i))
 end do
+write(*,*) "### INTEGRATE POLY END!! ###" ! 2024.08.27
 
 return
 end
@@ -291,31 +291,19 @@ logical                                 :: iflag_topright_land ! 2019.02.28
 write(*,*) "smoothen start!"
 
 !#[1]## set input
-write(*,*) "1"
   ncoast = g_coast%ncoast
-  write(*,*) "2"
   ncmax  = g_coast%ncmax
-  write(*,*) "3"
   nclose = g_poly%nclose
-  write(*,*) "4"
   lpoly0 = g_poly%lpoly0
   write(*,*) "lpoly0",lpoly0,"ncmax",ncmax
   allocate( tnn(ncoast+1000),ind(ncmax,2))! 2021.11.08 +1000 is added
-  write(*,*) "5"
   allocate( lpoly(lpoly0), lpoly2(lpoly0))
-  write(*,*) "6"
   allocate( xpoly( lpoly0,ncmax), ypoly( lpoly0,ncmax))
-  write(*,*) "7"
   allocate( xpoly2(lpoly0,ncmax), ypoly2(lpoly0,ncmax))
-  write(*,*) "8"
   ind(1:ncmax,1:2) = g_coast%ind_r(1:ncmax,1:2)
-  write(*,*) "9"
   xpoly(1:lpoly0,1:ncmax)  = g_poly%xypoly(2,1:lpoly0,1:ncmax)
-  write(*,*) "10"
   ypoly(1:lpoly0,1:ncmax)  = g_poly%xypoly(1,1:lpoly0,1:ncmax)
-  write(*,*) "11"
   lpoly(1:lpoly0)  = g_poly%lpoly(1:lpoly0)
-  write(*,*) "12"
   if ( nclose .ge. 1) then       ! 2019.03.06
    allocate( ind2(nclose,2,2) )  ! 2019.03.06
    allocate( loc(nclose,2) )     ! 2019.02.25
@@ -456,7 +444,7 @@ end subroutine smoothen10_5
 
 
 !########################################################### identifycraterlakepolygon 2023.09.01
-subroutine identifycraterlakepolygon(iflag_coast_required,g_grd,g_coast,g_poly,g_param_water,lpmax,ncmax)
+subroutine identifycraterlake(iflag_coast_required,g_grd,g_coast,g_poly,g_param_water,lpmax,ncmax)
   use topo_tool
   use param
   use water_level
@@ -493,11 +481,11 @@ subroutine identifycraterlakepolygon(iflag_coast_required,g_grd,g_coast,g_poly,g
   lat_grd     = g_grd%lat(1:nsouth) ! 2023.09.01
 
   if (.false.) then
-  open(1,file="cxy.dat")
-   do i=1,g_coast%ncoast
-    write(1,*) g_grd%xyz(1:2,g_coast%ind_r(i,1)),i 
-   end do
-  close(1)
+   open(1,file="cxy.dat")
+     do i=1,g_coast%ncoast
+       write(1,*) g_grd%xyz(1:2,g_coast%ind_r(i,1)),i 
+     end do
+   close(1)
   end if
 
   !#[2]# look for ic,jc for 
@@ -505,13 +493,13 @@ subroutine identifycraterlakepolygon(iflag_coast_required,g_grd,g_coast,g_poly,g
    if ( lon_grd(i) .le. clonlat(1) .and. clonlat(1) .lt. lon_grd(i+1) ) ic =i
   end do
   do i=1,nsouth-1
-!    write(*,*) i,"lat i+1,i", lat_grd(i+1),lat_grd(i)
+   !    write(*,*) i,"lat i+1,i", lat_grd(i+1),lat_grd(i)
     if ( lat_grd(i+1) .le. clonlat(2) .and. clonlat(2) .lt. lat_grd(i) ) jc =i
    end do
    write(*,*) "ic=",ic
    write(*,*) "jc=",jc
 
-  !# [3] ## generate iflagclosedpolygon_pid
+   !# [3] ## generate iflagclosedpolygon_pid
    allocate( iflgclosedpolygon_pid(node,2) ) ! 2019.02.27
    iflgclosedpolygon_pid = 0 ! initialize
    if ( nclose .eq. 0 ) then
@@ -859,12 +847,9 @@ real(8),   allocatable,dimension(:,:)   :: loc,locn                         ! 20
  nclosen = 0   ! 2019.02.25
  write(*,*) "lpoly0=",lpoly0
  do i=1,lpoly0
-  !write(*,*) "lpoly0=",lpoly0,"i=",i
   if ( iflag_coast_required(i) ) then ! 2019.02.25
    jj=jj+1
-   !xpolyn(jj,1:ncmax)=xpoly(i,1:ncmax)
-   !ypolyn(jj,1:ncmax)=ypoly(i,1:ncmax)
-   xpolyn(jj,1:lpoly(i))      = xpoly(i,1:lpoly(i)) ! July 15, 2015, the above 2 lines are replaced by these 2 lines
+   xpolyn(jj,1:lpoly(i))      = xpoly(i,1:lpoly(i))
    ypolyn(jj,1:lpoly(i))      = ypoly(i,1:lpoly(i))
    indn(ii+1:ii+lpoly(i),1:2) = ind(kk+1:kk+lpoly(i),1:2)
    lpolyn(jj)    = lpoly(i)
@@ -872,9 +857,9 @@ real(8),   allocatable,dimension(:,:)   :: loc,locn                         ! 20
    ncoastn       = ncoastn + lpoly(i)
    ii            = ii + lpoly(i)
    if ( i .le. nclose ) then      ! 2019.02.25
-    nclosen      = nclosen + 1
-    nboundn      = nboundn + 2
-    locn(jj,1:2) = loc(i,1:2) ! 2019.02.25
+     nclosen      = nclosen + 1
+     nboundn      = nboundn + 2
+     locn(jj,1:2) = loc(i,1:2) ! 2019.02.25
    end if
   end if
   kk = kk + lpoly(i)

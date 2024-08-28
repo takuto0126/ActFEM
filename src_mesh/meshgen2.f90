@@ -25,9 +25,11 @@ integer(4)                    :: iflag_water = 0
 
 !#[0]##
  CALL READPARAM(g_param,s_param)
- open(1,file="water_level.ctl",status='old',err=100) ! 2023.09.05
+ open(1,file=g_param%waterlevelfile,status='old',err=100) ! 2024.08.27
+  write(*,*) "g_param%waterlevelfile exist",g_param%waterlevelfile
   iflag_water = 1 ! set iflag_water for water level setting for crater lake
   call readwaterlevelctl(g_param,g_param_water,iunit=1)! 2023.09.05
+  write(*,*) "inum_water_level =",g_param_water%inum_water_level ! 2024.08.28
  close(1)     ! 2023.09.05
  100 continue ! 2023.09.05
 
@@ -699,6 +701,7 @@ n2k(:,2:3) = h_mesh%n2(:,1:2)
 lc         = g_param%sizebo
 inum_water_level = g_param_water%inum_water_level !2023.09.11
 inwl       = inum_water_level                     !2023.09.11
+write(*,*) "inum_water_level",inwl                !2024.08.28
 
 !#[1.5]## 2023.09.08 generate ntri_surf and ntri_surf_list
 nsurf = 2*inum_water_level + 1

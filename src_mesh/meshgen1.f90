@@ -47,7 +47,7 @@ logical                      :: iflag_coast_required(lpmax) ! 2023.08.31
 
 !#[1]## [water level option]# 2023.08.31
 !#[1-1]# Case for water_level.ctl exist
- open(1,file="water_level.ctl",status='old',err=100)
+ open(1,file=g_param%waterlevelfile,status='old',err=100) ! 2024.08.27
    call readwaterlevelctl(g_param,g_param_water,iunit=1)
    write(*,*) " 'water_level.ctl' exists!"
    write(*,*) " water_level_elev(1)",g_param_water%water_level_elev(1),"[km]"

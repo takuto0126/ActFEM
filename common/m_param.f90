@@ -52,6 +52,9 @@ type param_forward
  !# conductivity structure
  character(50) :: condfile
  integer(4)    :: condflag
+!########  water level control
+ integer(4)    :: iflag_water_level ! 0: no water level file, 1: read water level file 2024.08.27
+ character(50) :: waterlevelfile    ! 2024.08.27
 end type
 
 type param_source
@@ -164,6 +167,15 @@ read(input,10) c_param%z_meshfile
 write(*,   41) " 2dz    mesh file : ",trim(c_param%z_meshfile)     ! 2020.09.29
 read(input,10) c_param%g_lineinfofile
 write(*,   41) " line info   file : ",trim(c_param%g_lineinfofile) ! 2020.09.29
+
+!### read parameters for water level control 2024.08.28
+  read(input,*) c_param%iflag_water_level
+  write(*,*) "iflag_water_level =",c_param%iflag_water_level
+  if ( c_param%iflag_water_level .eq. 1 ) then
+   read(input,*) c_param%waterlevelfile
+   write(*,*) "water_level control file is",c_param%waterlevelfile
+  end if
+
 read(input,10) c_param%outputfolder
 write(*,   41) " output folder    : ",trim(c_param%outputfolder)   ! 2020.09.29
 read(input,10) c_param%header2d

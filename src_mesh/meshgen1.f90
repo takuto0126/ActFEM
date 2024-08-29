@@ -47,7 +47,8 @@ logical                      :: iflag_coast_required(lpmax) ! 2023.08.31
 
 !#[1]## [water level option]# 2023.08.31
 !#[1-1]# Case for water_level.ctl exist
- open(1,file=g_param%waterlevelfile,status='old',err=100) ! 2024.08.27
+if ( g_param%iflag_water_level .eq. 1 ) then
+ open(1,file=g_param%waterlevelfile,status='old') ! 2024.08.27
    call readwaterlevelctl(g_param,g_param_water,iunit=1)
    write(*,*) " 'water_level.ctl' exists!"
    write(*,*) " water_level_elev(1)",g_param_water%water_level_elev(1),"[km]"
@@ -81,21 +82,23 @@ logical                      :: iflag_coast_required(lpmax) ! 2023.08.31
      call smoothen10_5(g_poly(i),h_poly(i),g_coast(i),h_coast(i),g_param) ! h_poly is generated
      call deallocatecp(g_coast(i),h_coast(i),g_poly(i))
 
+   !#[1-1-5]## 2024.08.28
+     call rotatepoly(h_poly(i),g_param) ! 2024.08.28
  end do
-  write(*,*) "loop end"
+ write(*,*) "loop end"
 
- !#[1-2]# Case for no water lake 
-  goto 101
-  100 continue
+else ! iflag_water_level = 0
    write(*,*) " 'water_level.ctl' doesn't exist!"
    write(*,*) " No lake surface will be generated"
-  101 continue
+   inum_water_level = 0
+   ncmax=10
+   allocate(h_poly(inum_water_level)) ! work with inum_water_level=0
+end if
 
   !#[2]## Finalize polygons
   call integratepoly(h_poly,g_param,inum_water_level,i_poly,ncmax) ! 2024.08.27
   ! call outpolygon8(i_poly,h_coast(1),header2d,1) ! [for check] commented out on 2019.03.07
-   call outpolygon12(i_poly,header2d,1)           ! commented out 2018.11.09
-
+  ! call outpolygon12(i_poly,header2d,1)           ! commented out 2018.11.09
   call outpolygeo13(i_poly,g_param,g_param_water)
 
 ! call avoidintersections(h_poly)                ! m_intersection.f90
@@ -114,6 +117,23 @@ logical                      :: iflag_coast_required(lpmax) ! 2023.08.31
 ! call outbgfield2d(g_param) ! outbgfield2d.f90 2017.09.28
 
 end program meshgen1
+!##########################################################
+subroutine rotatepoly(h_poly,g_param)
+use param
+use topo_tool
+implicit none
+type(param_forward),intent(in)    :: g_param
+type(poly_data),    intent(inout) :: h_poly
+integer(4) :: i,j
+
+do i=1,h_poly%lpoly0
+ do j=1,h_poly%lpoly(i)
+   call rotate(h_poly%xypoly(1,i,j),h_poly%xypoly(2,i,j),g_param%angle) ! see m_param.f90
+ end do
+end do
+return
+
+end
 !###########################################################
 subroutine deallocatecp(g_coast,h_coast,g_poly) ! 2024.08.27
 use topo_tool   ! 2023.08.31
@@ -144,17 +164,22 @@ real(8) :: si,sb
 
  si   = g_param%sizein
  sb   = g_param%sizebo
-
+write(*,*) "a2"
+write(*,*) "lpmax",i_poly%lpmax
+write(*,*) "ncmax",i_poly%ncmax
+write(*,*) "ncmax",i_poly%lpoly0
 header2d = g_param%header2d
 lpoly0 = i_poly%lpoly0
-lpoly  = i_poly%lpoly
+write(*,*) "size(i_poly%lpoly)",size(i_poly%lpoly)
+lpoly  = i_poly%lpoly  ! lpoly(1:lpoly0)
 lpmax  = i_poly%lpmax
 ncmax  = i_poly%ncmax
+write(*,*) "a3"
 allocate(xpoly(lpmax,ncmax),ypoly(lpmax,ncmax))
 xpoly(1:lpmax,1:ncmax) = i_poly%xypoly(1,1:lpmax,1:ncmax)
 ypoly(1:lpmax,1:ncmax) = i_poly%xypoly(2,1:lpmax,1:ncmax)
 inum_water_level = g_param_water%inum_water_level
-
+write(*,*) "a4"
 !# topo/lake surface geo file
 geofile=trim(header2d)//".geo"
  write(*,*) "Start write geo file", trim(geofile)
@@ -1628,7 +1653,9 @@ END
   iclose=1 ! closed
   if ( i .le. g_poly%nclose) iclose=0 ! unclosed
   write(1,'(3i7)') i,g_poly%lpoly(i),iclose
+  write(*,'(3i7)') i,g_poly%lpoly(i),iclose
   write(1,'(i7,2g15.7)')(k,g_poly%xypoly(2,i,k),g_poly%xypoly(1,i,k),k=1,g_poly%lpoly(i))
+  write(*,'(i7,2g15.7)')(k,g_poly%xypoly(2,i,k),g_poly%xypoly(1,i,k),k=1,g_poly%lpoly(i))
  end do
  close(1)
 

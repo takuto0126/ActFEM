@@ -253,11 +253,11 @@ implicit none
 type(param_forward),    intent(in)    :: g_param
 type(mesh),             intent(inout) :: h_mesh
 type(param_water_level),intent(in)    :: g_param_water
-integer(4),             intent(in)    :: iflag_water ! 0: default, 1: water level set
-real(8),dimension(h_mesh%node)        :: x, y, z
+! 0: default, 1: water level set
+integer(4),             intent(in)    :: iflag_water 
+real(8),dimension(h_mesh%node)        :: x, y, z,x1,y1 !2024.08.28
 integer(4)                            :: node
-real(8)       :: calz, lon_c, lat_c, x_c, y_c
-real(8)       :: rlat,rlon,x_utm,y_utm
+real(8)       :: calz,lon_c,lat_c,x_c,y_c,rlat,rlon,x_utm,y_utm
 real(8), dimension(h_mesh%node) :: lon,lat
 real(8),      allocatable,dimension(:,:) :: lon1,lat1, z1
 character(50),allocatable,dimension(:)   :: files           ! 2017.09.25
@@ -270,8 +270,7 @@ character(3)  :: UTM
 character(2)  :: num ! 20200728
 character(120):: line
 character(50) :: header2d,header3d,pregeo,topofile
-integer(4)    :: ifile, ntmax
-integer(4)    :: ntopo, i, j, ii, k, neast1,nsouth1,nfile,inum_water_level ! 2023.09.09
+integer(4)    :: ifile, ntmax,ntopo, i, j, ii, k, neast1,nsouth1,nfile,inum_water_level ! 2023.09.09
 real(8)       :: zz1,zz2,zz3,zz4             ! 2017.09.26
 real(8)       :: sbound,nbound,wbound,ebound ! 2017.09.26
 real(8)       :: lonw,lone,latn,lats         ! 2017.09.26
@@ -314,43 +313,51 @@ allocate( lon1(ntmax,nfile),lat1(ntmax,nfile)) ! 2017.09.25
 allocate( z1(ntmax,nfile) ) ! x1(i,j) is x coord of j-th node of i-th file
 
 !# [2] ### read coordinates in gebcofile
-do ifile=1,nfile
-  open(1,file=files(ifile))
-  write(*,'(a,2f15.7,a,i5)') " lonlatshift=",lonlatshift(1:2,ifile)," ifile",ifile ! 2021.09.29
-  do i=1,nt(ifile)
-    read(1,*) lon1(i,ifile),lat1(i,ifile), z1(i,ifile)   ! 2017.09.25
-    lon1(i,ifile) = lon1(i,ifile) + lonlatshift(1,ifile) ! 2017.09.25
-    lat1(i,ifile) = lat1(i,ifile) + lonlatshift(2,ifile) ! 2017.09.25
-  end do
-  z1(:,ifile)=z1(:,ifile)/1000.d0 ! [m] -> [km]
-  close(1)
-end do
+ do ifile=1,nfile
+   open(1,file=files(ifile))
+     write(*,'(a,2f15.7,a,i5)') " lonlatshift=",lonlatshift(1:2,ifile)," ifile",ifile ! 2021.09.29
+     do i=1,nt(ifile)
+       read(1,*) lon1(i,ifile),lat1(i,ifile), z1(i,ifile)   ! 2017.09.25
+       lon1(i,ifile) = lon1(i,ifile) + lonlatshift(1,ifile) ! 2017.09.25
+       lat1(i,ifile) = lat1(i,ifile) + lonlatshift(2,ifile) ! 2017.09.25
+     end do
+     z1(:,ifile)=z1(:,ifile)/1000.d0 ! [m] -> [km]
+   close(1)
+ end do
 
 !# [3] ### change order and measure # of nodes in horizontal and vertical directions
-!# reorder the values to ((west -> east), north -> south )
-do i=1,nfile ! file loop
-!  write(*,*) "lon1(1:2,ifile)=",lon1(1:2,i),"ifile",i
-  call changeorder(lon1(1:nt(i),i),lat1(1:nt(i),i),z1(1:nt(i),i), nt(i), nsouth(i), neast(i))! see m_topo_tool.f90 2023.08.31
-  write(num,'(i2.2)') i                                       ! 20200728
-!  open(1,file="reordered_topo"//num//".dat")                  ! 20200728
-!  write(1,'(3f15.7)') (lon1(j,i),lat1(j,i),z1(j,i),j=1,nt(i)) ! 20200728
-!  close(1)                                                    ! 20200728
-end do
+ !# reorder the values to ((west -> east), north -> south )
+ do i=1,nfile ! file loop
+   !  write(*,*) "lon1(1:2,ifile)=",lon1(1:2,i),"ifile",i
+   call changeorder(lon1(1:nt(i),i),lat1(1:nt(i),i),z1(1:nt(i),i), nt(i), nsouth(i), neast(i))! see m_topo_tool.f90 2023.08.31 
+   write(num,'(i2.2)') i                                       ! 20200728
+     open(1,file="reordered_topo"//num//".dat")                  ! 20200728
+     write(1,'(3f15.7)') (lon1(j,i),lat1(j,i),z1(j,i),j=1,nt(i)) ! 20200728
+     close(1)                                                    ! 20200728
+ end do
 
 !# [4] ### calculate depth "z" at all the horizontal nodes
-rlon=lonorigin !copy because lonorigin and latorigin are parameters
-rlat=latorigin
-CALL UTMGMT(rlon,rlat,x_utm,y_utm,UTM,0) ! 0:LONLAT2UTM , 1:UTM2LONLAT
-cx0_utm=x_utm
-cy0_utm=y_utm
-write(*,'(a,f15.7,a,f15.7)') " (cx0_utm,cy0_utm)=",cx0_utm,"  ",cy0_utm ! 2021.09.30
+ !#[4-1]## calculate lon lat for all the 2-D node
+   rlon=lonorigin !copy because lonorigin and latorigin are parameters
+   rlat=latorigin
+   CALL UTMGMT(rlon,rlat,x_utm,y_utm,UTM,0) ! 0:LONLAT2UTM , 1:UTM2LONLAT
+   cx0_utm=x_utm
+   cy0_utm=y_utm
+   write(*,'(a,f15.7,a,f15.7)') " (cx0_utm,cy0_utm)=",cx0_utm,"  ",cy0_utm ! 2021.09.30
+   x1 = x ! 2024.08.24
+   y1 = y ! 2024.08.24
+   do i=1,node  ! 2024.08.24
+   call rotate(x1(i),y1(i),-g_param%angle) ! rotate (- angle)  ! 2024.08.24
+   end do  ! 2024.08.24
+   x1 = x1*1.d3+cx0_utm ! [m]  ! 2024.08.24
+   y1 = y1*1.d3+cy0_utm ! [m]  ! 2024.08.24
+   CALL UTMGMT_N(node,x1,y1,lon,lat,UTM,1) ! get LON and LAT for nodes
+   write(*,*) "### UTMGMT_N END!! ###"
+   z(:)=0.d0
 
-CALL UTMGMT_N(node,x(:)*1.d3+cx0_utm,y(:)*1.d3+cy0_utm,lon,lat,UTM,1) ! get LON and LAT for nodes
-
-write(*,*) "### UTMGMT_N END!! ###"
-
-z(:)=0.d0
-do k=1,node ! node is total # of nodes of 2d mesh
+ !#[4-2]## calculate z from lon lat grid files
+ open(1,file="result.dat")
+ do k=1,node ! node is total # of nodes of 2d mesh
    if ( inum_water_level .ge. 1 ) then! 2023.09.08
     if ( iflag_nodez_2d(k) > inum_water_level + 1 ) then ! node for lake surface 2023.09.09
      ii = iflag_nodez_2d(k) - (inum_water_level + 1)           ! 2023.09.08
@@ -358,68 +365,61 @@ do k=1,node ! node is total # of nodes of 2d mesh
      goto 100 ! 2023.09.08        
     end if    ! 2023.09.08
    end if     ! 2023.09.08
-!  write(*,*) "k",k,"lon",lon(k),"lat",lat(k)
-  ! provided narrow area to broad area
-  do ifile=1,nfile   ! files should be ordered as narrow topo file to broad topo file
-    neast1=0; nsouth1=0  ! 2017.09.26
-   !# lon1(2,1) is north west corner, while lon1(2,nt(2)) is south east corner
-   !
-   ! assuming:
-   !  lon1(1),lat1(1)  ---->  lon1(neast), lat1(neast)
-   !                    |
-   !                    v
-   !  lon1(1), ****    ----  lon1(nt),lat1(nt)
-   !
-    wbound = lon1(1, ifile) ;    ebound = lon1(nt(ifile),ifile)
-    nbound = lat1(1, ifile) ;    sbound = lat1(nt(ifile),ifile)
-   if ( wbound .lt. lon(k) .and. lon(k) .lt. ebound .and. &
-   &    sbound .lt. lat(k) .and. lat(k) .lt. nbound ) then   ! within the area for ifile
-    do i=1,nsouth(ifile)-1 ! latitudial location
-     if ( lat1( i *neast(ifile) + 1, ifile) .le. lat(k) .and. &
-      & lat(k) .le. lat1((i-1)*neast(ifile) + 1, ifile) )           nsouth1=i ! south location
-    end do
-    do j=1,neast(ifile)-1 ! longitudinal location
-     if ( lon1(j,ifile) .le. lon(k) .and. lon(k).le. lon1(j+1,ifile)) neast1=j !north south location
-    end do
-    if ( neast1 .eq. 0 .or. nsouth1 .eq. 0 ) then
-     write(*,*) "GEGEGE stop! cannot find lon",lon(k),"lat",lat(k),"in file",ifile
-     stop
-    end if
-    ii   = (nsouth1 - 1)*neast( ifile) + neast1 !       2017.09.26
-    zz1  = z1(ii,               ifile) ! top left       2017.09.26
-    zz2  = z1(ii+1,             ifile) ! top right      2017.09.26
-    zz3  = z1(ii+neast(ifile),  ifile) ! bottom left    2017.09.26
-    zz4  = z1(ii+neast(ifile)+1,ifile) ! bottom right   2017.09.26
-    lonw = lon1(ii,             ifile) ! west lon       2017.09.26
-    lone = lon1(ii+1,           ifile) ! east lon       2017.09.26
-    latn = lat1(ii,             ifile) ! north lat      2017.09.26
-    lats = lat1(ii+neast(ifile),ifile) ! south lat      2017.09.26
-    z(k)=calz(lon(k),lat(k), lonw, lone, latn, lats, zz1,zz2,zz3,zz4) ! 2017.09.26
-    if (z(k)  .lt. 0.d0 ) z(k)=0.d0
-    if ( .not. ( z(k) .ge. 0.d0 ) ) then
-     write(*,*) k,"lon(k),lat(k)",lon(k),lat(k),"z=",z(k),"ifile=",ifile
-     write(*,*) "lonw,lone",lonw,lone,"lats,latn",lats,latn
-     write(*,*) "zz1,zz2,zz3,zz4=",zz1,zz2,zz3,zz4
-     stop
-    end if
-    goto 100  ! 2017.09.26
-   end if     ! 2017.09.26  if within area
- end do       ! file loop end
+   write(1,'(a,i5,4(2x,a,f9.4))') "k",k,"lon",lon(k),"lat",lat(k),"x,",x(k),"y",y(k)
+   ! provided narrow area to broad area
+   do ifile=1,nfile   ! files should be ordered as narrow topo file to broad topo file
+     neast1=0; nsouth1=0  ! 2017.09.26
+     !# lon1(2,1) is north west corner, while lon1(2,nt(2)) is south east corner
+     !
+     ! assuming:
+     !  lon1(1),lat1(1)  ---->  lon1(neast), lat1(neast)
+     !                    |
+     !                    v
+     !  lon1(1), ****    ----  lon1(nt),lat1(nt)
+     !
+     wbound = lon1(1, ifile) ;    ebound = lon1(nt(ifile),ifile)
+     nbound = lat1(1, ifile) ;    sbound = lat1(nt(ifile),ifile)
+     if ( wbound < lon(k) .and. lon(k) < ebound .and. &
+       &  sbound < lat(k) .and. lat(k) < nbound ) then   ! within the area for ifile
+       do i=1,nsouth(ifile)-1 ! latitudial location
+         if ( lat1( i *neast(ifile) + 1, ifile) .le. lat(k) .and. &
+          & lat(k) .le. lat1((i-1)*neast(ifile) + 1, ifile) ) nsouth1=i ! south location
+       end do
+       do j=1,neast(ifile)-1 ! longitudinal location
+         if ( lon1(j,ifile) .le. lon(k) .and. lon(k).le. lon1(j+1,ifile)) neast1=j!east location
+       end do
+       if ( neast1 .eq. 0 .or. nsouth1 .eq. 0 ) goto 998
+       ii   = (nsouth1 - 1)*neast( ifile) + neast1 !       2017.09.26
+       zz1  = z1(ii,               ifile) ! top left       2017.09.26
+       zz2  = z1(ii+1,             ifile) ! top right      2017.09.26
+       zz3  = z1(ii+neast(ifile),  ifile) ! bottom left    2017.09.26
+       zz4  = z1(ii+neast(ifile)+1,ifile) ! bottom right   2017.09.26
+       lonw = lon1(ii,             ifile) ! west lon       2017.09.26
+       lone = lon1(ii+1,           ifile) ! east lon       2017.09.26
+       latn = lat1(ii,             ifile) ! north lat      2017.09.26
+       lats = lat1(ii+neast(ifile),ifile) ! south lat      2017.09.26
+       z(k)=calz(lon(k),lat(k),lonw,lone,latn,lats,zz1,zz2,zz3,zz4) ! 2017.09.26
+       if (z(k)  .lt. 0.d0 ) z(k)=0.d0
+       if ( .not. ( z(k) .ge. 0.d0 ) ) goto 997
+       if ( ifile .eq. 1) write(1,'(a,i5,2x,a,f9.3)')"file",ifile,"z",z(k)
+       goto 100  ! 2017.09.26
+     end if     ! 2017.09.26  if within area
+   end do       ! file loop end
 
- 100 continue ! 2017.09.26
-
- if ( inum_water_level > 1) then
-   ii =iflag_nodez_2d(k)
-   if ( 2 .le. ii .and. ii .le. inum_water_level + 1 ) then
-     z_up    = g_param_water%water_level_elev(ii - 1)
-     z_down  = -99.0 ! value for ii = inum_water_level + 1 at deepest bottom
-     if ( ii .le. inum_water_level ) z_down  = g_param_water%water_level_elev(ii)
-     if ( z(k) .ge. z_up )   z(k) = z_up   - 0.0005 ! 50 cm below the upper lake surface
-     if ( z(k) .le. z_down ) z(k) = z_down + 0.0005 ! 50 cm above the lower lake surface    
+   100 continue ! file is found and z is assigned 2024.08.28
+   if ( inum_water_level > 1) then
+     ii =iflag_nodez_2d(k)
+     if ( 2 .le. ii .and. ii .le. inum_water_level + 1 ) then
+       z_up    = g_param_water%water_level_elev(ii - 1)
+       z_down  = -99.0 ! value for ii = inum_water_level + 1 at deepest bottom
+       if ( ii .le. inum_water_level ) z_down  = g_param_water%water_level_elev(ii)
+       if ( z(k) .ge. z_up )   z(k) = z_up   - 0.0005 ! 50 cm below the upper lake surface
+       if ( z(k) .le. z_down ) z(k) = z_down + 0.0005 ! 50 cm above the lower lake surface    
+     end if
    end if
- end if
 
-end do        ! node loop end
+ end do        ! node loop end
+ close(1)
 
 ! output topo file
 open(1,file=header2d(1:len_trim(header2d))//".msh")
@@ -461,6 +461,15 @@ return
 write(*,*) "GEGEGE when node # is k=",k,"x(k),y(k)=",x(k),y(k)
 write(*,*) "neast1=",neast1,"nsouth1=",nsouth1
 stop
+998 continue
+write(*,*) "GEGEGE stop! cannot find lon",lon(k),"lat",lat(k),"in file",ifile
+stop
+997 continue
+write(*,*) k,"lon(k),lat(k)",lon(k),lat(k),"z=",z(k),"ifile=",ifile
+write(*,*) "lonw,lone",lonw,lone,"lats,latn",lats,latn
+write(*,*) "zz1,zz2,zz3,zz4=",zz1,zz2,zz3,zz4
+stop
+
 end subroutine calztopo2
 
 !######################################################  function calz

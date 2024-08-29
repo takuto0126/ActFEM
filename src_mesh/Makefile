@@ -5,7 +5,7 @@
 
 #FC=mpif90
 #OPT=-i-dynamic
-FC=gfortran
+#FC=gfortran
 #OPT= -O -fpe0 -check bounds -traceback -g  -mkl=parallel
 FC=ifort
 OPT= -O

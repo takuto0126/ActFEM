@@ -706,7 +706,7 @@ iele=i
 return
 !
 999 continue
-write(*,*) "GEGEGE! No corresponding element was wound!"
+write(*,*) "GEGEGE! No corresponding element was found! FINDELEMENT0 in m_mesh_type.f90"
 stop
 end subroutine
 

@@ -53,6 +53,8 @@ type param_forward_mt ! 2021.12.14
  !# conductivity structure
  character(50) :: condfile
  integer(4)    :: condflag
+ !########  rotation control  2024.08.28
+ real(8)       :: angle  ! NdegE of x-axis originally points east 2024.08.28
 end type
 
 !type param_bell ! inserted on 2016.10.12 for Kusatsushirane
@@ -120,6 +122,12 @@ read(input,10) c_param%z_meshfile
 write(*,   41) " 2dz    mesh file : ",trim(c_param%z_meshfile)     ! 2020.09.29
 read(input,10) c_param%g_lineinfofile
 write(*,   41) " line info   file : ",trim(c_param%g_lineinfofile) ! 2020.09.29
+
+!### read angle for coordinate rotation 2024.08.28
+read(input,*) c_param%angle    ! [NdegE]
+write(*,'(a,f15.7,a)')  " rotation angle is",c_param%angle,'([NdegE])' 
+
+
 read(input,10) c_param%outputfolder
 write(*,   41) " output folder    : ",trim(c_param%outputfolder)   ! 2020.09.29
 read(input,10) c_param%header2d
@@ -222,7 +230,7 @@ write(*,*) "" !2021.09.29
     read(input,*) (c_param%lonlataltobs(j,i),j=1,3)
     write(*,'(1x,a,a,3f15.7)') trim(site)," :",c_param%lonlataltobs(1:3,i) !2021.09.02
     call UTMXY(c_param%lonlataltobs(1:2,i),&
-        & lonorigin,latorigin,c_param%xyzobs(1:2,i),c_param%UTM)
+        & lonorigin,latorigin,c_param%xyzobs(1:2,i),c_param%UTM,c_param%angle)!2024.08.30
     c_param%xyzobs(3,i) = c_param%lonlataltobs(3,i)
     write(*,'(1x,a,2f15.7,a)') " UTM>",c_param%xyzobs(1:2,i)," [km]" ! 2021.09.29
     write(*,*) ""  ! 2021.09.29

@@ -6,7 +6,7 @@ MPIFC=mpif90
 #OPT=-i-dynamic
 VPATH = ../common ../solver ../src_mesh ../src_inv
 #OPT0= -O3 -xAVX -mkl=parallel
-OPT0= -O -fpe0 -check bounds -traceback -g -mkl=parallel
+OPT0= -O -fpe0 -check bounds -traceback -g -qmkl=parallel
 
 #2016.03.03 solver with many modules
 

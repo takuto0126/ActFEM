@@ -459,6 +459,8 @@ subroutine genjacobian1_mt(nobs_mt,nline,ut_mt,bs_mt,PT_mt,g_model,h_mesh,&
    type(complex_crs_matrix)                :: dzxy  ! 2017.09.03 (->g_mtdm)
    type(complex_crs_matrix)                :: dzyx  ! 2017.09.03 (->g_mtdm)
    type(complex_crs_matrix)                :: dzyy  ! 2017.09.03 (->g_mtdm)
+   type(complex_crs_matrix)                :: dtx   ! 2024.08.30
+   type(complex_crs_matrix)                :: dty   ! 2024.08.30
    complex(8),    dimension(nobs_mt,2)       :: be               ! 2022.01.05
    integer(4)                              :: nmodel,nphys2
    integer(4)                              :: imodel,i,j,k,l,m,n,ii,jj,kk!2018.06.21
@@ -470,6 +472,8 @@ subroutine genjacobian1_mt(nobs_mt,nline,ut_mt,bs_mt,PT_mt,g_model,h_mesh,&
    complex(8),allocatable,dimension(:,:)   :: dzxydm       ! 2017.09.03
    complex(8),allocatable,dimension(:,:)   :: dzyxdm       ! 2017.09.03
    complex(8),allocatable,dimension(:,:)   :: dzyydm       ! 2017.09.03
+   complex(8),allocatable,dimension(:,:)   :: dtxdm       ! 2024.08.29
+   complex(8),allocatable,dimension(:,:)   :: dtydm       ! 2024.08.29
    real(8)                                 :: threshold =1.d-10
    integer(4)                              :: nmodelactive     ! 2018.06.21
    integer(4),allocatable,dimension(:)     :: iactive          ! 2018.06.21
@@ -698,13 +702,13 @@ subroutine genjacobian1_mt(nobs_mt,nline,ut_mt,bs_mt,PT_mt,g_model,h_mesh,&
  end do ! imodel loop
 
  !#[3]## full to complex_crs_matrix
-   call conv_full2crs_complex(dzxxdm(:,:),nobs_mt,nmodelactive,dzxx,threshold)!2022.01.05
-   call conv_full2crs_complex(dzxydm(:,:),nobs_mt,nmodelactive,dzxy,threshold)!2022.01.05
-   call conv_full2crs_complex(dzyxdm(:,:),nobs_mt,nmodelactive,dzyx,threshold)!2022.01.05
-   call conv_full2crs_complex(dzyydm(:,:),nobs_mt,nmodelactive,dzyy,threshold)!2022.01.05
+   call conv_full2crs_complex(dzxxdm,nobs_mt,nmodelactive,dzxx,threshold)!2022.01.05
+   call conv_full2crs_complex(dzxydm,nobs_mt,nmodelactive,dzxy,threshold)!2022.01.05
+   call conv_full2crs_complex(dzyxdm,nobs_mt,nmodelactive,dzyx,threshold)!2022.01.05
+   call conv_full2crs_complex(dzyydm,nobs_mt,nmodelactive,dzyy,threshold)!2022.01.05
    if (TIP) then !2023.12.26
-     call conv_full2crs_complex(dtxdm(:,:),nobs_mt,nmodelactive,dtx,threshold)!2023.12.26
-     call conv_full2crs_complex(dtydm(:,:),nobs_mt,nmodelactive,dty,threshold)!2023.12.26
+     call conv_full2crs_complex(dtxdm,nobs_mt,nmodelactive,dtx,threshold)!2023.12.26
+     call conv_full2crs_complex(dtydm,nobs_mt,nmodelactive,dty,threshold)!2023.12.26
    end if        !2023.12.26
 
  !#[4]## set output

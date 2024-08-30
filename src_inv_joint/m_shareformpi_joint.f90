@@ -65,7 +65,8 @@ subroutine sharemt(g_param_mt,g_surface,ip)
    g_surface(5)%facetype="yz" ! east
    g_surface(6)%facetype="xy" ! bottom
   end if
-
+  
+  write(*,*) "### SHAREMT END!! ###" ! 2024.08.30
   return
   end
 !############################################################

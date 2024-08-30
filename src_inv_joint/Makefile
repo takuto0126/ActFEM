@@ -5,7 +5,7 @@ VPATH= ../common ../solver  ../src_inv/ ../common_mpi ../src_3DMT/ ../src_2D
 
 # for poseidon
 OPT0= -O3 -fpe0 -check bounds -traceback -g  -mkl=parallel -lmpi -I/opt/intel/compilers_and_libraries/linux/mpi/include64 -I/opt/intel/compilers_and_libraries_2018.5.274/linux/mkl/include -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -ldl
-OPT0= -O3 -fpe0 -check bounds -traceback -g  -mkl=parallel -lmpi -mcmodel=large
+OPT0= -O3 -fpe0 -check bounds -traceback -g  -qmkl=parallel -lmpi -mcmodel=large
 # -mcmodel=large :: program can deal with one array with the size > 2Gb
 
 #2016.03.03 solver with many modules

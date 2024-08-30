@@ -179,7 +179,7 @@ end subroutine
 subroutine conv_full2crs_complex(full,nrow,ncolm,crs,threshold)
   implicit none
   real(8),   intent(in)  :: threshold
-  complex(8),   intent(in)  :: full(nrow,ncolm)
+  complex(8),intent(in)  :: full(nrow,ncolm)
   integer(4),intent(in)  :: nrow,ncolm
   type(complex_crs_matrix),   intent(out) :: crs
   integer(4) :: i,j,row_count(nrow),ii

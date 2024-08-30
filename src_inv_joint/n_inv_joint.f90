@@ -61,7 +61,7 @@ program inversion_joint
  real(8)                                     :: omega, freq_tot_ip
  integer(4)                                  :: nfreq_tot, nfreq_act, nfreq_tot_ip ! 2022.10.20
  integer(4)                                  :: nfreq_act_ip,nfreq_mt_ip ! 2022.10.20
- real(8)                                     :: nrms, nrms0, alpha      ! 2017.09.08
+ real(8)                                     :: nrms=0, nrms0, alpha      ! 2017.09.08
  real(8)                                     :: misfit       ! 2017.12.22
  complex(8),    allocatable,dimension(:,:)   :: fp,fs        ! (nline,nsr_inv) 2017.08.31
  type(obsfiles)                              :: files        ! see m_outresp.f90
@@ -98,7 +98,7 @@ program inversion_joint
   type(respmt),  allocatable,dimension(:)     :: timp_mt      ! 2022.01.02 see ../common/m_outresp.f90
   integer(4)                                  :: nsr_mt=2     ! 2021.12.30
   character(1) :: num
-  real(8)      :: nrms_mt         ! 2022.01.04
+  real(8)      :: nrms_mt=0       ! 2022.01.04
   real(8)      :: misfit_mt       ! 2022.01.04
   real(8)      :: misfit_tipper   ! 2023.12.22
   real(8)      :: nrms_mt_ini     ! 2018.06.25
@@ -253,7 +253,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
   CALL sharemt(g_param_mt,g_surface,ip) ! 2021.12.30
 
 !#[8.5]## link globalmodel2surface
-  call linkglobalmodel2surface(g_model_ini,g_surface(2:6)) ! 2022.01.16
+  call linkglobalmodel2surface(g_model_ini,g_surface(2:6)) ! 2022.01.16 Is this necessary? 2024.08.30
 
 !#[9]## prepare A of surface for 2D TM calculation
   CALL PREPAOFSURFACE(g_surface(2:5),4,ip) ! allocate A and table_dof for 2DMT
@@ -334,7 +334,8 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
          allocate( fp(nline,nsr_inv),fs(nline,nsr_inv) )      ! 2017.08.31
   end if
   if (MT) then  ! 2022.12.05
-         allocate( gt_mtdm(nfreq_mt), g_mtdm(nfreq_mt_ip))    ! 2022.01.05
+         allocate( gt_mtdm(nfreq_mt),  g_mtdm(nfreq_mt_ip)  )  ! 2022.01.05
+         allocate( gt_tipdm(nfreq_mt), g_tipdm(nfreq_mt_ip) )  ! 2024.08.30
          call allocatemtdm(nobs_mt,nfreq_mt_ip,nmodelactive, g_mtdm) ! 2022.01.05
          call allocatemtdm(nobs_mt,nfreq_mt,   nmodelactive,gt_mtdm) ! 2022.01.05
          allocate( fs_mt(nline,2)) ! 2021.12.30
@@ -455,7 +456,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
        write(*,'(2(a,i2),a,i8)')     "ip",ip,"np",np," | ip =",ip
        end if
      CALL genjacobian1_mt(nobs_mt,nline,ut_mt,fs_mt,PT_mt,h_model,g_mesh,&
-                  &g_line,omega,g_mtdm(i_mt),g_param_joint,ip,np) !2022.10.20
+                  &g_line,omega,g_mtdm(i_mt),g_tipdm(i_mt),g_param_joint,ip,np) !2022.10.20
      write(*,'(a,i2)') " ### genjacobian1_mt en main ###  ip =",ip
   end if
   write(*,'(a,i2)') " ### genjacobian1 / genjacobian1_mt / both end!! ### ip =",ip! 2022.12.05
@@ -507,16 +508,17 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
     !#[1]## output misfit and nrms
     frms = g_param_joint%finalrms  ! 2018.06.25
     if ( frms .lt. 0.1  ) frms=1.0 ! 2018.06.25
-    if ( nrms .lt. frms ) then     ! 2018.06.25
-     if (ACT) call OUTRMS(21,ite,nrms,misfit,alpha,rough1,rough2,1) !Converged  2017.09.08
-     if (MT)  call OUTRMS(22,ite,nrms_mt,misfit_mt,alpha,rough1,rough2,1)!converged  2017.09.08
+    if ( nrms < frms .and. nrms_mt < frms ) then  ! 2024.08.30
+     if (ACT) call OUTRMS(21,ite,nrms,misfit,        alpha,rough1,rough2,1) !Converged  2017.09.08
+     if (MT)  call OUTRMS(22,ite,nrms_mt,misfit_mt,  alpha,rough1,rough2,1) !converged  2017.09.08
      if (TIP) call OUTRMS(23,ite,nrms_tip,misfit_tip,alpha,rough1,rough2,1)!2023.12.25
      iflag = 1 ;  goto 80                           ! iflag = 1 means "end" 2017.12.20
     else
-     if (ACT) call OUTRMS(21,ite,nrms,misfit,alpha,rough1,rough2,0) ! Not converged  2017.09.08
-     if (MT ) call OUTRMS(22,ite,nrms_mt,misfit_mt,alpha,rough1,rough2,0)!Not converged22.01.04
-     if (TIP )call OUTRMS(23,ite,nrms_tip,misfit_tip,alpha,rough1,rough2,0)!Not converged
+     if (ACT) call OUTRMS(21,ite,nrms,misfit,        alpha,rough1,rough2,0) !Not converged 17.09.08
+     if (MT ) call OUTRMS(22,ite,nrms_mt,misfit_mt,  alpha,rough1,rough2,0) !Not converged 22.01.04
+     if (TIP )call OUTRMS(23,ite,nrms_tip,misfit_tip,alpha,rough1,rough2,0) !Not converged
     end if
+
     if ( ite .ge. 2 .and. nrms_ini .lt. nrms ) then ! 2018.01.25 stop when nrms is larger
      write(*,*) "GEGEGE, rms exceeded the initial rms under the current inversion setting "!2022.10.31
      write(*,*) "Consider of changing the current inversion setting " ! 2022.10.31
@@ -2292,11 +2294,12 @@ subroutine PREPOBSCOEFF(g_param,h_mesh,l_line,coeffobs)
 
  !#[2]# find element and set values to coeffobs
  ii=0
+ write(*,*)
  do i=1,g_param%nobs
    if (g_param%lonlatflag .eq. 2 ) then ! xyobs is already set
      x3(1:3)=(/g_param%xyzobs(1,i),g_param%xyzobs(2,i),g_param%xyzobs(3,i)/) ! [km]
+     !write(*,*) "x3(1:3,i)=",x3(1:3)
      call FINDELEMENT0(x3,h_mesh,iele,a4) ! see m_mesh_type.f90
-     !  write(*,*) "x3(1:3,i)=",x3(1:3)
      !  write(*,*) "ieleobs(i)=",iele
      !  write(*,*) "coeff(i,1:4)=",coeff(1:4)
      do j=1,2

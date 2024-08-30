@@ -55,6 +55,8 @@ type param_forward
 !########  water level control
  integer(4)    :: iflag_water_level ! 0: no water level file, 1: read water level file 2024.08.27
  character(50) :: waterlevelfile    ! 2024.08.27
+!########  rotation control  2024.08.28
+ real(8)       :: angle  ! NdegE of x-axis originally points east 2024.08.28
 end type
 
 type param_source
@@ -168,6 +170,10 @@ write(*,   41) " 2dz    mesh file : ",trim(c_param%z_meshfile)     ! 2020.09.29
 read(input,10) c_param%g_lineinfofile
 write(*,   41) " line info   file : ",trim(c_param%g_lineinfofile) ! 2020.09.29
 
+!### read angle for coordinate rotation 2024.08.28
+read(input,*) c_param%angle    ! [NdegE]
+write(*,'(a,f15.7,a)')  " rotation angle is",c_param%angle,'([NdegE])' 
+
 !### read parameters for water level control 2024.08.28
   read(input,*) c_param%iflag_water_level
   write(*,*) "iflag_water_level =",c_param%iflag_water_level
@@ -278,7 +284,7 @@ write(*,*) "" !2021.09.29
     read(input,*) (c_param%lonlataltobs(j,i),j=1,3)
     write(*,'(1x,a,a,3f15.7)') trim(site)," :",c_param%lonlataltobs(1:3,i) !2021.09.02
     call UTMXY(c_param%lonlataltobs(1:2,i),&
-        & lonorigin,latorigin,c_param%xyzobs(1:2,i),c_param%UTM)
+        & lonorigin,latorigin,c_param%xyzobs(1:2,i),c_param%UTM,c_param%angle)!2024.08.28 angle is added
     c_param%xyzobs(3,i) = c_param%lonlataltobs(3,i)
     write(*,'(1x,a,2f15.7,a)') " UTM>",c_param%xyzobs(1:2,i)," [km]" ! 2021.09.29
     write(*,*) ""  ! 2021.09.29
@@ -327,8 +333,8 @@ write(*,*) "" !2021.09.29
    read(input,*) sparam%lonlats2(1:2,i),sparam%xs2(3,i)
    write(*,44) " Start point (lon,lat,z)=",sparam%xs1(1:3,i)
    write(*,44) " End   point (lon,lat,z)=",sparam%xs2(1:3,i)
-   call UTMXY(sparam%lonlats1(1:2,i),lonorigin,latorigin,sparam%xs1(1:2,i),c_param%UTM)
-   call UTMXY(sparam%lonlats2(1:2,i),lonorigin,latorigin,sparam%xs2(1:2,i),c_param%UTM)
+   call UTMXY(sparam%lonlats1(1:2,i),lonorigin,latorigin,sparam%xs1(1:2,i),c_param%UTM,c_param%angle)! 2024.08.28 angle is added
+   call UTMXY(sparam%lonlats2(1:2,i),lonorigin,latorigin,sparam%xs2(1:2,i),c_param%UTM,c_param%angle)! 2024.08.28
    write(*,*) " converted with UTM to :"
    write(*,'(a,3f15.7)') " xs1 (x,y,z)=",sparam%xs1(1:3,i) !2020.09.29
    write(*,'(a,3f15.7)') " xs2 (x,y,z)=",sparam%xs2(1:3,i) !2020.09.29
@@ -447,9 +453,23 @@ if (allocated(g_cond%rho)  ) deallocate(g_cond%rho  ) ! [Ohm.m] 2018.10.05
 return
 end subroutine
 
+!##########################################################
+subroutine rotate(x,y,theta) ! 2024.08.28
+implicit none
+real(8),intent(in)    :: theta
+real(8),intent(inout) :: x,y
+real(8)    :: x1,y1,pi,d2r,s
+pi=4.*atan(1.d0)
+d2r=pi/180.
+s=theta*d2r
+x1= cos(s)*x + sin(s)*y  
+y1=-sin(s)*x + cos(s)*y
+x=x1
+y=y1
+return
+end
 
-
-!#################  subroutine calobsr ################################################# calobsr
+!#################  subroutine calobsr ##################### calobsr
 ! Coded on 2016.10.14
 ! generate virtual observatories for mesh refinement along source dipole 2021.09.29
 subroutine calobsr(s_param,g_param)
@@ -553,12 +573,14 @@ write(*,'(a)') " ### CALOBSR END!! ###"
 return
 end subroutine
 !######################################################### UTMXY
+!# include coordinate rotation 2024.08.28
 !# Coded on 2016.10.12 by T.MINAMI
-subroutine UTMXY(lonlat,lonorigin,latorigin,xyout,zone)
+subroutine UTMXY(lonlat,lonorigin,latorigin,xyout,zone,angle)
 implicit none
-real(8),intent(in) :: lonlat(2),lonorigin,latorigin
-character(3),intent(in) :: zone
-real(8) ,intent(out) :: xyout(2)
+real(8),          intent(in) :: lonlat(2),lonorigin,latorigin
+character(3),     intent(in) :: zone
+real(8) ,         intent(out) :: xyout(2)
+real(8),optional, intent(in) :: angle
 real(8) :: xorigin,yorigin,x,y
 
 call UTMGMT(lonlat(1),lonlat(2), x,       y,      zone,0)
@@ -569,6 +591,7 @@ call UTMGMT(lonorigin,latorigin, xorigin, yorigin,zone,0)
 xyout(1) = (x - xorigin)/1.d3 ! [km]
 xyout(2) = (y - yorigin)/1.d3 ! [km]
 
+if (present(angle)) call rotate(xyout(1),xyout(2),angle) ! 2024.08.28
 !write(*,*) "xout=",xout,"yout=",yout
 
 return

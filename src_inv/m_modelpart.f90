@@ -15,6 +15,12 @@ type modelpara
  real(8),allocatable,dimension(:) :: xdiv
  real(8),allocatable,dimension(:) :: ydiv
  real(8),allocatable,dimension(:) :: zdiv
+ ! icomb = -1 inner outer mode 2024.10.03
+ integer(4)    :: nxdiv_in,nydiv_in,nzdiv_in ! 2024.10.03
+ real(8),allocatable,dimension(:) :: xdiv_in ! 2024.10.03
+ real(8),allocatable,dimension(:) :: ydiv_in ! 2024.10.03
+ real(8),allocatable,dimension(:) :: zdiv_in ! 2024.10.03
+
 end type
 
 type model
@@ -44,6 +50,8 @@ implicit none
 type(modelpara),intent(out) :: g_modelpara
 integer(4),intent(in) :: idev
 integer(4) :: i,j,nxdiv,nydiv,nzdiv
+real(8) :: xdiv_in_start,xdiv_in_end,xdiv_in_inc
+real(8) :: ydiv_in_start,ydiv_in_end,ydiv_in_inc
 
 !open(idev,file=ifile)
  write(*,*) "" !2020.09.29
@@ -91,6 +99,59 @@ integer(4) :: i,j,nxdiv,nydiv,nzdiv
  write(*,43) (g_modelpara%zdiv(i),i=1,nzdiv)
 ! write(*,'(g15.7)')   (g_modelpara%zdiv(i),i=1,nzdiv) commented out 2017.12.25
 !close(idev)
+
+ !### when icombine = -1 2024.10.03############################################inner outer mode
+ if ( g_modelpara%icombine .eq. -1 ) then ! outer inner mode 2024.10.03 
+ ! start to read inner mesh
+ !read(idev,*) ! ## inner mesh
+ !read(idev,*) ! ## x
+ write(*,*) ""
+ write(*,40) "<############ Inner moderl block part ##############>" !2020.09.29
+ write(*,*)  "icombine = -1 !!" 
+ !
+ read(idev,*) xdiv_in_start
+ read(idev,*) xdiv_in_end
+ read(idev,*) xdiv_in_inc
+ write(*,*) ""
+ write(*,*) "< x >"
+ write(*,'(a,3f9.4)') "xdiv_in_start, xdiv_in_end,xdiv_in_inc",xdiv_in_start, xdiv_in_end, xdiv_in_inc
+ g_modelpara%nxdiv_in = (xdiv_in_end - xdiv_in_start)/xdiv_in_inc + 1
+ write(*,*) "nxdiv_in =",g_modelpara%nxdiv_in
+ allocate( g_modelpara%xdiv_in(g_modelpara%nxdiv_in) )
+ do i=1,g_modelpara%nxdiv_in
+  g_modelpara%xdiv_in(i) = (i-1)*xdiv_in_inc + xdiv_in_start
+ end do 
+ write(*,43) (g_modelpara%xdiv_in(i),i=1,g_modelpara%nxdiv_in)
+ 
+ !read(idev,*) ! ## y
+ write(*,*) ""
+ write(*,*) "< y >"
+ read(idev,*) ydiv_in_start
+ read(idev,*) ydiv_in_end
+ read(idev,*) ydiv_in_inc
+ write(*,'(a,3f9.4)') "ydiv_in_start, ydiv_in_end,ydiv_in_inc",ydiv_in_start, ydiv_in_end,ydiv_in_inc 
+ g_modelpara%nydiv_in = (ydiv_in_end - ydiv_in_start)/ydiv_in_inc + 1
+ write(*,*) "nydiv_in =",g_modelpara%nydiv_in
+ allocate( g_modelpara%ydiv_in(g_modelpara%nydiv_in) )
+ do i=1,g_modelpara%nydiv_in
+  g_modelpara%ydiv_in(i) = (i-1)*ydiv_in_inc + ydiv_in_start
+ end do
+ write(*,43) (g_modelpara%ydiv_in(i),i=1,g_modelpara%nydiv_in)
+ 
+ !read(idev,*) ! ## z
+  write(*,*) ""
+  write(*,*) "< z >"
+  read(idev,*) g_modelpara%nzdiv_in
+ write(*,*) "nzdiv_in =",g_modelpara%nzdiv_in
+ allocate(g_modelpara%zdiv_in(g_modelpara%nzdiv_in))
+ do i=1,g_modelpara%nzdiv_in
+  read(idev,*) g_modelpara%zdiv_in(i)
+ end do
+ write(*,43) (g_modelpara%zdiv_in(i),i=1,g_modelpara%nzdiv_in)
+
+end if
+ write(*,*) ""
+ write(*,*) "### READ MODELPARA END!! ###" ! 2024.10.04
 40 format(a)! 2020.09.29
 41 format(a,a)
 42 format(a,i3)

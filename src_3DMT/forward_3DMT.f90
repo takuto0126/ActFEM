@@ -36,7 +36,7 @@ zmax = g_param_mt%zbound(4) ! 2021.12.15
 xout = g_param_mt%xbound(4) ! 2021.12.15
 yout = g_param_mt%ybound(4) ! 2021.12.15
 !write(*,*) "### forward_3DMT start nline"
-write(*,*) zmin,zmax,xout,yout
+!write(*,*) zmin,zmax,xout,yout
 !write(*,*) "ip",ip
 
 !#[3]## SET Coefficient matrix and Generate Matrix
@@ -286,7 +286,7 @@ end do    ! element loop end
 
 b_vec(:,:)=0.d0 ! 2021.12.15
 
-write(*,*) "### GENMAT END !! ###"
+write(*,*) "### GENMAT_MT END !! ###"
 
 !  do i=1,l_line%nline
 !   if (b_vec(i) .ne. 0.d0) write(*,*) i,"b=",b_vec(i)

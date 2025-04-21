@@ -224,9 +224,13 @@ real(8),   intent(in)  :: threshold
 real(8),   intent(in)  :: full(nrow,ncolm)
 integer(4),intent(in)  :: nrow,ncolm
 type(real_ccs_matrix),   intent(out) :: ccs
-integer(4) :: i,j,colm_count(ncolm),ii
-integer(4) :: item_work(ncolm,nrow),ntot
+integer(4) :: i,j,ii
+integer(4),allocatable,dimension(:) :: colm_count !2024.10.04
+integer(4),allocatable,dimension(:,:) :: item_work ! 2024.10.04
+integer(4) ::ntot
 
+allocate(colm_count(ncolm))     ! 2024.10.04
+allocate(item_work(ncolm,nrow)) ! 2024.10.04
 !#[1]## count
 colm_count = 0 ; ntot=0
 do i=1,ncolm

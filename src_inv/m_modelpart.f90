@@ -205,6 +205,7 @@ type(model),            intent(out)    :: g_model
 type(param_forward),    intent(in)     :: g_param
 type(param_cond),       intent(in)     :: g_cond
 real(8),   allocatable, dimension(:)   :: xdiv,ydiv,zdiv
+real(8),   allocatable, dimension(:)   :: xdiv_in,ydiv_in,zdiv_in ! 2024.10.04
 real(8),   allocatable, dimension(:,:) :: xyz
 integer(4),allocatable, dimension(:,:) :: n4
 integer(4),allocatable, dimension(:)   :: ele2model,elecount_model,model2model
@@ -213,6 +214,7 @@ integer(4),allocatable, dimension(:)   :: stack,item      ! 2017.05.15
 real(8)    :: xyzminmax(6),xyzcen(3)
 integer(4) :: i,j,k,ie, i1,j1,j2,k1,iele,ii
 integer(4) :: nmodel,nxdiv,nydiv,nzdiv
+integer(4) :: nmodel_in,nxdiv_in,nydiv_in,nzdiv_in,nmodel_out ! 2024.10.04
 integer(4) :: nphys2,ntet,node,icount,imodel,nphys1
 integer(4) :: icombine                   ! 2017.09.20
 integer(4),allocatable,dimension(:)    :: index
@@ -234,13 +236,23 @@ type(real_crs_matrix) :: crsout
  ydiv(1) = xyzminmax(3) ;  ydiv(nydiv+2) = xyzminmax(4)
  zdiv(1) = xyzminmax(5) ;  zdiv(nzdiv+2) = xyzminmax(6)
  if (      icombine .eq. 0 ) then       ! no combine 2017.09.20
-  nmodel = (nxdiv + 1)*(nydiv +1 )*(nzdiv + 1)  ! commented out on 2017.09.20
+   nmodel = (nxdiv + 1)*(nydiv +1 )*(nzdiv + 1)  ! commented out on 2017.09.20
  else if ( icombine .eq. 1 .or. icombine .eq. 2 ) then ! combine outside model 2018.03.16
-  nmodel = (nxdiv - 1)*(nydiv - 1 )*(nzdiv - 1) + 1   ! 2017.09.20
+   nmodel = (nxdiv - 1)*(nydiv - 1 )*(nzdiv - 1) + 1   ! 2017.09.20
+ else if ( icombine .eq. -1 ) then ! 2024.10.04 Inner block exist
+   nxdiv_in   = g_modelpara%nxdiv_in
+   nydiv_in   = g_modelpara%nydiv_in
+   nzdiv_in   = g_modelpara%nzdiv_in
+   nmodel_out = (nxdiv + 1)*(nydiv +1 )*(nzdiv + 1)         ! outside block
+   nmodel_in  = (nxdiv_in - 1)*(nydiv_in -1 )*(nzdiv_in -1) ! inside block
+   nmodel     = nmodel_out + nmodel_in
+   xdiv_in    = g_modelpara%xdiv_in
+   ydiv_in    = g_modelpara%ydiv_in
+   zdiv_in    = g_modelpara%zdiv_in
  else
-  write(*,*) "GEGEGE! stop!"                    ! 2017.09.20
+   write(*,*) "GEGEGE! stop!"                    ! 2017.09.20
  end if
- write(*,*) "# of model parameters: nmodel=",nmodel
+ write(*,*) "# of initial model parameters: nmodel=",nmodel
 !
  ntet = g_mesh%ntet
  node = g_mesh%node
@@ -258,26 +270,21 @@ do ie=1,nphys2
  xyzcen = 0.d0
  iele = index(ie)
  do i=1,4
-  xyzcen(1:3) = xyzcen(1:3) + xyz(1:3,n4(iele,i))/4.d0
+   xyzcen(1:3) = xyzcen(1:3) + xyz(1:3,n4(iele,i))/4.d0
  end do
  do k=1,nzdiv+1
-  if ( zdiv(k) .lt. xyzcen(3) .and. xyzcen(3) .le. zdiv(k+1)) then
-  do j=1,nydiv+1
-   if ( ydiv(j) .lt. xyzcen(2) .and. xyzcen(2) .le. ydiv(j+1)) then
-   do i=1,nxdiv+1
-    if ( xdiv(i) .lt. xyzcen(1) .and. xyzcen(1) .le. xdiv(i+1)) then
-     k1 = k ; j1 = j ; i1 = i
-     goto 100
-    end if
-   end do
-   end if
-  end do
-  end if
- end do
+   if ( zdiv(k) .lt. xyzcen(3) .and. xyzcen(3) .le. zdiv(k+1)) then
+     do j=1,nydiv+1
+       if ( ydiv(j) .lt. xyzcen(2) .and. xyzcen(2) .le. ydiv(j+1)) then
+         do i=1,nxdiv+1
+           if ( xdiv(i) .lt. xyzcen(1) .and. xyzcen(1) .le. xdiv(i+1)) then
+             k1 = k ; j1 = j ; i1 = i
+             goto 100
+ end if;end do;end if;end do; end if; end do
  write(*,*) "GEGEGE iele=",iele,"xyzcen=",xyzcen(1:3)
  stop
 
- 100 continue
+ 100 continue ! which cell the tetrahedron belongs is determined already as k1, j1, i1
 
  if ( icombine .eq. 1 .or. icombine .eq. 2 ) then    ! 2018.03.16
    if ( k1 .eq. 1 .or. k1 .eq. nzdiv+1 .or. j1 .eq. 1 .or. j1 .eq. nydiv+1 .or.&
@@ -288,6 +295,15 @@ do ie=1,nphys2
    end if
  else if (icombine .eq. 0 ) then ! 2017.09.20
     ele2model(ie) = (k1-1)*(nydiv+1)*(nxdiv+1) + (j1-1)*(nxdiv+1) + i1  ! 2017.09.20
+ else if (icombine .eq. -1 ) then ! 2024.10.04
+    call checkinoutinner(xyzcen,xdiv_in,ydiv_in,zdiv_in,nxdiv_in,nydiv_in,nzdiv_in,i,j,k)
+    if ( i == 0 ) then      ! outer block
+      ele2model(ie) = (k1-1)*(nydiv+1)*(nxdiv+1) + (j1-1)*(nxdiv+1) + i1
+    else                    ! inner block
+      ele2model(ie) = (k-1)*(nydiv_in-1)*(nxdiv_in-1) + (j-1)*(nxdiv_in-1) + i + nmodel_out
+    end if
+ else
+   stop
  end if ! 2017.09.20
 ! write(*,*) "ie=",ie,"index(ie)=",index(ie),"ele2model(ie)=",ele2model(ie)
 ! write(*,*) "xyzcen=",xyzcen
@@ -393,6 +409,38 @@ end if
 
 return
 end subroutine
+!#####################################################
+subroutine checkinoutinner(xyzcen,xdiv,ydiv,zdiv,nxdiv,nydiv,nzdiv,i1,j1,k1)
+implicit none
+integer(4),intent(in)  :: nxdiv,nydiv,nzdiv
+integer(4),intent(out) :: i1,j1,k1
+real(8),intent(in) :: xyzcen(3),xdiv(nxdiv),ydiv(nydiv),zdiv(nzdiv)
+integer(4) :: i,j,k
+
+!#[0]##
+i1=0;j1=0;k1=0
+
+!#[1]## 
+   if ( zdiv(1)  .lt. xyzcen(3) .and. xyzcen(3) .le. zdiv(nzdiv) .and. &
+      &  ydiv(1) .lt. xyzcen(2) .and. xyzcen(2) .le. ydiv(nydiv) .and. &
+      &  xdiv(1) .lt. xyzcen(1) .and. xyzcen(1) .le. xdiv(nxdiv) ) then ! inside the inner
+
+     do k=1,nzdiv-1
+       if ( zdiv(k) .lt. xyzcen(3) .and. xyzcen(3) .le. zdiv(k+1)) then
+         do j=1,nydiv-1
+           if ( ydiv(j) .lt. xyzcen(2) .and. xyzcen(2) .le. ydiv(j+1)) then
+             do i=1,nxdiv-1
+               if ( xdiv(i) .lt. xyzcen(1) .and. xyzcen(1) .le. xdiv(i+1)) then
+                 k1 = k ; j1 = j ; i1 = i
+                 goto 100
+     end if;end do;end if;end do; end if; end do
+     write(*,*) "GEGEGE not found xyzcen",xyzcen(1:3)
+     stop
+     100 continue
+   end if
+
+return
+end
 !##################################################### modelparam
 ! coded on 2017.08.28
 ! to show model parameter space

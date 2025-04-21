@@ -148,6 +148,7 @@ icount=0
 allocate(xccs(nite))
 
 do i=1,nmodel/nrhsmax
+  write(*,*) "i",i,"nmodel/nrhsmax",nmodel/nrhsmax
   bb(:,:)=0.d0 ; x(:,:) = 0.d0
   do j=1,nrhsmax
    icount = icount + 1
@@ -159,6 +160,9 @@ do i=1,nmodel/nrhsmax
 ! write(*,*) 'i=',i,'Solve completed ... '
 ! if (icount .gt. 3000 ) write(*,*) "x(:,1)=",x(:,1)
  IF (B%error /= 0) goto 99
+ write(*,*) "nmodel 4",nmodel
+ write(*,*) "nrhsmax 4",nrhsmax
+ write(*,*) "size(x)",size(x)
  call conv_full2ccs(x,nmodel,nrhsmax,xccs(i),threshold)
 ! write(*,*) "i=",i,"xccs(i) end"
 end do

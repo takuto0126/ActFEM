@@ -130,7 +130,7 @@ type(real_crs_matrix),intent(out)   :: CM
 integer(4),           parameter     :: nrhsmax = 100
 integer(4)                          :: phase,icount,nite,nres
 real(8),allocatable,dimension(:,:)  :: bb,x
-real(8),parameter                   :: threshold = 1.d-15
+real(8),parameter                   :: threshold = 1.d-10
 type(real_ccs_matrix),allocatable,dimension(:) :: xccs
 type(real_ccs_matrix)                          :: CMCCS
 integer(4) :: i,j
@@ -141,13 +141,15 @@ B%msglvl   = 0 ! not print statistical info
 
 nite = nmodel/nrhsmax
 if ( nmodel .gt. nrhsmax*nite ) nite = nite + 1
-write(*,*) "nite=",nite
+write(*,*) "nite=",nite 
 allocate(bb(nmodel,nrhsmax),x(nmodel,nrhsmax))
 
 icount=0
 allocate(xccs(nite))
 
+write(*,*) "size(x)",size(x)
 do i=1,nmodel/nrhsmax
+  if (mod(i,10) .eq. 0 ) write(*,*) "i",i,"nmodel/nrhsmax",nmodel/nrhsmax
   bb(:,:)=0.d0 ; x(:,:) = 0.d0
   do j=1,nrhsmax
    icount = icount + 1
@@ -159,6 +161,9 @@ do i=1,nmodel/nrhsmax
 ! write(*,*) 'i=',i,'Solve completed ... '
 ! if (icount .gt. 3000 ) write(*,*) "x(:,1)=",x(:,1)
  IF (B%error /= 0) goto 99
+ !write(*,*) "nmodel 4",nmodel
+ !write(*,*) "nrhsmax 4",nrhsmax
+ !write(*,*) "size(x)",size(x)
  call conv_full2ccs(x,nmodel,nrhsmax,xccs(i),threshold)
 ! write(*,*) "i=",i,"xccs(i) end"
 end do

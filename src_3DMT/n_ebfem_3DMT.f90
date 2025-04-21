@@ -28,6 +28,7 @@ integer(4)              :: ixyflag
 real(8)                 :: omega,freq
 type(respdata),allocatable,dimension(:,:,:) :: resp5  ! 2018.02.22
 type(respmt),  allocatable,dimension(:)     :: resp_mt !see m_outresp.f90
+type(resptip), allocatable,dimension(:)     :: resp_tip! m_outresp.f90 2025.04.21
 integer(4),    allocatable,dimension(:,:)   :: n4
 complex(8),    allocatable,dimension(:,:)   :: al_MT ! 2021.09.14
 integer(4)                                  :: ip=0,iele
@@ -39,6 +40,7 @@ character(1) ::num
 !#[1]## Mesh READ
  CALL READMESH_TOTAL(g_mesh,g_param_mt%g_meshfile) ! 3D mesh
  CALL READMESH_TOTAL(h_mesh,g_param_mt%z_meshfile) ! topography file
+ CALL PREPZOBSMT(h_mesh,g_param_mt) ! 2024.10.07
  CALL GENXYZMINMAX_MT(g_mesh,g_param_mt) ! generate xyzminmax 2021.12.15
   if (g_cond%condflag .eq. 1) then !"1" : conductivity file is given
    g_cond%ntet   = g_mesh%ntet
@@ -76,10 +78,14 @@ character(1) ::num
  CALL set_size_of_A(6,nline,nline,nline,ntet,g_line%n6line,A,ip) ! m_iccg_var_takuto.f90 2021.09.16
 
 !#[6]## prepare coefficients
+do i=1,g_param_mt%nobs
+ write(*,'(a,i3,a,3f15.7)') "i",i," xyzobs",g_param_mt%xyzobs(1:3,i)
+end do
  CALL PREPOBSCOEFF(g_param_mt,g_mesh,g_line,coeffobs) ! for bx,by,bz,ex,ey component
 
 !#[7]## set resp5
 allocate( resp5(5,nsr,nfreq), resp_mt(nfreq)) ! 2018.02.22
+allocate( resp_tip(nfreq))                    ! 2025.04.21 resp_tip is added
 CALL ALLOCATERESP(g_param_mt%nobs,nsr,resp5,resp_mt,ip,nfreq) !2021.09.14,see below
 
 allocate( al_MT(nline,2) ) ! 2021.09.14 for ex and ey source
@@ -104,8 +110,8 @@ do i = 1,nfreq
 
 
 !#[9-2]## forward for both Ex and Ey polarization
- write(*,*) "ip",ip
- write(*,*) "g_param",g_param_mt%xbound(4)
+ !write(*,*) "ip",ip
+ !write(*,*) "g_param",g_param_mt%xbound(4)
  call forward_3DMT(A,g_param_mt,g_mesh,g_line,nline,al_MT,freq,g_cond,g_surface,ip)
  if (ip .eq. 0 .and. .false. ) then ! fs_mt01.dat
    open(1,file="fs_mt01.dat")
@@ -118,6 +124,7 @@ do i = 1,nfreq
 
 !#[9-4]## cal MT impedance
  call CALRESPMT( resp5(:,1:2,i),resp_mt(i),omega )
+ call CALRESPTIP(resp5(:,1:2,i),resp_tip(i),omega,ip) ! 2025.04.21
 
 end do ! end frequency loop
 
@@ -173,6 +180,51 @@ real(8)        :: freq
 
 return
 end
+
+!########################################### OUTOBSRESP_TIP 2023.12.25
+!# copied from OUTOBSFILESINV_TIP and modified
+subroutine OUTOBSRESP_TIP(g_param_mt,resp_tip,nfreq)
+ !# coded on 2023.12.25
+ !# declaration
+   use param_mt
+   use outresp
+   implicit none
+   integer(4),                intent(in)    :: nfreq! 2017.09.11
+   type(resptip),             intent(in)   :: resp_tip(nfreq) ! 2023.12.25
+   type(param_forward_mt),    intent(in)    :: g_param_mt         ! 2022.01.02
+   real(8)                                  :: freq            ! 2017.07.14
+   character(2)                             :: num             ! 2017.07.14
+   integer(4)                               :: nhead, nsite    ! 2018.10.05
+   integer(4)                               :: i,j,k,l,nobs    ! 2017.07.14
+   character(100)                           :: filename1       ! 2022.01.22
+   character(50)                            :: head,site       ! 2017.07.14
+   integer(4)                               :: idat,ialphaflag ! 2017.09.11
+   character(1)                             :: num2            ! 2017.09.11
+   integer(4)                               :: icomp
+  
+ !#[1]## set
+   nobs       = g_param_mt%nobs
+   head       = g_param_mt%outputfolder     ! 2017.07.25
+   nhead      = len_trim(head)
+  
+ !#[2]## output impedance and rho and phi to obs files
+   do l=1,nobs
+     site  = g_param_mt%obsname(l)
+     nsite = len_trim(site)
+     filename1 = head(1:nhead)//site(1:nsite)//"_TIP"//num//".dat"     ! 2022.01.02
+     open(31,file=filename1)
+
+     do i=1,nfreq
+       freq = g_param_mt%freq(i)
+       write(31,'(9g15.7)') freq,resp_tip(i)%tx(l),resp_tip(i)%ty(l)
+     end do
+
+     close(31)
+   end do
+
+ write(*,*) "### OUTOBSRESP_TIP END!! ###"  
+ return
+ end
 
 !#############################################
 ! coded on 2021.09.15
@@ -236,8 +288,67 @@ coef = dmu/omega*1.d+6
  resp_mt%phayy(j) = phase(z(2,2))
 end do
 
+write(*,*) "### CALRESPMT END!! ###" ! 2024.10.06
 return
 end
+!#############################################
+! 2025.04.21 copied from n_inv_joint.f90
+subroutine calresptip(resp5,resp_tip,omega,ip) ! 2023.12.23
+  ! coded on 2023.12.23
+  use outresp
+  use constants ! dmu,pi
+  implicit none
+  real(8),       intent(in)     :: omega
+  integer(4),    intent(in)     :: ip     ! 2022.12.05
+  type(respdata),intent(in)     :: resp5(5,2) ! 1 for ex, 2 for ey polarization
+  type(resptip),  intent(inout) :: resp_tip
+  complex(8),    allocatable    :: be5_ex(:,:),be5_ey(:,:) ! be5 = bx,by,bz,ex,ey
+  complex(8)                    :: a,b,c,d,iunit=(0.d0,1.d0)
+  complex(8)                    :: det,txy(2,1),bi(2,2),e(2,1)
+  integer(4)                    :: i,j,nobs
+  real(8)                       :: coef,amp,phase
+  
+  nobs = resp_tip%nobs
+  allocate(be5_ex(5,nobs),be5_ey(5,nobs))
+  ! calculate tipper Txy = Bz/(Bx, By)
+  ! (Bz_ex) = (Bx_ex By_ex) (Tx)
+  ! (Bz_ey) = (Bx_ex By_ex) (Ty)
+  ! [Bz] =[Bxy][T] 
+  ! Then, Tx and Ty are obtained by
+  ! [T] = [Bxy]^-1 [Bz]
+  !
+  !# set bxyzexy_ex and bxyzexy_ey
+  write(*,*) "nobs",nobs,"ip",ip
+  do i=1,5
+   do j=1,nobs
+     be5_ex(i,j)=resp5(i,1)%ftobs(j) ! ex polarization
+     be5_ey(i,j)=resp5(i,2)%ftobs(j) ! ey plarization
+   end do
+  end do
+  
+  write(*,*)
+  !# calculate tipper
+  do j=1,nobs
+   a = be5_ex(1,j) ! Bx_ex
+   b = be5_ex(2,j) ! By_ex ! 2022.12.25
+   c = be5_ey(1,j) ! Bx_ey ! 2023.12.25
+   d = be5_ey(2,j) ! By_ey
+   det = a*d - b*c
+   bi(1,1:2)=(/ d, -b/)
+   bi(2,1:2)=(/ -c, a/)
+   bi = bi/det
+   e(1,1)= be5_ex(3,j) ! (bz_ex)
+   e(2,1)= be5_ey(3,j) ! (bz_ey)
+   txy = matmul(bi,e)
+   resp_tip%tx(j) = txy(1,1) ! [nT]/[nT]
+   resp_tip%ty(j) = txy(2,1)
+  end do
+  
+  write(*,'(a,i2)') " ### CALRESPTIP     END !! ###  ip =",ip  ! 2023.12.23
+  return
+  end
+
+
 !######################################## function phase
 function phase(c) ! [deg]
 implicit none
@@ -369,7 +480,7 @@ do i=1, nsr ! 2017.07.11
  CALL CALOBSRESP(fs(:,i),nline,coeffobs(1,2),resp5(5,i)  ) !ey,fp deleted 2021.09.15
 end do      ! 2017.07.11
 
-write(*,*) "### CALOBSEBCOMP END!! ###" ! 2017.07.12
+!write(*,*) "### CALOBSEBCOMP END!! ###" ! 2017.07.12
 
 return
 end
@@ -401,7 +512,7 @@ do i=1,resp%nobs
  resp%ftobs(i)     =ftobs(i)        ! 2021.09.15
 end do
 
-write(*,*) "### CALOBSRESP END!! ###"
+!write(*,*) "### CALOBSRESP END!! ###"
 return
 end
 !####################################################### PREPOBSCOEFF
@@ -521,8 +632,69 @@ em_mesh%xyzminmax = xyzminmax    ! 2021.10.13
 write(*,*) "### GENXYZMINMAX END!! ###"
 return
 end
+!################################################################# PREPZSRCOBS
+subroutine PREPZOBSMT(h_mesh,g_param_mt)
+ ! modified on 2017.07.11 to include multi source
+ !# Coded on 2017.02.21
+ use param_mt
+ use mesh_type
+ use triangle
+ implicit none
+ type(mesh),         intent(inout)     :: h_mesh  ! deallocated at the end 2017.05.15
+ type(param_forward_mt),intent(inout)     :: g_param_mt
+ type(grid_list_type)                  :: glist
+ integer(4)                            :: nobs,nx,ny
+ real(8),   allocatable,dimension(:,:) :: xyzobs,xyz
+ integer(4),allocatable,dimension(:,:) :: n3k
+ real(8),   allocatable,dimension(:)   :: znew
+ real(8)    :: a3(3)
+ integer(4) :: iele,n1,n2,n3,j,k,ntri
+ integer(4) :: nsr                                ! 2017.07.14
+ real(8)    :: xyzminmax(6),zorigin
+ real(8),   allocatable,dimension(:,:) :: xs1,xs2 ! 2017.07.14
+
+ !#[0]## cal xyzminmax of h_mesh
+  CALL GENXYZMINMAX_MT(h_mesh,g_param_mt)
+
+ !#[1]## set
+ allocate(xyz(3,h_mesh%node),n3k(h_mesh%ntri,3))
+ allocate(xyzobs(3,g_param_mt%nobs))
+ allocate(znew(g_param_mt%nobs))
+ nobs      = g_param_mt%nobs
+ xyz       = h_mesh%xyz    ! triangle mesh
+ n3k       = h_mesh%n3
+ ntri      = h_mesh%ntri
+ xyzobs    = g_param_mt%xyzobs
+ xyzminmax = g_param_mt%xyzminmax
 
 
+ !#[2]## cal z for nobsr
+ nx=300;ny=300
+ CALL allocate_2Dgrid_list(nx,ny,ntri,glist)   ! see m_mesh_type.f90
+ CALL gen2Dgridforlist(xyzminmax,glist) ! see m_mesh_type.f90
+ CALL classifytri2grd(h_mesh,glist)   ! classify ele to glist,see
 
 
+ !#[3] search for the triangle including (x1,y1)
+ do j=1,nobs
+    call findtriwithgrid(h_mesh,glist,xyzobs(1:2,j),iele,a3)
+    n1 = n3k(iele,1); n2 = n3k(iele,2) ; n3 = n3k(iele,3)
+    znew(j) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + xyzobs(3,j)
+    write(*,10) " Obs # ",j, g_param_mt%obsname(j)    ! 2020.09.29
+    write(*,11) " x,y =",xyzobs(1,j)," , ",xyzobs(2,j)," [km]" ! 2022.10.14
+    write(*,11) "   z =",xyzobs(3,j)," ->",znew(j),    " [km]" ! 2020.09.17
+ end do
 
+ 9  format(a,i3)
+ 10 format(a,i3,a)
+ 11 format(a,f8.3,a,f8.3,a) ! 2020.09.17
+
+ !#[4]## set znew to xyz_r
+    g_param_mt%xyzobs(3,1:nobs) = znew(1:nobs)
+
+ !#[5]## kill mesh for memory 2017.05.15
+  !  call killmesh(h_mesh) ! see m_mesh_type.f90
+
+ write(*,*) "### PREPZOBSMT  END!! ###"
+ return
+ end

@@ -676,16 +676,17 @@ type (mesh),            intent(in) :: h_mesh
 type(param_water_level),intent(in) :: g_param_water
 integer(4),             intent(in) :: nlinbry(4),linbry(4,100)
 real(8),dimension(h_mesh%node+8),intent(in) :: x3d,y3d,z3d
-integer(4)             :: n3k(h_mesh%ntri,3),is,is2,is3
-integer(4)             :: nlink,ntrik,node,n2k(h_mesh%nlin,3)
-integer(4)             :: inum_water_level,nsurf,isurf,itri            ! 2023.09.08
+integer(4)             :: is,is2,is3
+integer(4)             :: nlink,ntrik,node
+integer(4)             :: inum_water_level,nsurf,isurf,itri ! 2023.09.08
 integer(4),allocatable :: ntri_surf(:),ntri_surf_list(:,:),n3flag(:,:) ! 2023.09.08
 integer(4),allocatable :: nlake_loop(:),nlake_loop_list(:,:) !2023.09.11
+integer(4),allocatable,dimension(:,:) :: n3k,n2k,linelist ! 2024.10.07
 ! linbry(i,j) is positive/negative line # corresponding to j-th line
 ! along the i-th calculation boundary;
 ! 1 to 4-th boundaries are right, bottom, left, and top boundary
 ! negative # indicates opposite direction of the original line
-integer(4) :: i,j,k,ii,ij,jj,n3(3),line(3),linelist(h_mesh%ntri*6,3),toploop(3),inwl
+integer(4) :: i,j,k,ii,ij,jj,n3(3),line(3),toploop(3),inwl
 ! linelist(i,j) is the starting node number (j=1), or, end node number (j=2), or,
 !                       the belonging group (j=3), of the line of number i
 integer(4),allocatable :: toplooplist(:),botlooplist(:) ! 2023.09.08
@@ -699,6 +700,7 @@ real(8) :: x1,x2,y1,y2,lc,z0,z(3)
 
 
 !#[1]## set
+allocate(n2k(h_mesh%nlin,3),linelist(h_mesh%ntri*6,3))
 node       = h_mesh%node
 header3d   = g_param%header3d
 ntrik      = h_mesh%ntri

@@ -240,12 +240,12 @@ g_surface(5)%facetype="yz" ! east
 g_surface(6)%facetype="xy" ! bottom
 
 !#[2]## extract line
-xmin = g_mesh%xyzminmax(1) +0.1
-xmax = g_mesh%xyzminmax(2) -0.1
-ymin = g_mesh%xyzminmax(3) +0.1
-ymax = g_mesh%xyzminmax(4) -0.1
-zmin = g_mesh%xyzminmax(5) +0.1
-zmax = g_mesh%xyzminmax(6) -0.1
+xmin = g_mesh%xyzminmax(1) +0.01
+xmax = g_mesh%xyzminmax(2) -0.01
+ymin = g_mesh%xyzminmax(3) +0.01
+ymax = g_mesh%xyzminmax(4) -0.01
+zmin = g_mesh%xyzminmax(5) +0.01
+zmax = g_mesh%xyzminmax(6) -0.01
 
 !#[3]## node group
 allocate(node_on_surface(6,node))
@@ -273,7 +273,7 @@ do j=1,nsurface ! surface loop
 end do
 end do
 node_surface_max = maxval(node_surface)
-write(*,'(a,6i7)') " # of nodes of each surface",node_surface(1:6) ! 2021.10.13
+!write(*,'(a,6i7)') " # of nodes of each surface",node_surface(1:6) ! 2021.10.13
 write(*,*) "node_surface_max=",node_surface_max
 
 !#[5]## allocate node
@@ -335,7 +335,7 @@ do j=1,nsurface ! surface loop
 ! close(1) ! commented out 2021.12.22
 end do
  nface_surface(:)=iface_count(:)
- write(*,'(a,6i7)') " # of face of each surface",nface_surface(1:6)
+ !write(*,'(a,6i7)') " # of face of each surface",nface_surface(1:6)
  nface_surface_max=maxval(nface_surface)
 
 !#[8]## modify n3 anticlockwise and starint with smallest node id

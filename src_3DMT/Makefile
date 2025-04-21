@@ -4,7 +4,7 @@ FC=ifort# for EIC
 #OPT=-i-dynamic
 VPATH = ../common ../solver  ../src_2D/ ../src_inv/
 #OPT0= -O3 -xAVX -mkl=parallel
-OPT0= -O -check bounds -traceback -g -mkl=parallel
+OPT0= -O -check bounds -traceback -g -qmkl=parallel
 
 #OPT0= -O3 -xCORE-AVX2 -mkl=parallel -lmpi
 

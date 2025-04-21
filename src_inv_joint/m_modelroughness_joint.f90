@@ -535,9 +535,12 @@ call watchstart(t_watch) ! 2017.12.22
 
 !#[4]## calculate BMI
 
-!write(*,*) "nmodel check =",nmodel
+ write(*,*) "nmodel check =",nmodel
+ write(*,*) "size(RTR%item)",size(RTR%item)
+ write(*,*) "size(RTR%stack)",size(RTR%stack)
  call PARDISOphase1(RTR,B)   ! see m_solveCM_ap.f90
  call PARDISOphase2(B)       ! see m_solveCM_ap.f90
+ write(*,*) "nmodel 3",nmodel
  call PARDISOphase3(B,nmodel,BMI) ! see m_solveCM_ap.f90 2017.12.25
  call PARDISOphase4(B)       ! see m_solveCM_ap.f90
 

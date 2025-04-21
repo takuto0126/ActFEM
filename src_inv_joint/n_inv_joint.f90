@@ -186,13 +186,14 @@ if ( ip .eq. 0) then !################################################# ip = 0
   g_param_joint%nobs_mt  = g_param_mt%nobs  ! 2022.01.04
   g_param_joint%nfreq_mt = g_param_mt%nfreq ! 2022.01.04
   !m_param_jointinv.f90 2022.10.22
-  stop
+
 !#[1]## read mesh
   CALL READMESH_TOTAL(g_mesh,g_param%g_meshfile)
-  if ( access( g_param%z_meshfile, " ") .eq. 0 ) then! if exist, 2017.05.15
+  !if ( access( g_param%z_meshfile, " ") .eq. 0 ) then! if exist, commented out 2024.10.07
     CALL READMESH_TOTAL(h_mesh,g_param%z_meshfile)
-    CALL PREPZSRCOBS(h_mesh,g_param,sparam)          ! see below, include kill h_mesh
-  end if
+    if (ACT) CALL PREPZSRCOBS(h_mesh,g_param,sparam)! see below, include
+    if (MT)  CALL PREPZOBSMT(h_mesh,g_param_mt)     ! see below 2024.10.07
+  !end if
   CALL GENXYZMINMAX(g_mesh,g_param) ! see below 2021.12.27
        g_param_mt%xyzminmax = g_param%xyzminmax ! 2021.12.27
   CALL READLINE(g_param%g_lineinfofile,g_line)       ! see m_line_type.f90
@@ -2644,8 +2645,115 @@ subroutine PREPZSRCOBS(h_mesh,g_param,s_param)
     s_param%xs2(3,:) = xs2(3,:)                 ! 2017.07.14
 
  !#[5]## kill mesh for memory 2017.05.15
-    call killmesh(h_mesh) ! see m_mesh_type.f90
+  !  call killmesh(h_mesh) ! see m_mesh_type.f90 commented out 2024.10.07
 
  write(*,*) "### PREPZSRCOBS  END!! ###"
  return
  end
+ !################################################################# PREPZOBSMT
+subroutine PREPZOBSMT(h_mesh,g_param_mt)
+ ! modified on 2017.07.11 to include multi source
+ !# Coded on 2017.02.21
+ use param_mt
+ use mesh_type
+ use triangle
+ implicit none
+ type(mesh),         intent(inout)     :: h_mesh  ! deallocated at the end 2017.05.15
+ type(param_forward_mt),intent(inout)     :: g_param_mt
+ type(grid_list_type)                  :: glist
+ integer(4)                            :: nobs,nx,ny
+ real(8),   allocatable,dimension(:,:) :: xyzobs,xyz
+ integer(4),allocatable,dimension(:,:) :: n3k
+ real(8),   allocatable,dimension(:)   :: znew
+ real(8)    :: a3(3)
+ integer(4) :: iele,n1,n2,n3,j,k,ntri
+ integer(4) :: nsr                                ! 2017.07.14
+ real(8)    :: xyzminmax(6),zorigin
+ real(8),   allocatable,dimension(:,:) :: xs1,xs2 ! 2017.07.14
+
+ !#[0]## cal xyzminmax of h_mesh
+  CALL GENXYZMINMAX_MT(h_mesh,g_param_mt)
+
+ !#[1]## set
+ allocate(xyz(3,h_mesh%node),n3k(h_mesh%ntri,3))
+ allocate(xyzobs(3,g_param_mt%nobs))
+ allocate(znew(g_param_mt%nobs))
+ nobs      = g_param_mt%nobs
+ xyz       = h_mesh%xyz    ! triangle mesh
+ n3k       = h_mesh%n3
+ ntri      = h_mesh%ntri
+ xyzobs    = g_param_mt%xyzobs
+ xyzminmax = g_param_mt%xyzminmax
+
+
+ !#[2]## cal z for nobsr
+ nx=300;ny=300
+ CALL allocate_2Dgrid_list(nx,ny,ntri,glist)   ! see m_mesh_type.f90
+ CALL gen2Dgridforlist(xyzminmax,glist) ! see m_mesh_type.f90
+ CALL classifytri2grd(h_mesh,glist)   ! classify ele to glist,see
+
+
+ !#[3] search for the triangle including (x1,y1)
+ do j=1,nobs
+    call findtriwithgrid(h_mesh,glist,xyzobs(1:2,j),iele,a3)
+    n1 = n3k(iele,1); n2 = n3k(iele,2) ; n3 = n3k(iele,3)
+    znew(j) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + xyzobs(3,j)
+    write(*,10) " Obs # ",j, g_param_mt%obsname(j)    ! 2020.09.29
+    write(*,11) " x,y =",xyzobs(1,j)," , ",xyzobs(2,j)," [km]" ! 2022.10.14
+    write(*,11) "   z =",xyzobs(3,j)," ->",znew(j),    " [km]" ! 2020.09.17
+ end do
+
+ 9  format(a,i3)
+ 10 format(a,i3,a)
+ 11 format(a,f8.3,a,f8.3,a) ! 2020.09.17
+
+ !#[4]## set znew to xyz_r
+    g_param_mt%xyzobs(3,1:nobs) = znew(1:nobs)
+
+ !#[5]## kill mesh for memory 2017.05.15
+  !  call killmesh(h_mesh) ! see m_mesh_type.f90
+
+ write(*,*) "### PREPZOBSMT  END!! ###"
+ return
+ end
+ !###################################################################
+! modified for spherical on 2016.11.20
+! iflag = 0 for xyz
+! iflag = 1 for xyzspherical
+subroutine GENXYZMINMAX_MT(em_mesh,g_param_mt)
+use param_mt ! 2016.11.20
+use mesh_type
+implicit none
+type(mesh),            intent(inout) :: em_mesh ! 2021.10.13
+type(param_forward_mt),intent(inout) :: g_param_mt ! 2021.12.15
+real(8) :: xmin,xmax,ymin,ymax,zmin,zmax
+real(8) :: xyz(3,em_mesh%node),xyzminmax(6)
+integer(4) :: i
+xyz = em_mesh%xyz ! normal
+xmin=xyz(1,1) ; xmax=xyz(1,1)
+ymin=xyz(2,1) ; ymax=xyz(2,1)
+zmin=xyz(3,1) ; zmax=xyz(3,1)
+
+do i=1,em_mesh%node
+ xmin=min(xmin,xyz(1,i))
+ xmax=max(xmax,xyz(1,i))
+ ymin=min(ymin,xyz(2,i))
+ ymax=max(ymax,xyz(2,i))
+ zmin=min(zmin,xyz(3,i))
+ zmax=max(zmax,xyz(3,i))
+end do
+
+write(*,*) "xmin,xmax",xmin,xmax ! 2021.10.13
+write(*,*) "ymin,ymax",ymin,ymax ! 2021.10.13
+write(*,*) "zmin,zmax",zmin,zmax ! 2021.10.13
+
+xyzminmax(1:6)=(/xmin,xmax,ymin,ymax,zmin,zmax/)
+
+!# set output
+g_param_mt%xyzminmax = xyzminmax ! 2021.12.15
+em_mesh%xyzminmax = xyzminmax    ! 2021.10.13
+
+write(*,*) "### GENXYZMINMAX END!! ###"
+return
+end
+

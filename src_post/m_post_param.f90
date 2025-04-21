@@ -51,6 +51,8 @@ type param_slice ! 2017.12.20
  real(8),allocatable,dimension(:)  :: B
  real(8),allocatable,dimension(:)  :: D
  real(8),allocatable,dimension(:)  :: bl,br,bb,bt ! 2018.01.19
+ !# 2024.10.08
+ character(50),allocatable,dimension(:) :: sitefile! 2024.10.08
 end type
 
 
@@ -126,6 +128,7 @@ allocate(g_paramslice%bl(g_paramslice%nslice))! 2018.01.19
 allocate(g_paramslice%br(g_paramslice%nslice))! 2018.01.19
 allocate(g_paramslice%bb(g_paramslice%nslice))! 2018.01.19
 allocate(g_paramslice%bt(g_paramslice%nslice))! 2018.01.19
+allocate(g_paramslice%sitefile(g_paramslice%nslice)) ! 2024.10.08
 do i=1,g_paramslice%nslice ! 2017.12.21
 write(*,*) "Please input A (should be >= 0)"
 read(input,'(20x,g15.7)') g_paramslice%A(i) ! 2017.12.21
@@ -135,6 +138,7 @@ read(input,'(20x,g15.7)') g_paramslice%bl(i) ! boundary left   2018.01.19
 read(input,'(20x,g15.7)') g_paramslice%br(i) ! boundary right  2018.01.19
 read(input,'(20x,g15.7)') g_paramslice%bb(i) ! boundary bottom 2018.01.19
 read(input,'(20x,g15.7)') g_paramslice%bt(i) ! boundary top    2018.01.19
+read(input,'(20x,a)')     g_paramslice%sitefile(i) ! site data 2024.10.08
 end do ! 2017.12.21
 
 write(*,'(a)') "    1st slice | 2nd slice |"
@@ -145,7 +149,7 @@ write(*,10)    "lb ",g_paramslice%bl
 write(*,10)    "rb ",g_paramslice%br
 write(*,10)    "bb ",g_paramslice%bb
 write(*,10)    "tb ",g_paramslice%bt
-
+write(*,'(a,6a)') "sitefile",(trim(g_paramslice%sitefile(i)),i=1,g_paramslice%nslice)!2024.10.08
 write(*,*) "g_paramslice%nmodelfile",g_paramslice%nmodelfile
 !do i=1,g_paramslice%nmodelfile
 !write(*,*) "polygonhead i",i,g_paramslice%outpolygonhead(i)
@@ -162,7 +166,7 @@ end do
 close(input) ! 2020.12.10
 
 return
-10 format(a,3f9.3)
+10 format(a,6f9.3)
 
 end subroutine
 

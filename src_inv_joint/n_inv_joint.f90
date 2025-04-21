@@ -1622,7 +1622,7 @@ subroutine ALLOCATERESP_MT(nobs,nsr,resp,resp_mt,resp_tip,ip,nfreq)
    end do
   end do
   
-  if( ip .eq. 0) write(*,*) "### ALLOCATERESP END!! ###"
+  if( ip .eq. 0) write(*,*) "### ALLOCATERESP_MT END!! ###"
   return
   end
 !############################################# CALOBSEBCOMP

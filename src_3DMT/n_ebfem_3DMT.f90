@@ -86,7 +86,7 @@ end do
 !#[7]## set resp5
 allocate( resp5(5,nsr,nfreq), resp_mt(nfreq)) ! 2018.02.22
 allocate( resp_tip(nfreq))                    ! 2025.04.21 resp_tip is added
-CALL ALLOCATERESP(g_param_mt%nobs,nsr,resp5,resp_mt,ip,nfreq) !2021.09.14,see below
+CALL ALLOCATERESP_MT(g_param_mt%nobs,nsr,resp5,resp_mt,resp_tip,ip,nfreq)!2025.04.21,see below
 
 allocate( al_MT(nline,2) ) ! 2021.09.14 for ex and ey source
 
@@ -129,6 +129,7 @@ do i = 1,nfreq
 end do ! end frequency loop
 
  call OUTOBSRESPMT(g_param_mt,resp_mt,nfreq)
+ call OUTOBSRESP_TIP(g_param_mt,resp_tip,nfreq) ! 2025.04.21
 
 end program ebfem_3DMT
 
@@ -193,30 +194,25 @@ subroutine OUTOBSRESP_TIP(g_param_mt,resp_tip,nfreq)
    type(resptip),             intent(in)   :: resp_tip(nfreq) ! 2023.12.25
    type(param_forward_mt),    intent(in)    :: g_param_mt         ! 2022.01.02
    real(8)                                  :: freq            ! 2017.07.14
-   character(2)                             :: num             ! 2017.07.14
-   integer(4)                               :: nhead, nsite    ! 2018.10.05
    integer(4)                               :: i,j,k,l,nobs    ! 2017.07.14
    character(100)                           :: filename1       ! 2022.01.22
    character(50)                            :: head,site       ! 2017.07.14
    integer(4)                               :: idat,ialphaflag ! 2017.09.11
-   character(1)                             :: num2            ! 2017.09.11
    integer(4)                               :: icomp
   
  !#[1]## set
    nobs       = g_param_mt%nobs
    head       = g_param_mt%outputfolder     ! 2017.07.25
-   nhead      = len_trim(head)
   
  !#[2]## output impedance and rho and phi to obs files
    do l=1,nobs
      site  = g_param_mt%obsname(l)
-     nsite = len_trim(site)
-     filename1 = head(1:nhead)//site(1:nsite)//"_TIP"//num//".dat"     ! 2022.01.02
+     filename1 = trim(head)//trim(site)//"_TIP.dat"     ! 2022.01.02
      open(31,file=filename1)
 
      do i=1,nfreq
        freq = g_param_mt%freq(i)
-       write(31,'(9g15.7)') freq,resp_tip(i)%tx(l),resp_tip(i)%ty(l)
+       write(31,'(5g15.7)') freq,resp_tip(i)%tx(l),resp_tip(i)%ty(l)
      end do
 
      close(31)
@@ -318,7 +314,7 @@ subroutine calresptip(resp5,resp_tip,omega,ip) ! 2023.12.23
   ! [T] = [Bxy]^-1 [Bz]
   !
   !# set bxyzexy_ex and bxyzexy_ey
-  write(*,*) "nobs",nobs,"ip",ip
+  !write(*,*) "nobs",nobs,"ip",ip
   do i=1,5
    do j=1,nobs
      be5_ex(i,j)=resp5(i,1)%ftobs(j) ! ex polarization
@@ -369,8 +365,9 @@ end
 
 
 !#############################################
+!# modified on 2025.04.21 based on ALLOCATERESP_MT in n_inv_joint.f90
 !# copied from ../solver/n_ebfem_bxyz.f90 on 2021.09.14
-subroutine ALLOCATERESP(nobs,nsr,resp,resp_mt,ip,nfreq)
+subroutine ALLOCATERESP_MT(nobs,nsr,resp,resp_mt,resp_tip,ip,nfreq)
 use outresp
 use param
 implicit none
@@ -379,18 +376,20 @@ integer(4),         intent(in)    :: nsr ! 2017.07.11
 integer(4),         intent(in)    :: nfreq,ip
 type(respdata),     intent(inout) :: resp(5,nsr,nfreq) !2017.07.11
 type(respmt),       intent(inout) :: resp_mt(nfreq)     !2021.09.14
+type(resptip),      intent(inout) :: resp_tip(nfreq)   ! tippers for each freq
 integer(4)                        :: i,j,k
 
 do j=1,nfreq
  CALL ALLOCATERESPMT(  nobs,resp_mt(j)    ) ! 2021.09.14 m_outresp.f90
+ CALL ALLOCATERESPTIP( nobs,resp_tip(j)   ) ! 2023.12.23 m_outresp.f90
  do i=1,5
-  do k=1,nsr ! 2017.07.11
-   CALL ALLOCATERESPDATA(nobs,resp(  i,k,j)) ! 2017.07.11
-  end do     ! 2017.07.11
+   do k=1,nsr ! 2017.07.11
+     CALL ALLOCATERESPDATA(nobs,resp(  i,k,j)) ! 2017.07.11
+   end do     ! 2017.07.11
  end do
 end do
 
-if( ip .eq. 0) write(*,*) "### ALLOCATERESP END!! ###"
+if( ip .eq. 0) write(*,*) "### ALLOCATERESP_MT END!! ###"
 return
 end
 

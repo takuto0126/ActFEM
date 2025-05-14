@@ -1,6 +1,6 @@
 # Coded on Oct. 12, 2021 Takuto Minami
 
-FC=ifort# for EIC
+FC=ifx# for EIC
 #OPT=-i-dynamic
 VPATH = ../common ../solver  ../src_2D/ ../src_inv/
 #OPT0= -O3 -xAVX -mkl=parallel

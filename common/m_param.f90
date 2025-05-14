@@ -935,10 +935,11 @@ call subtractcommentout(n,lines)
 
 open(1,file="tmp.ctl")
 do i=1,n
-if ( present(ikeep) .and. ikeep .eq. 1 ) then !2021.10.04
- write(1,'(a)')  lines(i)(1:len_trim(lines(i))) ! cut initial 20 characters 2021.10.04
+if ( present(ikeep) ) then !2025.04.24
+ if ( ikeep == 1  ) write(1,'(a)')  lines(i)(1:len_trim(lines(i))) 
+ if ( ikeep .ne. 1) write(1,'(a)')  lines(i)(21:len_trim(lines(i))) !2025.04.24
 else   ! 2021.10.04
- write(1,'(a)')  lines(i)(21:len_trim(lines(i))) ! cut initial 20 characters 2021.09.02
+ write(1,'(a)')  lines(i)(21:len_trim(lines(i)))
 end if ! 2021.10.04
 ! write(1,'(a)') trim(lines(i))
 end do

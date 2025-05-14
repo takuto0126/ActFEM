@@ -11,7 +11,7 @@ FC=ifort
 OPT= -O
 OPT= -fpe0 -check bounds -traceback -g -qmkl=parallel
 VPATH = ../common
-all: 3dgeo mkline meshgen1 meshgen2 meshgen2_bell gridmdl2msh outmodel mkface compmodel compcond
+all: 3dgeo mkline meshgen1 meshgen2 gridmdl2msh outmodel mkface compmodel compcond
 
 # 3dgeo
 objs= m_param.o m_horizontalresolution.o outbgmesh3d.o m_gmsh_geo.o 3dgeo.o
@@ -35,10 +35,6 @@ objs4= m_param.o m_water_level.o m_topo_tool.o m_horizontalresolution.o outbgmes
 meshgen2: $(objs4)
 	$(FC) $(OPT) $(objs4) -o meshgen2.exe
 
-# meshgen2_bell
-objs41=m_horizontalresolution.o m_param.o outbgmesh3d.o m_outerinnerproduct.o sort_index.o m_fem_util.o m_mesh_type.o m_triangle.o calzobsr.o m_bell.o outbgfield3d.o meshgen2_bell.o
-meshgen2_bell: $(objs41)
-	$(FC) $(OPT) $(objs41) -o meshgen2_bell.exe
 
 # gridmdl2msh
 objs5= m_param.o m_cond_type.o m_outerinnerproduct.o sort_index.o m_fem_util.o m_mesh_type.o gridmdl2msh.o

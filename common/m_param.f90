@@ -84,19 +84,19 @@ type param_cond
  real(8),   allocatable,dimension(:) :: sigma_land  ! ( condflag = 0 )2017.09.28
 end type
 
-!type param_bell ! inserted on 2016.10.12 for Kusatsushirane
-! character(50) :: bellgeofile
-! integer(4) :: ilonlatflag ! 1 for lonlat, 2 for xy [km]
-! real(8)  :: lon_bell, lat_bell
-! real(8)  :: radius![km]
-! real(8)  :: width ![km]
-! real(8)  :: ztop  ! < 0 [km] how deep is the top of bell
-! real(8)  :: zbot  ! < 0 [km] how deep is the bottom of bell
-! real(8)  :: zthic ! [km] thickness of top of the bell
-! real(8)  :: reso_bell ! [km] mesh resolution for inside bell
-!--
-! real(8)  :: xyz_bell(3)
-!end type
+type param_bell ! inserted on 2016.10.12 for Kusatsushirane
+ character(50) :: bellgeofile
+ integer(4) :: ilonlatflag ! 1 for lonlat, 2 for xy [km]
+ real(8)  :: lon_bell, lat_bell
+ real(8)  :: radius![km]
+ real(8)  :: width ![km]
+ real(8)  :: ztop  ! < 0 [km] how deep is the top of bell
+ real(8)  :: zbot  ! < 0 [km] how deep is the bottom of bell
+ real(8)  :: zthic ! [km] thickness of top of the bell
+ real(8)  :: reso_bell ! [km] mesh resolution for inside bell
+--
+ real(8)  :: xyz_bell(3)
+end type
 
 contains
 !################################################# duplicatescalarcond

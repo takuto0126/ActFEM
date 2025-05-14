@@ -6,11 +6,13 @@ program meshgen2
 use param
 use mesh_type
 use water_level ! 2023.09.05
+use bell  ! Added from meshgen2_bell
 implicit none
 type(param_forward)           :: g_param ! see m_param.f90
 type(param_source)            :: s_param ! see m_param.f90
 type(param_water_level)       :: g_param_water
 type(param_cond)              :: g_cond  ! see m_param.f90
+type(param_bell)              :: b_param ! Added from meshgen2_bell
 type(mesh)                    :: h_mesh  ! 2D mesh
 ! n2(j,1) : the initial line number that j-th line belongs to
 character(50)                 :: mshfile2d, mshfile2d_z, mshfile2dz
@@ -25,6 +27,7 @@ integer(4)                    :: iflag_water = 0
 
 !#[0]##
  CALL READPARAM(g_param,s_param)
+ call READPARAMBELL(g_param,b_param)    ! Added from meshgen2_bell
  open(1,file=g_param%waterlevelfile,status='old',err=100) ! 2024.08.27
   write(*,*) "g_param%waterlevelfile exist",g_param%waterlevelfile
   iflag_water = 1 ! set iflag_water for water level setting for crater lake
@@ -69,7 +72,7 @@ integer(4)                    :: iflag_water = 0
  call prepare7_5(h_mesh, x3d, y3d, z3d, n3dn, linbry, g_param)
 
 !#[5]## generate 3d geometry file
- call outpregeo8(h_mesh, x3d, y3d, z3d, nlinbry, linbry, g_param,g_param_water)
+ call outpregeo8(h_mesh, x3d, y3d, z3d, nlinbry, linbry, g_param, g_param_water, b_param)
 
 !#[6]# outposfile
  call calobsr(s_param,g_param)   ! cal g_param%nobsr, xyz_r,sigma_r,A_r (m_param.f90)
@@ -666,14 +669,16 @@ end subroutine prepare7_5
 
 !######################################### outpregeo8
 ! here assume in the calculation area, no ocean exist
-subroutine outpregeo8(h_mesh,x3d,y3d,z3d,nlinbry,linbry,g_param,g_param_water)
+subroutine outpregeo8(h_mesh,x3d,y3d,z3d,nlinbry,linbry,g_param,g_param_water,b_param)
 use param
 use mesh_type
 use water_level
+use bell
 implicit none
-type (param_forward),   intent(in) :: g_param
-type (mesh),            intent(in) :: h_mesh
+type(param_forward),    intent(in) :: g_param
+type(mesh),            intent(in) :: h_mesh
 type(param_water_level),intent(in) :: g_param_water
+type(param_bell),       intent(in) :: b_param
 integer(4),             intent(in) :: nlinbry(4),linbry(4,100)
 real(8),dimension(h_mesh%node+8),intent(in) :: x3d,y3d,z3d
 integer(4)             :: is,is2,is3

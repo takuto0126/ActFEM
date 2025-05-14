@@ -201,10 +201,10 @@ end do
 !# xy plane boundary by xy coordinate [km]
  write(*,*) ""
  write(*,*) "< input xbound and ybound >"    ! 2020.09.29
- read(input,*) c_param%xbound(2)             ! 12->* 2021.09.02
- read(input,*) c_param%xbound(3)             ! 12->* 2021.09.02
- read(input,*) c_param%ybound(2)             ! 12->* 2021.09.02
- read(input,*) c_param%ybound(3)             ! 12->* 2021.09.02
+ read(input,*) c_param%xbound(2)       ! 12->* 2021.09.02
+ read(input,*) c_param%xbound(3)       ! 12->* 2021.09.02
+ read(input,*) c_param%ybound(2)       ! 12->* 2021.09.02
+ read(input,*) c_param%ybound(3)       ! 12->* 2021.09.02
  write(*,43) " xbound(2)=",c_param%xbound(2) ! 2020.09.29
  write(*,43) " xbound(3)=",c_param%xbound(3) ! 2020.09.29
  write(*,43) " ybound(2)=",c_param%ybound(2) ! 2020.09.29

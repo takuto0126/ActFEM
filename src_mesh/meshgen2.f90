@@ -27,13 +27,13 @@ integer(4)                    :: iflag_water = 0
 
 !#[0]##
  CALL READPARAM(g_param,s_param)
- call READPARAMBELL(g_param,b_param)    ! Added from meshgen2_bell
- open(1,file=g_param%waterlevelfile,status='old',err=100) ! 2024.08.27
-  write(*,*) "g_param%waterlevelfile exist",g_param%waterlevelfile
-  iflag_water = 1 ! set iflag_water for water level setting for crater lake
-  call readwaterlevelctl(g_param,g_param_water,iunit=1)! 2023.09.05
-  write(*,*) "inum_water_level =",g_param_water%inum_water_level ! 2024.08.28
- close(1)     ! 2023.09.05
+ !call READPARAMBELL(g_param,b_param)    ! m_bell.f90
+ !open(1,file=g_param%waterlevelfile,status='old',err=100) ! 2024.08.27
+ ! write(*,*) "g_param%waterlevelfile exist",g_param%waterlevelfile
+ ! iflag_water = 1 ! set iflag_water for water level setting for crater lake
+ ! call readwaterlevelctl(g_param,g_param_water,iunit=1)! 2023.09.05
+ ! write(*,*) "inum_water_level =",g_param_water%inum_water_level ! 2024.08.28
+ !close(1)     ! 2023.09.05
  100 continue ! 2023.09.05
 
 !#[1]## set
@@ -72,7 +72,7 @@ integer(4)                    :: iflag_water = 0
  call prepare7_5(h_mesh, x3d, y3d, z3d, n3dn, linbry, g_param)
 
 !#[5]## generate 3d geometry file
- call outpregeo8(h_mesh, x3d, y3d, z3d, nlinbry, linbry, g_param, g_param_water, b_param)
+ call outpregeo8(h_mesh, x3d, y3d, z3d, nlinbry, linbry, g_param, g_param_water)!, b_param
 
 !#[6]# outposfile
  call calobsr(s_param,g_param)   ! cal g_param%nobsr, xyz_r,sigma_r,A_r (m_param.f90)
@@ -279,25 +279,36 @@ real(8)       :: sbound,nbound,wbound,ebound ! 2017.09.26
 real(8)       :: lonw,lone,latn,lats         ! 2017.09.26
 
 !#[0]## set
+write(*,*) "[0]start"
 nfile       = g_param%nfile           ! 2017.09.25
 allocate(files(nfile))                ! 2017.09.25
 allocate(nt(nfile),neast(nfile),nsouth(nfile)) ! 2017.09.25
 allocate(lonlatshift(2,nfile) )       ! 2017.09.26
 files       = g_param%topofile        ! 2017.09.25
 lonlatshift = g_param%lonlatshift     ! 2017.09.26
+write(*,*) "[0.1]"
 node        = h_mesh%node
 header2d    = g_param%header2d
 header3d    = g_param%header3d
+write(*,*) "[0.2]"
 x           = h_mesh%xyz(1,:)
 y           = h_mesh%xyz(2,:)
 z           = h_mesh%xyz(3,:) ! will be modified and set in h_mesh again
+write(*,*) "[0.3]"
 UTM         = g_param%UTM   ! zone
 lonorigin   = g_param%lonorigin
 latorigin   = g_param%latorigin
-iflag_nodez_2d = g_param_water%iflag_nodez_2d !2023.09.09
-inum_water_level = g_param_water%inum_water_level
+write(*,*) "[0.4]"
+inum_water_level=0
+if ( iflag_water .ne. 0) then ! 2025.05.22
+ iflag_nodez_2d = g_param_water%iflag_nodez_2d !2023.09.09
+ write(*,*) "[0.5]"
+ inum_water_level = g_param_water%inum_water_level
+end if ! 2024.05.22
+write(*,*) "[0.6]"
 
 !# [1] ### count lines of gebcofile and allocate
+write(*,*) "[1]start"
 ntmax = 0     ! 2017.09.25
 do ifile=1,nfile
   ntopo=0
@@ -316,6 +327,7 @@ allocate( lon1(ntmax,nfile),lat1(ntmax,nfile)) ! 2017.09.25
 allocate( z1(ntmax,nfile) ) ! x1(i,j) is x coord of j-th node of i-th file
 
 !# [2] ### read coordinates in gebcofile
+write(*,*) "[2]start"
  do ifile=1,nfile
    open(1,file=files(ifile))
      write(*,'(a,2f15.7,a,i5)') " lonlatshift=",lonlatshift(1:2,ifile)," ifile",ifile ! 2021.09.29
@@ -330,6 +342,7 @@ allocate( z1(ntmax,nfile) ) ! x1(i,j) is x coord of j-th node of i-th file
 
 !# [3] ### change order and measure # of nodes in horizontal and vertical directions
  !# reorder the values to ((west -> east), north -> south )
+ write(*,*) "[3]start"
  do i=1,nfile ! file loop
    !  write(*,*) "lon1(1:2,ifile)=",lon1(1:2,i),"ifile",i
    call changeorder(lon1(1:nt(i),i),lat1(1:nt(i),i),z1(1:nt(i),i), nt(i), nsouth(i), neast(i))! see m_topo_tool.f90 2023.08.31 
@@ -669,7 +682,7 @@ end subroutine prepare7_5
 
 !######################################### outpregeo8
 ! here assume in the calculation area, no ocean exist
-subroutine outpregeo8(h_mesh,x3d,y3d,z3d,nlinbry,linbry,g_param,g_param_water,b_param)
+subroutine outpregeo8(h_mesh,x3d,y3d,z3d,nlinbry,linbry,g_param,g_param_water)!,b_param
 use param
 use mesh_type
 use water_level
@@ -678,7 +691,7 @@ implicit none
 type(param_forward),    intent(in) :: g_param
 type(mesh),            intent(in) :: h_mesh
 type(param_water_level),intent(in) :: g_param_water
-type(param_bell),       intent(in) :: b_param
+!type(param_bell),optional,intent(in) :: b_param
 integer(4),             intent(in) :: nlinbry(4),linbry(4,100)
 real(8),dimension(h_mesh%node+8),intent(in) :: x3d,y3d,z3d
 integer(4)             :: is,is2,is3

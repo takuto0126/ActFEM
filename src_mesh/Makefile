@@ -7,9 +7,9 @@
 #OPT=-i-dynamic
 #FC=gfortran
 #OPT= -O -fpe0 -check bounds -traceback -g  -mkl=parallel
-FC=ifort
+FC=ifx
 OPT= -O
-OPT= -fpe0 -check bounds -traceback -g -qmkl=parallel
+OPT= -fpe0 -O -check bounds -traceback -g -qmkl=parallel
 VPATH = ../common
 all: 3dgeo mkline meshgen1 meshgen2 gridmdl2msh outmodel mkface compmodel compcond
 
@@ -31,7 +31,7 @@ meshgen1: $(objs3)
 	$(FC) $(OPT) $(objs3) -o meshgen1.exe
 
 # meshgen2
-objs4= m_param.o m_water_level.o m_topo_tool.o m_horizontalresolution.o outbgmesh3d.o m_outerinnerproduct.o sort_index.o m_fem_util.o m_mesh_type.o m_triangle.o calzobsr.o meshgen2.o
+objs4= m_param.o m_water_level.o m_topo_tool.o m_horizontalresolution.o outbgmesh3d.o m_outerinnerproduct.o sort_index.o m_fem_util.o m_mesh_type.o m_triangle.o calzobsr.o m_bell.o meshgen2.o
 meshgen2: $(objs4)
 	$(FC) $(OPT) $(objs4) -o meshgen2.exe
 

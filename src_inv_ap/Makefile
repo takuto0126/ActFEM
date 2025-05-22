@@ -5,7 +5,7 @@ FC=mpiifort    # for poseidon
 VPATH= ../common ../solver  ../src_inv/ ../common_mpi 
 
 # for poseidon
-OPT0= -O3 -fpe0 -check bounds -traceback -g  -mkl=parallel -lmpi -I/opt/intel/compilers_and_libraries/linux/mpi/include64 -I/opt/intel/compilers_and_libraries_2018.5.274/linux/mkl/include -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -ldl
+OPT0= -fc=ifx -O3 -fpe0 -qmkl=parallel -check bounds -traceback -g -lmpi
 
 #2016.03.03 solver with many modules
 target1=ebfem_inv_ap.exe

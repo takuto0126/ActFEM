@@ -1,6 +1,2 @@
-sync*.sh
-pull*.sh
-*.mod
-*.o
-*.exe
-.DS_Store
+work
+.vscode

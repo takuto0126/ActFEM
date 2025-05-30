@@ -1,0 +1,4 @@
+*.dat
+*.pdf
+result_homo/*
+result_lateral/*

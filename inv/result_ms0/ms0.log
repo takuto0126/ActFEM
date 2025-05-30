@@ -1,0 +1,22 @@
+ ip =  1 /  2
+ ip =  0 /  2
+ 
+ <Please input the forward parameter file>
+ file is aso_inv.ctl
+forrtl: severe (174): SIGSEGV, segmentation fault occurred
+Image              PC                Routine            Line        Source             
+ebfem_inv_ap.exe   000000000049E9DA  Unknown               Unknown  Unknown
+libpthread-2.31.s  00007F7ACB79F420  Unknown               Unknown  Unknown
+ebfem_inv_ap.exe   0000000000429B98  subtractcommentou         960  m_param.f90
+ebfem_inv_ap.exe   000000000042988F  readcontrolfile           933  m_param.f90
+ebfem_inv_ap.exe   000000000041F002  readparam                 139  m_param.f90
+ebfem_inv_ap.exe   000000000047B274  inversion_ap              134  n_inv_ap.f90
+ebfem_inv_ap.exe   0000000000405B22  Unknown               Unknown  Unknown
+libc-2.31.so       00007F7ACADE0083  __libc_start_main     Unknown  Unknown
+ebfem_inv_ap.exe   0000000000405A2E  Unknown               Unknown  Unknown
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   RANK 1 PID 3620691 RUNNING AT triton
+=   KILLED BY SIGNAL: 9 (Killed)
+===================================================================================

@@ -2,3 +2,5 @@
 *.mod
 *.o
 *.exe
+.DS_Store
+work

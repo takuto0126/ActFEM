@@ -9,7 +9,7 @@ make
 cd -
 
 #cat tmp.ctl
-OMP_NUM_THREADS=7
+OMP_NUM_THREADS=12
 mpiexec -n 2 ${SRC}/ebfem_inv_ap.exe << EOF &> ./result_ms0/ms0.log
 aso_inv.ctl
 inv201405_ap.ctl

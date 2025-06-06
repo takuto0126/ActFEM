@@ -149,8 +149,11 @@ write(*,10)    "lb ",g_paramslice%bl
 write(*,10)    "rb ",g_paramslice%br
 write(*,10)    "bb ",g_paramslice%bb
 write(*,10)    "tb ",g_paramslice%bt
-write(*,'(a,6a)') "sitefile",(trim(g_paramslice%sitefile(i)),i=1,g_paramslice%nslice)!2024.10.08
-write(*,*) "g_paramslice%nmodelfile",g_paramslice%nmodelfile
+do i=1,g_paramslice%nslice ! 2025.06.06
+ write(*,'(a,i3,2x,6a)') "sitefile",i,trim(g_paramslice%sitefile(i)) !2025.06.06
+end do  ! 2025.06.06
+write(*,'(a,i5)') "ncondfile:  ",g_paramslice%ncondfile ! 2025.06.06
+write(*,'(a,i5)') "nmodelfile: ",g_paramslice%nmodelfile! 2025.06.06
 !do i=1,g_paramslice%nmodelfile
 !write(*,*) "polygonhead i",i,g_paramslice%outpolygonhead(i)
 !end do

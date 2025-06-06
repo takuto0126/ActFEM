@@ -94,11 +94,11 @@ integer(4) :: access ! 2024.10.08
    !  write(*,*) "zn",zn
    !  write(*,*) "xn",xn
    xdir = outer(zn,xn)
-   if ( B .ne. 0. .and.  -A/B .lt. 0. ) xdir = outer(xn,zn) ! 2018.03.28
+   if ( B .ne. 0. .and.  -A*B .lt. 0. ) xdir = outer(xn,zn) ! 2018.03.28 -A/B becomes error when B=0 in previous version
    !  write(*,*) "xdir",xdir
    xdir(1:3) = xdir(1:3) / sqrt(xdir(1)**2. + xdir(2)**2. + xdir(3)**2.d0)
    ydir = outer(xn,xdir)
-   if ( B .ne. 0. .and.  -A/B .lt. 0. ) ydir = outer(xdir,xn) ! 2018.03.28
+   if ( B .ne. 0. .and.  -A*B .lt. 0. ) ydir = outer(xdir,xn) ! 2018.03.28
    !  write(*,*) "xdir",xdir
    !  write(*,*) "ydir",ydir
    !# xo : vector from origin to the origin on the plane for drawing
@@ -113,7 +113,7 @@ integer(4) :: access ! 2024.10.08
    if (access(g_paramslice%sitefile(islice),'r') .eq. 0 ) then
      call outsitefile(g_paramslice,islice,xdir,ydir)
    else
-     write(*,*) trim(g_paramslice%sitefile(islice)), "not exist!!"
+     write(*,*) trim(g_paramslice%sitefile(islice)), " does not exist. Nothing to do."
    end if 
 
    do i=1,node

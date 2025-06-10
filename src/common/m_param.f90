@@ -1,4 +1,5 @@
 module param
+use constants
 implicit none
 
 type param_forward
@@ -19,7 +20,9 @@ type param_forward
  real(8),allocatable,dimension(:)   :: freq ! frequencies
  ! observatory info
  integer(4)    :: nobs  ! # of observatories
- integer(4)    :: lonlatflag !# 1: lonlat [deg], 2: xy [km]
+ integer(4)    :: iflag_map  !type of map projection 1:ECP, 2: [UTM]
+ character(3)  :: UTM ! UTM zone
+ integer(4)    :: lonlatflag ! 1 only lon lat  2 xy are already given
  real(8)       :: wlon,elon,slat,nlat ! [deg]
  real(8)       :: lonorigin,latorigin ! [deg]
  real(8)       :: lenout    ! [km]
@@ -38,7 +41,6 @@ type param_forward
  real(8),      allocatable,dimension(:,:) :: xyz_r
  real(8),      allocatable,dimension(:)   :: A_r,sigma_r
  real(8)                                  :: xbound(4),ybound(4),zbound(4)
- character(3)                             :: UTM ! UTM zone
  real(8),      allocatable,dimension(:,:) :: lonlataltobs!lon[deg],lat[deg],alt[km]
  real(8),      allocatable,dimension(:,:) :: xyzobs ! x eastward[km],y northward[km],z[km]
  character(50),allocatable,dimension(:)   :: obsname
@@ -61,6 +63,7 @@ end type
 
 type param_source
  integer(4) :: lonlatflag !# 1:lonlat [deg], 2: xy [km]
+ integer(4) :: iflag_map  !0:ECP, 1:UTM   2025.06.10
  integer(4) :: nsource    ! # of sources  added on 2017.07.11
  character(50),allocatable,dimension(:) :: sourcename ! 2017.07.11
  real(8),allocatable,dimension(:,:) :: xs1  ! [km] xyz coordinate of start electrode
@@ -126,7 +129,7 @@ implicit none
 type(param_forward),          intent(out) :: c_param
 type(param_source),           intent(out) :: sparam
 type(param_cond),   optional, intent(out) :: g_cond
-integer(4)                  :: i,j,nobs,input=2,nsource
+integer(4)                  :: i,j,nobs,input=2,nsource,iflag_map,lonlatflag!2025.06.10
 character(50)               :: site
 real(8)                     :: lonorigin,latorigin,a
 character(100)              :: paramfile
@@ -143,12 +146,22 @@ open(input,file="tmp.ctl")
 write(*,*) ""
 write(*,*) "<input 0 for no topo, 1 for topofiles (itopoflag)>" ! 2018.10.02
 read(input,*)    c_param%itopoflag      ! 11->* 2021.09.02
-write(*,'(a,i3)') " itopoflag =", c_param%itopoflag    ! 2020.09.17
+write(*,'(a,i3)')    " itopoflag =", c_param%itopoflag ! 2020.09.17
 
 if ( c_param%itopoflag .eq. 0 ) then ! 2017.09.29
  goto 101 ! 2017.09.29
-else if (c_param%itopoflag .eq. 1 ) then ! 2017.09.29
-  read(input,*) c_param%nfile            ! 12->* 2021.09.02
+else if (c_param%itopoflag .eq. 1 ) then               ! 2017.09.29
+  read(input,*) c_param%iflag_map                      ! 2025.06.10 1 for ECP, 2 for UTM
+  write(*,'(a,i13)') " iflag_map =",c_param%iflag_map  ! 2025.06.10 
+  if ( c_param%iflag_map .eq. 2 ) then    ! UTM          2025.06.10
+   read(input,*) c_param%UTM                           ! 10->* 2021.09.02
+   write(*,*) "UTM zone : ",c_param%UTM                ! 2020.09.29
+  end if
+  read(input,*) c_param%lonorigin,c_param%latorigin    ! 12->* 2021.09.02
+  write(*,*) "lonorigin =",c_param%lonorigin           ! 2025.06.10
+  write(*,*) "latorigin =",c_param%latorigin           ! 2025.06.10
+
+  read(input,*) c_param%nfile                          ! 12->* 2021.09.02
   allocate(c_param%topofile(c_param%nfile) )            ! 2017.09.27
   allocate(c_param%lonlatshift(2,c_param%nfile) )       ! 2017.09.27
  do i=1,c_param%nfile                                  ! 2017.09.27
@@ -259,27 +272,32 @@ end do
 
 !# lonlatflag
  read(input,*)  c_param%lonlatflag    ! 1: lonlatalt, 2:xyz ! 11->* 2021.09.02
- if ( c_param%lonlatflag .eq. 1) then ! lonlat
-  read(input,*) c_param%UTM           ! 10->* 2021.09.02
-  write(*,*) "UTM zone : ",c_param%UTM ! 2020.09.29
-  read(input,*) c_param%lonorigin,c_param%latorigin ! 12->* 2021.09.02
-  write(*,*) "lonorigin =",c_param%lonorigin ! 2020.09.17
-  write(*,*) "latorigin =",c_param%latorigin  ! 2020.09.17
- end if
- lonorigin = c_param%lonorigin
- latorigin = c_param%latorigin
- nobs = c_param%nobs
+ write(*,*) "c_param%lonlatflag =",c_param%lonlatflag
 
 !# read site information
-if (c_param%lonlatflag .eq. 1) write(*,'(a)') "< conversion of Lon Lat to UTM x (east), y (north) [km]>"!2021.09.29
-write(*,*) "" !2021.09.29
+ lonorigin  = c_param%lonorigin
+ latorigin  = c_param%latorigin
+ iflag_map  = c_param%iflag_map   ! 1:ECP, 2: UTM, 2:xyfile 2025.06.10
+ lonlatflag = c_param%lonlatflag ! 1:lonlat, 2:xy 2025.06.10
+ nobs       = c_param%nobs
+ if (c_param%lonlatflag .eq. 1) write(*,'(a)') "< conversion of Lon Lat to x (east), y (north) [km]>"!2021.09.29
+ write(*,*) "" !2021.09.29
 
  do i=1, nobs
    read(input,10) c_param%obsname(i)
    site=c_param%obsname(i) ! 2021.09.02
 
-   ! lonlatalt
-   if (c_param%lonlatflag .eq. 1 ) then
+   ! [1] iflag_map = 1 (ECP: Equatorial Cylindrical Projection)  2025.06.09
+   if   (  iflag_map .eq. 1 .and. lonlatflag .eq. 1  ) then ! 2025.06.09
+    read(input,*) (c_param%lonlataltobs(j,i),j=1,3)
+    write(*,'(1x,a,a,3f15.7)') trim(site)," :",c_param%lonlataltobs(1:3,i) ! 2025.06.09
+    call ECPXY(c_param%lonlataltobs(1:2,i),lonorigin,latorigin,c_param%xyzobs(1:2,i),c_param%angle)!2025.06.09
+    c_param%xyzobs(3,i) = c_param%lonlataltobs(3,i)
+    write(*,'(1x,a,2f15.7,a)') " ECP>",c_param%xyzobs(1:2,i)," [km]" ! 2025.06.09
+    write(*,*) ""  ! 2025.06.09
+
+   ! [2] iflag_map = 2  (UTM) 
+   else if ( iflag_map .eq. 2 .and. lonlatflag .eq. 1) then ! 2025.06.10
     read(input,*) (c_param%lonlataltobs(j,i),j=1,3)
     write(*,'(1x,a,a,3f15.7)') trim(site)," :",c_param%lonlataltobs(1:3,i) !2021.09.02
     call UTMXY(c_param%lonlataltobs(1:2,i),&
@@ -288,10 +306,16 @@ write(*,*) "" !2021.09.29
     write(*,'(1x,a,2f15.7,a)') " UTM>",c_param%xyzobs(1:2,i)," [km]" ! 2021.09.29
     write(*,*) ""  ! 2021.09.29
 
-   ! xyz
-   else if (c_param%lonlatflag .eq. 2 ) then ! xyz
+   ! xyz [2]
+   else if ( lonlatflag .eq. 2 ) then ! src/obs coordinates are given by xyz
     read(input,*) (c_param%xyzobs(j,i),j=1,3)
-
+   
+   else                                ! 2025.06.05
+    write(*,*) "GEGEGE!"               ! 2025.06.10
+    write(*,*) "lonlatflag",lonlatflag ! 2025.06.10
+    write(*,*) "iflag_map", iflag_map  ! 2025.06.10
+    write(*,*) "Not supported"         ! 2025.06.10
+    stop                               ! 2025.06.10
    end if
   end do
 
@@ -312,6 +336,7 @@ write(*,*) "" !2021.09.29
 
 !#[3]# read source param
  sparam%lonlatflag = c_param%lonlatflag
+ sparam%iflag_map  = c_param%iflag_map ! 2025.06.10
 
  ! # of sources 2017.07.11
  write(*,*) ""
@@ -325,30 +350,45 @@ write(*,*) "" !2021.09.29
 
  ! lonlat input
  do i=1,nsource ! 2017.07.11
-  read(input,*) sparam%sourcename(i) ! 10->* 2021.09.02
-  write(*,41) " source name: ",sparam%sourcename(i) ! 2020.09.29
-  if (sparam%lonlatflag .eq. 1) then ! lonlat
-   read(input,*) sparam%lonlats1(1:2,i),sparam%xs1(3,i)
-   read(input,*) sparam%lonlats2(1:2,i),sparam%xs2(3,i)
-   write(*,44) " Start point (lon,lat,z)=",sparam%xs1(1:3,i)
-   write(*,44) " End   point (lon,lat,z)=",sparam%xs2(1:3,i)
-   call UTMXY(sparam%lonlats1(1:2,i),lonorigin,latorigin,sparam%xs1(1:2,i),c_param%UTM,c_param%angle)! 2024.08.28 angle is added
-   call UTMXY(sparam%lonlats2(1:2,i),lonorigin,latorigin,sparam%xs2(1:2,i),c_param%UTM,c_param%angle)! 2024.08.28
-   write(*,*) " converted with UTM to :"
-   write(*,'(a,3f15.7)') " xs1 (x,y,z)=",sparam%xs1(1:3,i) !2020.09.29
-   write(*,'(a,3f15.7)') " xs2 (x,y,z)=",sparam%xs2(1:3,i) !2020.09.29
- !# xy input
- else if (sparam%lonlatflag .eq. 2) then ! xyz
-  read(input,*) sparam%xs1(1:3,i)
-  read(input,*) sparam%xs2(1:3,i)
+   read(input,*) sparam%sourcename(i) ! 10->* 2021.09.02
+   write(*,41) " source name: ",sparam%sourcename(i) ! 2020.09.29
 
- else
-  goto 99
- end if
- end do ! 2017.07.11
+   if (   iflag_map .le. 2  .and. lonlatflag .eq. 1) then ! ECP or UTM 2025.06.09
+     read(input,*) sparam%lonlats1(1:2,i),sparam%xs1(3,i)
+     read(input,*) sparam%lonlats2(1:2,i),sparam%xs2(3,i)
+     write(*,44) " Start point (lon,lat,z)=",sparam%lonlats1(1:2,i),sparam%xs1(3,i)
+     write(*,44) " End   point (lon,lat,z)=",sparam%lonlats2(1:2,i),sparam%xs2(3,i)
+   end if
+
+   if (      iflag_map .eq. 1  .and. lonlatflag .eq. 1  ) then ! lonlat (ECP) 2025.06.09
+     call ECPXY(sparam%lonlats1(1:2,i),lonorigin,latorigin,sparam%xs1(1:2,i),c_param%angle)
+     call ECPXY(sparam%lonlats2(1:2,i),lonorigin,latorigin,sparam%xs2(1:2,i),c_param%angle)
+     write(*,*) " converted with ECP to :"
+
+   else if ( iflag_map .eq. 2  .and. lonlatflag .eq. 1) then ! lonlat (UTM)
+     call UTMXY(sparam%lonlats1(1:2,i),lonorigin,latorigin,sparam%xs1(1:2,i),c_param%UTM,c_param%angle)! 2024.08.28 angle is added
+     call UTMXY(sparam%lonlats2(1:2,i),lonorigin,latorigin,sparam%xs2(1:2,i),c_param%UTM,c_param%angle)! 2024.08.28
+     write(*,*) " converted with UTM to :"
+
+   !# xy input
+   else if ( lonlatflag .eq. 2) then ! xyz
+     read(input,*) sparam%xs1(1:3,i)
+     read(input,*) sparam%xs2(1:3,i)
+     write(*,*) "Read xyz coordinates of start and end points are :" !2025.06.09
+
+    else
+     goto 99
+
+    end if
+
+    write(*,'(a,3f15.7)') " xs1 (x,y,z)=",sparam%xs1(1:3,i) !2020.09.29
+    write(*,'(a,3f15.7)') " xs2 (x,y,z)=",sparam%xs2(1:3,i) !2020.09.29
+
+  end do ! nsource loop end 2017.07.11
 
  read(input,*) sparam%I ! [A] ! 11->* 2021.09.02
  write(*,'(a,g15.7,a)') " Electric source current :",sparam%I," [A]" ! 2020.09.29
+
 !#[4]## lonlatflag : 1 -> 2 because xyzobs is laready set
  c_param%lonlatflag = 2
 
@@ -571,6 +611,60 @@ write(*,'(a)') " ### CALOBSR END!! ###"
 
 return
 end subroutine
+!######################################################### Equidistant Cylindrical Projection (ECP)
+! added on 2025.06.09
+subroutine ECPXY(lonlat,lonorigin,latorigin,xyout,angle)
+implicit none
+real(8),          intent(in) :: lonlat(2),lonorigin,latorigin
+real(8) ,         intent(out) :: xyout(2)
+real(8),optional, intent(in) :: angle
+real(8) :: xorigin,yorigin,x,y,dlat
+integer(4) :: i
+
+dlat=latorigin*d2r
+xyout(1)= planetrad * cos(dlat)*(lonlat(1) - lonorigin)*d2r ! eastward [km]
+xyout(2)= planetrad *           (lonlat(2) - latorigin)*d2r ! northward [km]
+
+if (present(angle)) call rotate(xyout(1),xyout(2),angle) ! 2025.06.09
+!write(*,*) "xout=",xout,"yout=",yout
+
+return
+end subroutine
+!######################################################### Equidistant Cylindrical Projection (ECP)
+! added on 2025.06.09
+subroutine ECPGMT(n,lonorigin,latorigin,xin,yin,xout,yout,iflag)
+integer(4),intent(in)  :: n
+real(8),   intent(in)  :: lonorigin,latorigin
+real(8),   intent(in)  :: xin(n),yin(n)
+real(8),   intent(out) :: xout(n),yout(n)
+integer(4),intent(in)  :: iflag ! 0: LONLAT2XY, 1:XY2LONLAT
+integer(4) :: i
+real(8) :: dlat
+
+if ( iflag .eq. 0 ) then ![deg] -> [km]
+
+ do i=1,N
+   dlat=latorigin*d2r
+   xout(i)= planetrad *1.d3 * cos(dlat)*(xin(i) - lonorigin)*d2r ! eastward  [m]
+   yout(i)= planetrad *1.d3*            (yin(i) - latorigin)*d2r ! northward [m]
+ end do
+
+else if ( iflag .eq. 1) then ! [km]  -> [deg]
+ 
+ do i=1,N
+   dlat=latorigin*d2r
+   xout(i) = xin(i)/ (planetrad * cos(dlat) *d2r)  + lonorigin ! lon  [deg]
+   yout(i)=  yin(i)/ (planetrad *d2r)               + latorigin ! lat  [deg]
+ end do
+
+else
+ write(*,*) "GEGEGE iflag=",iflag
+ stop
+end if
+
+return
+end
+
 !######################################################### UTMXY
 !# include coordinate rotation 2024.08.28
 !# Coded on 2016.10.12 by T.MINAMI

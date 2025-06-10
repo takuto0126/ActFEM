@@ -929,15 +929,12 @@ implicit none
 type(param_forward),    intent(in)    :: g_param
 type(grid_data) ,       intent(out)   :: g_grd ! only for the first topofile (only for the focus area)
 type(param_water_level),intent(in)    :: g_param_water ! 2023.08.31
-real(8)       :: lon_c, lat_c, x_c, y_c
-real(8)       :: rlat,rlon,x_utm,y_utm
-real(8),      allocatable,dimension(:,:) :: lon1,lat1, z1
+real(8),      allocatable,dimension(:,:) :: lon1,lat1, z1,lonlatshift ! 2017.09.26
 real(8),      allocatable,dimension(:)   :: x,y
 character(50),allocatable,dimension(:)   :: files           ! 2017.09.25
 integer(4),   allocatable,dimension(:)   :: nt,nsouth,neast ! 2017.09.25
-real(8),      allocatable,dimension(:,:) :: lonlatshift     ! 2017.09.26
-real(8)       :: cx0_utm,cy0_utm
-real(8)       :: lonorigin, latorigin, elev
+real(8)       :: lon_c, lat_c, x_c, y_c,lonorigin, latorigin, elev
+real(8)       :: rlat,rlon,x_utm,y_utm,cx0_utm,cy0_utm
 character(3)  :: UTM
 character(2)  :: num ! 20200728
 character(120):: line
@@ -945,8 +942,7 @@ character(50) :: header2d,header3d,pregeo,topofile
 integer(4)    :: ifile, ntmax
 logical       :: iflag_topright_land ! 2023.08.31 iflag_topright_land
 integer(4)    :: ntopo, i, j, ii, k, neast1,nsouth1,nfile
-real(8)       :: zz1,zz2,zz3,zz4             ! 2017.09.26
-real(8)       :: lonw,lone,latn,lats         ! 2017.09.26
+real(8)       :: zz1,zz2,zz3,zz4,lonw,lone,latn,lats         ! 2017.09.26
 
 !#[0]## set
 nfile       = g_param%nfile           ! 2017.09.25
@@ -1004,20 +1000,31 @@ end do
 !# [4] ### calculate depth "z" at all the horizontal nodes
 rlon=lonorigin !copy because lonorigin and latorigin are parameters
 rlat=latorigin
-CALL UTMGMT(rlon,rlat,x_utm,y_utm,UTM,0) ! 0:LONLAT2UTM , 1:UTM2LONLAT
-cx0_utm=x_utm
-cy0_utm=y_utm
-write(*,'(a,f15.7,a,f15.7)') " (cx0_utm,cy0_utm)=",cx0_utm,"  ",cy0_utm ! 2021.09.30
-
 allocate(x(nt(1)),y(nt(1)))
-CALL UTMGMT_N(nt(1),lon1(1:nt(1),1),lat1(1:nt(1),1),x,y,UTM,0) ! see m_param.f90
-x = x - x_utm
-y = y - y_utm
+
+if (     g_param%iflag_map .eq. 1 ) then ! ECP 2025.06.10
+ call ECPGMT(nt(1),rlon,rlat,lon1(1:nt(1),1),lat1(1:nt(1),1),x,y,0) ! [deg] -> (x,y) [km]
+
+else if (g_param%iflag_map .eq. 2 ) then ! UTM 2025.06.10
+ CALL UTMGMT(rlon,rlat,x_utm,y_utm,UTM,0) ! 0:LONLAT2UTM , 1:UTM2LONLAT
+ cx0_utm=x_utm
+ cy0_utm=y_utm
+ write(*,'(a,f15.7,a,f15.7)') " (cx0_utm,cy0_utm)=",cx0_utm,"  ",cy0_utm ! 2021.09.30
+
+ CALL UTMGMT_N(nt(1),lon1(1:nt(1),1),lat1(1:nt(1),1),x,y,UTM,0) ! see m_param.f90
+ x = (x - x_utm) * 1.d-3 ! 2025.06.10
+ y = (y - y_utm) * 1.d-3 ! 2025.06.10
+
+else 
+ write(*,*) "GEGEGE iflag_map =",g_param%iflag_map           ! 2025.06.10
+ write(*,*) "g_param%iflag_map should be 1 (ECP) or 2 (UTM)" ! 2025.06.10
+ stop                                                        ! 2025.06.10
+end if
 
 !# [4] ## set g_grd only for the first topo file
 allocate(g_grd%xyz(3,nt(1)))
-g_grd%xyz(1,:) = x*1.d-3 ! [km]
-g_grd%xyz(2,:) = y*1.d-3 ! [km]
+g_grd%xyz(1,:) = x ! [km] 2025.06.10
+g_grd%xyz(2,:) = y ! [km] 2025.06.10
 g_grd%xyz(3,:) = z1(1:nt(1),1) ! [km]
 g_grd%node   = nt(1)
 g_grd%neast  = neast(1)
@@ -1036,7 +1043,7 @@ elev = g_param_water%water_level_elev(1)
 
 write(*,*) "### TOPO2GRDXYZ END!! ###"
 
- if ( .true. ) then ! 2019.03.08
+ if ( .false. ) then ! 2019.03.08
   open(1,file="topo.xyz")
   write(1,'(3g15.7)') (g_grd%xyz(1,i),g_grd%xyz(2,i),g_grd%xyz(3,i),i=1,g_grd%node)
   close(1)

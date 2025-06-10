@@ -22,6 +22,7 @@ real(8),allocatable,dimension(:) ::  x3d,y3d,z3d
 ! nlinbry(i) is # of lines on i-th calculation boundary, linbry(i,j) is line number of j-th line of i-th boundary
 integer(4)                    :: nlinbry(4),linbry(4,100)
 integer(4)                    :: itopoflag ! 2017.09.29
+integer(4)                    :: iflag_map ! 0:ECP, 1:UTM 2025.06.10
 real(8)                       :: dlen,dlen2,height1,height2,height3,height4, height5
 integer(4)                    :: iflag_water = 0
 
@@ -44,6 +45,7 @@ integer(4)                    :: iflag_water = 0
  mshfile2dz     = name2d(1:len_trim(name2d))//"z.msh"
  posfile        = name3d(1:len_trim(name3d))//".pos"
  itopoflag      = g_param%itopoflag  ! 2017.09.29
+ iflag_map      = g_param%iflag_map  ! 2025.06.10
 
 !#[2]## read 2d mesh
  CALL READMESH_TOTAL(h_mesh,mshfile2d)
@@ -259,7 +261,7 @@ type(param_water_level),intent(in)    :: g_param_water
 ! 0: default, 1: water level set
 integer(4),             intent(in)    :: iflag_water 
 real(8),dimension(h_mesh%node)        :: x, y, z,x1,y1 !2024.08.28
-integer(4)                            :: node
+integer(4)    :: node,lonlatflag,iflag_map ! 2025.06.10
 real(8)       :: calz,lon_c,lat_c,x_c,y_c,rlat,rlon,x_utm,y_utm
 real(8), dimension(h_mesh%node) :: lon,lat
 real(8),      allocatable,dimension(:,:) :: lon1,lat1, z1
@@ -279,36 +281,36 @@ real(8)       :: sbound,nbound,wbound,ebound ! 2017.09.26
 real(8)       :: lonw,lone,latn,lats         ! 2017.09.26
 
 !#[0]## set
-write(*,*) "[0]start"
+!write(*,*) "[0]start"
 nfile       = g_param%nfile           ! 2017.09.25
 allocate(files(nfile))                ! 2017.09.25
 allocate(nt(nfile),neast(nfile),nsouth(nfile)) ! 2017.09.25
 allocate(lonlatshift(2,nfile) )       ! 2017.09.26
 files       = g_param%topofile        ! 2017.09.25
 lonlatshift = g_param%lonlatshift     ! 2017.09.26
-write(*,*) "[0.1]"
+!write(*,*) "[0.1]"
 node        = h_mesh%node
 header2d    = g_param%header2d
 header3d    = g_param%header3d
-write(*,*) "[0.2]"
-x           = h_mesh%xyz(1,:)
-y           = h_mesh%xyz(2,:)
+!write(*,*) "[0.2]"
+x           = h_mesh%xyz(1,:) ! [km]
+y           = h_mesh%xyz(2,:) ! [km]
 z           = h_mesh%xyz(3,:) ! will be modified and set in h_mesh again
-write(*,*) "[0.3]"
+!write(*,*) "[0.3]"
 UTM         = g_param%UTM   ! zone
 lonorigin   = g_param%lonorigin
 latorigin   = g_param%latorigin
-write(*,*) "[0.4]"
+!write(*,*) "[0.4]"
 inum_water_level=0
 if ( iflag_water .ne. 0) then ! 2025.05.22
  iflag_nodez_2d = g_param_water%iflag_nodez_2d !2023.09.09
- write(*,*) "[0.5]"
+ !write(*,*) "[0.5]"
  inum_water_level = g_param_water%inum_water_level
 end if ! 2024.05.22
-write(*,*) "[0.6]"
+!write(*,*) "[0.6]"
 
 !# [1] ### count lines of gebcofile and allocate
-write(*,*) "[1]start"
+!write(*,*) "[1]start"
 ntmax = 0     ! 2017.09.25
 do ifile=1,nfile
   ntopo=0
@@ -327,7 +329,7 @@ allocate( lon1(ntmax,nfile),lat1(ntmax,nfile)) ! 2017.09.25
 allocate( z1(ntmax,nfile) ) ! x1(i,j) is x coord of j-th node of i-th file
 
 !# [2] ### read coordinates in gebcofile
-write(*,*) "[2]start"
+ !write(*,*) "[2]start"
  do ifile=1,nfile
    open(1,file=files(ifile))
      write(*,'(a,2f15.7,a,i5)') " lonlatshift=",lonlatshift(1:2,ifile)," ifile",ifile ! 2021.09.29
@@ -342,34 +344,50 @@ write(*,*) "[2]start"
 
 !# [3] ### change order and measure # of nodes in horizontal and vertical directions
  !# reorder the values to ((west -> east), north -> south )
- write(*,*) "[3]start"
+ !write(*,*) "[3]start"
  do i=1,nfile ! file loop
    !  write(*,*) "lon1(1:2,ifile)=",lon1(1:2,i),"ifile",i
    call changeorder(lon1(1:nt(i),i),lat1(1:nt(i),i),z1(1:nt(i),i), nt(i), nsouth(i), neast(i))! see m_topo_tool.f90 2023.08.31 
    write(num,'(i2.2)') i                                       ! 20200728
-     open(1,file="reordered_topo"//num//".dat")                  ! 20200728
-     write(1,'(3f15.7)') (lon1(j,i),lat1(j,i),z1(j,i),j=1,nt(i)) ! 20200728
-     close(1)                                                    ! 20200728
+    ! open(1,file="reordered_topo"//num//".dat")                  ! 20200728 commented out 2025.06.07
+    ! write(1,'(3f15.7)') (lon1(j,i),lat1(j,i),z1(j,i),j=1,nt(i)) ! 20200728
+    ! close(1)                                                    ! 20200728
  end do
 
 !# [4] ### calculate depth "z" at all the horizontal nodes
  !#[4-1]## calculate lon lat for all the 2-D node
    rlon=lonorigin !copy because lonorigin and latorigin are parameters
    rlat=latorigin
-   CALL UTMGMT(rlon,rlat,x_utm,y_utm,UTM,0) ! 0:LONLAT2UTM , 1:UTM2LONLAT
-   cx0_utm=x_utm
-   cy0_utm=y_utm
-   write(*,'(a,f15.7,a,f15.7)') " (cx0_utm,cy0_utm)=",cx0_utm,"  ",cy0_utm ! 2021.09.30
-   x1 = x ! 2024.08.24
-   y1 = y ! 2024.08.24
-   do i=1,node  ! 2024.08.24
-   call rotate(x1(i),y1(i),-g_param%angle) ! rotate (- angle)  ! 2024.08.24
-   end do  ! 2024.08.24
-   x1 = x1*1.d3+cx0_utm ! [m]  ! 2024.08.24
-   y1 = y1*1.d3+cy0_utm ! [m]  ! 2024.08.24
-   CALL UTMGMT_N(node,x1,y1,lon,lat,UTM,1) ! get LON and LAT for nodes
-   write(*,*) "### UTMGMT_N END!! ###"
-   z(:)=0.d0
+   lonlatflag = g_param%lonlatflag ! 1:obs/src is lonlat, 2:xyz
+   iflag_map  = g_param%iflag_map ! 1:ECP, 2*UTM
+   if (     iflag_map .eq. 1 ) then ! ECP 2025.06.09
+     write(*,*) "iflag_map =",iflag_map," ECP: Triangular (x,y) -> (lon, lat)"
+     x1 = x ; y1 = y ! [km] 2025.06.10
+     do i=1,node     ! 2024.08.24
+       call rotate(x1(i),y1(i),-g_param%angle) ! rotate (- angle)  ! 2024.08.24
+     end do  ! 2024.08.24
+     call ECPGMT(node,rlon,rlat,x1,y1,lon,lat,1) ! x1,x2 to lon1 and lat1 [km] -> [deg]
+
+   else if ( iflag_map .eq. 2 ) then ! 2025.06.09
+     write(*,*) "iflag_map =",iflag_map," UTM: Triangular (x,y) -> (lon, lat)"
+     CALL UTMGMT(rlon,rlat,x_utm,y_utm,UTM,0) ! 0:LONLAT2UTM , 1:UTM2LONLAT
+     cx0_utm=x_utm ; cy0_utm=y_utm
+     write(*,'(a,f15.7,a,f15.7)') " (cx0_utm,cy0_utm)=",cx0_utm,"  ",cy0_utm ! 2021.09.30
+     x1 = x ; y1 = y ! 2024.08.24
+     do i=1,node  ! 2024.08.24
+       call rotate(x1(i),y1(i),-g_param%angle) ! rotate (- angle)  ! 2024.08.24
+     end do  ! 2024.08.24
+     x1 = x1*1.d3+cx0_utm ! [m]  ! 2024.08.24
+     y1 = y1*1.d3+cy0_utm ! [m]  ! 2024.08.24
+     CALL UTMGMT_N(node,x1,y1,lon,lat,UTM,1) ! get LON and LAT for nodes
+     write(*,*) "### UTMGMT_N END!! ###"
+
+   else
+    write(*,*) "iflag_map =",iflag_map,"no modification for (x,y)"
+    write(*,*) "GEGEGE"
+    stop  ! 2025.06.10
+   end if
+     z(:)=0.d0 ! initialization
 
  !#[4-2]## calculate z from lon lat grid files
  open(1,file="result.dat")
@@ -519,7 +537,7 @@ write(2,'(a100)') line
 end do
 read(1,*) node
 write(2,*) node
-write(3,*) node
+!write(3,*) node
 do i=1,node
 read(1,*) j,x1,y1,z1 ! 2018.06.14
 write(2,'(i10,3g15.7)') j,x1,y1,z(i)*1.d0 ! 2018.06.14
@@ -772,19 +790,15 @@ end do
 write(*,*) "n23dlinbry and n23dlinbryb generated!"
 ! upper line, lineloop, and surface in air ####################################    
 !#                           TOP TOP TOP  VOLUME
-write(*,*) "1"
 n4(1)=n3d+1; n4(2)=n3d+2
 n4(3)=n3d+3; n4(4)=n3d+4
-write(*,*) "2"
 linelist(:,1:3)=0
-write(*,*) "3"
 write(1,*) "Line(1)={",n4(1),",",n4(2),"};";linelist(1,1:2)=(/n4(1),n4(2)/) ! top east
 write(1,*) "Line(2)={",n4(2),",",n4(3),"};";linelist(2,1:2)=(/n4(2),n4(3)/) ! top south
 write(1,*) "Line(3)={",n4(3),",",n4(4),"};";linelist(3,1:2)=(/n4(3),n4(4)/) ! top west
 write(1,*) "Line(4)={",n4(4),",",n4(1),"};";linelist(4,1:2)=(/n4(4),n4(1)/) ! top north
 write(1,*) "Line Loop( 1 )={1,2,3,4};"
 write(1,*) "Plane Surface(1)={1};"
-write(*,*) "4"
 write(1,*) "Line(5)={",n4(1),",",n23dlinbry(1,1,1),"};"
                    linelist(5,1:2)=(/n4(1),n23dlinbry(1,1,1)/) ! start, end node, belonging
 write(1,*) "Line(6)={",n4(2),",",n23dlinbry(2,1,1),"};"
@@ -794,7 +808,6 @@ write(1,*) "Line(7)={",n4(3),",",n23dlinbry(3,1,1),"};"
 write(1,*) "Line(8)={",n4(4),",",n23dlinbry(4,1,1),"};"
                    linelist(8,1:2)=(/n4(4),n23dlinbry(4,1,1)/)
 ii=8 ! line #
-write(*,*) "5"
 !#####################################################################
 !### add lines for transmitter cables to linelist with belonging group of 1, while normal one is 0
 do i=1, nlink
@@ -808,7 +821,6 @@ end do
 write(1,*)  "Physical Line(1)={",(i,",",i=9,ii-1),ii,"};"
 !####
 ! the node order is the same between nakadake2d.msh and nakadake3d.geo up to n3d
-write(*,*) "6"
 !#####################################################################
 n43(1,1:3)=(/-6,-1,5/) ! top east surface
 n43(2,1:3)=(/-7,-2,6/) ! top south surface
@@ -825,7 +837,6 @@ do i=1,4
   write(1,*) "Plane Surface(",i+jj,")={",i+jj,"};"
   deallocate(linb)
 end do
-write(*,*) "7"
 
 !#[1]## generate all the line loop from 2-D mesh
  jj=5 ! line loop  & Plane Surface #
@@ -865,7 +876,7 @@ write(*,*) "7"
 
 !#[4]## generate volume 1
  write(1,*) "Surface loop(1)={1,2,3,4,5"
- write(*,*) "13 ntoploop",ntoploop,"size(toplooplist_out)",size(toplooplist_out)
+ !write(*,*) "13 ntoploop",ntoploop,"size(toplooplist_out)",size(toplooplist_out)
  !write(*,'(2i10)') (i,toplooplist_out(i),i=1,ntoploop)
  write(1,*) (",",toplooplist(i),i=1,ntoploop),"};"
  write(1,*) "Volume(1)={1};"
@@ -905,12 +916,10 @@ write(*,*) "7"
 
 !#############################################################
 !                                  BOTTOM BOTTOM VOLUME
-write(*,*) "14"
 n4(1)=n3d+5; n4(2)=n3d+6
 n4(3)=n3d+7; n4(4)=n3d+8
 n4b(1)=n23dlinbryb(1,1,1); n4b(2)=n23dlinbryb(2,1,1) ! n4b(i) is the node number for ocean bottom node at the i-th corner
 n4b(3)=n23dlinbryb(3,1,1); n4b(4)=n23dlinbryb(4,1,1)
-write(*,*) "14"
 ! bottom line, lineloop, and surface in air
 write(1,*) "Line(",ii+1,")={",n4b(1),",",n4(1),"};";linelist(ii+1,1:2)=(/n4b(1),n4(1)/)
 write(1,*) "Line(",ii+2,")={",n4b(2),",",n4(2),"};";linelist(ii+2,1:2)=(/n4b(2),n4(2)/) ! top south
@@ -920,14 +929,12 @@ write(1,*) "Line(",ii+5,")={",n4(1),",",n4(2),"};";linelist(ii+5,1:2)=(/n4(1),n4
 write(1,*) "Line(",ii+6,")={",n4(2),",",n4(3),"};";linelist(ii+6,1:2)=(/n4(2),n4(3)/)  ! bottom south
 write(1,*) "Line(",ii+7,")={",n4(3),",",n4(4),"};";linelist(ii+7,1:2)=(/n4(3),n4(4)/)  ! bottom west
 write(1,*) "Line(",ii+8,")={",n4(4),",",n4(1),"};";linelist(ii+8,1:2)=(/n4(4),n4(1)/)  ! bottom north
-write(*,*) "15"
 n43(1,1:3)=(/ii+2,-(ii+5),-(ii+1)/)
 n43(2,1:3)=(/ii+3,-(ii+6),-(ii+2)/)
 n43(3,1:3)=(/ii+4,-(ii+7),-(ii+3)/)
 n43(4,1:3)=(/ii+1,-(ii+8),-(ii+4)/)
 ii=ii+8
 iilast=ii
-write(*,*) "16"
 do i=1,4
   allocate(linb(nlinbry(i)))
   do j=1,nlinbry(i)
@@ -940,14 +947,12 @@ do i=1,4
   write(1,*) "Plane Surface(",jj,")={",jj,"};"
   deallocate(linb)
 end do
-write(*,*)"17"
 if ( ii .ne. iilast ) goto 100
 jj=jj+1
 write(1,*) "Line Loop(",jj,")={",ii-3,",",ii-2,",",ii-1,",",ii,"};" !    LAST BOTTOM LINE LOOP
 write(1,*) "Plane Surface(",jj,")={",jj,"};"
 write(1,*) "Surface Loop(2)={",(botlooplist(i),",",i=1,nbotloop) ! end with comma
 write(1,*)  jj-4,",",jj-3,",",jj-2,",",jj-1,",",jj,"};"
-write(*,*)"18"
 write(1,*) "Volume(2)={2};"
 write(1,*) "Physical Volume (2)={2};"
 

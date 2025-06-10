@@ -67,11 +67,13 @@ CALL GENBCMT(g_surface,omega,nline,Avalue_bc,line_bc) ! ok 2021.09.14
 !#[6]## Set Boundary Condition for dirichlet boundary; Avalue_bc -> A and b_vec
 CALL SET_BC_3Djoint(A, nline, nsr, b_vec, Avalue_bc, line_bc(:,1), ip) ! ok 2021.09.14
 
-open(1,file="bc.dat")
-do i=1,nline
- if (line_bc(i,1) ) write(1,'(i6,4g15.7)'),i,Avalue_bc(i,1:2)
-end do
-close(1)
+if (.false.) then
+ open(1,file="bc.dat")
+ do i=1,nline
+   if (line_bc(i,1) ) write(1,'(i6,4g15.7)'),i,Avalue_bc(i,1:2)
+ end do
+ close(1)
+end if
 
 !#[7]## Solve
 !call solveMUMPS(doftot,A,b_vec,bs,ip)  ! for MacbookPro 15inch

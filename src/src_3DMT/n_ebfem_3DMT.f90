@@ -163,6 +163,8 @@ real(8)        :: freq
 
    do i=1,nfreq
     freq = g_param_mt%freq(i)
+    ! In homogeneous structure, arg(rho_yx)=pi/4, arg(rho_xy)=-3/4*pi, 
+    ! because the coordinate system wehre z is upward positive
     write(31,'(9g15.7)') freq,resp_mt(i)%rhoxx(l),resp_mt(i)%phaxx(l),&
     &                         resp_mt(i)%rhoxy(l),resp_mt(i)%phaxy(l),&
     &                         resp_mt(i)%rhoyx(l),resp_mt(i)%phayx(l),&
@@ -691,7 +693,15 @@ subroutine PREPZOBSMT(h_mesh,g_param_mt)
  !#[4]## set znew to xyz_r
     g_param_mt%xyzobs(3,1:nobs) = znew(1:nobs)
 
- !#[5]## kill mesh for memory 2017.05.15
+ !#[5]## output 2025.06.09
+   open(11,file=trim(g_param_mt%outputfolder)//"/site_mt.dat")
+   do j=1,nobs 
+    write(11,'(a5,3f15.7)') g_param_mt%obsname(j),xyzobs(1:3,j)
+   end do
+  close(11)
+
+
+ !#[6]## kill mesh for memory 2017.05.15
   !  call killmesh(h_mesh) ! see m_mesh_type.f90
 
  write(*,*) "### PREPZOBSMT  END!! ###"

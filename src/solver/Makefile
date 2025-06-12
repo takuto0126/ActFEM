@@ -1,10 +1,10 @@
 # Coded on August 15, 2015 by T. MINAMI
 
-FC=ifort
+FC=ifx
 MPIFC=mpif90
 #OPT=-i-dynamic
 VPATH = ../common
-OPT0= -O3 -xAVX -mkl=parallel
+OPT0= -O3 -xAVX -qmkl=parallel
 #OPT0= -O -fpe0 -check bounds -traceback -g  -mkl=parallel
 
 #2016.03.03 solver with many modules

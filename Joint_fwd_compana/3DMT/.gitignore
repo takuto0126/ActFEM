@@ -1,0 +1,8 @@
+
+*.msh
+*.geo
+*.pos
+tmp.ctl
+*.log
+*.dat
+result/*

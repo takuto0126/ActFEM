@@ -616,6 +616,7 @@ write(*,*) "i=",i,"findbry"
   ! if no lines selected for next linbry, move on next calculation boundary
 end do
 
+if (.false.) then ! 2025.06.11
 write(*,*) "pre3dbry.geo start!!"
 !### write nodes
 open(1,file="pre3dbry.geo")
@@ -640,6 +641,7 @@ do i=1,4
 end do
 close(1)
 write(*,*) "## pre3dbry.geo end! ##"
+end if ! 2025.06.11
 
 if ( is .ne. 1) goto 99
 write(*,*) "### FINDBRYLINE7 END!! ###"

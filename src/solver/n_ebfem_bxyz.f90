@@ -297,8 +297,8 @@ type(param_source),  intent(in) :: sparam
 real(8)    :: amp,phase,a(3),p(3),x3(3),x1(3),x2(3),I,ab(3),pb(3)
 complex(8) :: one=(1.d0,0.d0),iunit=(0.d0,1.d0),e3(3),fp(3),b3(3),e1(3),e2(3),phi
 integer(4) :: j,k,ntimes=20
-real(8)    :: omega,pi, dd,ds
-pi=4.d0*datan(1.d0)
+real(8)    :: omega,dd,ds ! 2025.06.11 pi is give by m_constants.f90
+!pi=4.d0*datan(1.d0) ! commented out 2025.06.11
 omega=2.d0*pi*freq
 
 x1(1:3)=sparam%xs1(1:3,1)*1.d3 ! [m]

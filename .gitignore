@@ -3,5 +3,5 @@
 *.o
 *.exe
 .DS_Store
-work
 .vscode
+work

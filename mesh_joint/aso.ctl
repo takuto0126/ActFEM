@@ -35,15 +35,15 @@ west bound         !-1.8
 east bound         !1.7
 south bound        !-1.8
 north bound        !1.7
-lenout [km]        !20.0
-upz in [km]  (>0)  !1.0
-downz in [km](<0)  !-1.1
+lenout [km]        !8.0
+upz in [km]  (>0)  !1.5
+downz in [km](<0)  !0.0
 zmax   [km]        !50.0
 zmin   [km]        !-50.0
-sizein [km]        !0.10
+sizein [km]        !0.12
 sizebo [km]        !3.0
 sigma_obs [km]     !0.3
-A_obs     [km]     !0.008
+A_obs     [km]     !0.01
 dlen_source [km]   !0.3
 sigma_src [km]     !0.32
 A_src     [km]     !0.006

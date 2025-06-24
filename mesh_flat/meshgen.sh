@@ -8,8 +8,8 @@ cd $SRC
 make -f Makefile_gfort
 cd -
 
-#ctlfile=aso.ctl
-ctlfile=aso_ECP.ctl
+ctlfile=aso.ctl
+#ctlfile=aso_ECP.ctl
 #ctlfile=aso_rotate.ctl
 #ctlfile=aso_ECP_rotate.ctl
 

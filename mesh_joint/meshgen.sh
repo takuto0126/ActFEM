@@ -29,6 +29,8 @@ ${SRC}/mkline.exe <<EOF
 aso.ctl
 EOF
 
+exit
+
 #![6]## mkface
 ${SRC}/mkface.exe <<EOF
 aso.ctl

@@ -60,5 +60,5 @@ $(target6) : $(objs6)
 
 clean:
 	rm -f *.o    ../src_mesh/*.o   ../solver/*.o ../src_inv/*.o
-	rm -f *.mod  ../src_mesh/*.mod  ../solver/*.mod ../src_inv/*.mod
+	rm -f *.mod *.mod0  ../src_mesh/*.mod  ../solver/*.mod ../src_inv/*.mod
 	rm -f *.exe  ../src_mesh/*.exe ../solver/*.exe ../src_inv/*.exe

@@ -4,9 +4,9 @@
 ##-----10!-------20! inv201405_ap.ctl
 face info file     !../mesh_aso_A04/faceinfo.dat
 1:cond,2:model     !1
-ref  cond file     !./cond_homo.msh
+ref  cond file     !./structure/cond_homo.msh
 1:cond,2:model     !1
-init cond file     !./cond_init.msh
+init cond file     !./structure/cond_init.msh
 output folder      |./result_ms0/
 error floor  [0-1] !0.010
 Roughness type     |1

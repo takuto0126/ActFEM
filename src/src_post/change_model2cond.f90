@@ -175,14 +175,14 @@ xyzminmax  = h_mesh%xyzminmax
        if (y2(1) .lt. cxyz(2,l) .and. cxyz(2,l) .lt. y2(2) ) then
           if ( iflag_ele == 0 ) then ! normal cuboid
             if (z2(1) .lt. cxyz(3,l) .and. cxyz(3,l) .lt. z2(2) ) then
-!              write(*,*) "In cxyz",cxyz(1:3,l)
+              ! write(*,*) "In cxyz",cxyz(1:3,l)
               h_cond%rho(j) = g_info_cond_model%g_cuboid(i)%rho
-!              write(*,*) "rho is change from",g_cond%rho(j)," ->",h_cond%rho(j)
+              ! write(*,*) "rho is change from",g_cond%rho(j)," ->",h_cond%rho(j)
             end if
           else if ( iflag_ele == 1) then ! depth from surface
-!             write(*,*) "cxyz(1:2,l)",cxyz(1:2,l)
+             ! write(*,*) "cxyz(1:2,l)",cxyz(1:2,l)
              call findtriwithgrid(topo2d_mesh,glist,cxyz(1:2,l),iele,a3) ! 2017.07.14
-!             write(*,*) "iele=",iele
+             ! write(*,*) "iele=",iele
              n1 = n3k(iele,1); n2 = n3k(iele,2) ; n3 = n3k(iele,3) ! 3 node for iele triangle
              z_topo = a3(1)*xyzk(3,n1)+a3(2)*xyzk(3,n2)+a3(3)*xyzk(3,n3)
              if (z_topo + z2(1) .lt. cxyz(3,l) .and. cxyz(3,l) .lt. z_topo + z2(2) ) then

@@ -1,7 +1,20 @@
 ## lines starting with "##" work as lines for comments ! 2020.09.28
 ## this file is forward control file
 ##-----10!-------20!
-itopofile 0 or 1   !1
+## itopofile controls whether topo file is provided or not
+## itopofile = 0   : no topo file and z=0 surface is assumed
+##                   obs and src coordinates should be provided by cartesian position
+## itopofile = 1   : topofile(s) is(are) provided, iflag_map should be provided
+   itopofile       !1
+## iflag_map controls the type of Map projection
+## iflag_map = 1 (ECP) : lon lat topo + Equidistant Cylindrical Projection  (ECP)
+##                 x=planetrad*cos(latorigin)*(lon-lonorigin), y=planetrad*(lat-latorigin)
+##                 one additional line: lonlat origin (2f15.7) 
+## iflag_map = 2 (UTM) : lon lat topo + Universal Transvers Mercatol (UTM) projection
+##                 two additional line: UTM zone like 52S (a3) and lonlat origin (2f15..7)
+iflag_map          !2
+UTM zone           !52S
+lonlatorigin       !131.084782     32.884882
 # of topofile      !1
 topofile           !../topo/topo127_134_29_36.xyz
 lon lat shift      !0.0         0.0
@@ -40,8 +53,6 @@ sigma_src [km]     !0.3
 A_src     [km]     !0.005
 # of observatory   !4
 lonlat(1),xyz (2)  !1
-UTM ZONE           |52S
-lonlatorigin       !131.084782   32.884882
 1  Name            !A02
 1  xyz             !131.083411   32.886706  -0.001
 2  Name            !A04
@@ -58,4 +69,4 @@ source end   point !131.0814639  32.8912333  -0.001
 Elcetric current[A]! 1.0
 sigma_air    [S/m] !1.e-8
 condflag 0:home,1: !1
-condfile           !./cond_homo.msh
+condfile           !./structure/cond_homo.msh

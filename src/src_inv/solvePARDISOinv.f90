@@ -141,9 +141,9 @@ END DO
   !write(*,*) "ia",ia,"ja",ja,"mtype","mnum",mnum
   phase = 22 !! only factorization
   write(num,'(i2.2)') ip
-  open(61,file="AMAT_"//num//".dat")
-  write(61,*) "AMAT",AMAT
-  close(61)
+  !open(61,file="AMAT_"//num//".dat")
+  !write(61,*) "AMAT",AMAT
+  !close(61)
     CALL pardiso (pt, maxfct, mnum, mtype, phase, n, AMAT, ia, ja, &
               idum, nrhs, iparm, msglvl, ddum, ddum, error)
   !WRITE(*,*) 'Factorization completed ... ' ! commented out on 2017.12.22

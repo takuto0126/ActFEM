@@ -70,5 +70,5 @@ compcond: $(objs9)
 
 clean:
 	rm -f *.o
-	rm -f *.mod
+	rm -f *.mod *mod0
 	rm -f *.exe

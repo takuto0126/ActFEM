@@ -7,7 +7,7 @@ face info file     !../mesh_aso_A04/faceinfo.dat
 ref  cond file     !./structure/cond_homo.msh
 1:cond,2:model     !1
 init cond file     !./structure/cond_init.msh
-output folder      |./result_ms0/
+output folder      |./result_inv/
 error floor  [0-1] !0.010
 Roughness type     |1
 1:L,2:Cl,3:Mi,4:Gr !2

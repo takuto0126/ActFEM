@@ -1,2 +1,5 @@
-result_ms0
+result_inv/*
 tmp.ctl
+
+!result_inv/
+!result_inv/.gitkeep

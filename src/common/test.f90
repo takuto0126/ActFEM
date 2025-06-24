@@ -2,6 +2,7 @@
 ! test of m_matrix.f90
 ! complile this, for example, by "ifort m_matrix.f90 test.f90"
 program test
+use caltime ! 2025.06.24
 use matrix ! 2017.09.04
 implicit none
 !      | 1 0 1 0 0|     | 1 0 0 0 1 |    | 2 0 1 0 1 |
@@ -26,7 +27,9 @@ complex(8) :: ACO(3,5)
 real(8)    :: fullA2(3,5),fullA1(3,5)
 real(8) :: threshold=1.d-10
 integer(4) :: ntot,nrow,ncolm
+type(watch) :: t_watch
 
+call watchstart(t_watch)
 ! A1
 fullA1(1,1:5)=(/1,0,1,0,0/)
 fullA1(2,1:5)=(/2,1,3,0,0/)
@@ -46,6 +49,9 @@ write(*,*) "crs%stack=",crsout%stack
 write(*,*) "crs%item=",crsout%item
 write(*,*) "crs%val=",crsout%val
 
+call watchstop(t_watch)
+write(*,10) "t_watch%time",t_watch%time,"[min]"
+10 format(a,f8.5,a)
 !stop
 
 !# set B

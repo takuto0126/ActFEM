@@ -1015,6 +1015,7 @@ open(1,file=filename)
 do
 i=i+1
 read(1,'(a)',end=99) lines(i)
+write(*,'(a)') trim(lines(i))
 end do
 99 continue
 
@@ -1023,7 +1024,7 @@ close(1)
 !do i=1,20
 !write(*,'(a)') trim(lines(i))
 !end do
-
+write(*,*)"subtractcomment start, n=",n
 call subtractcommentout(n,lines)
 
 open(1,file="tmp.ctl")
@@ -1047,14 +1048,15 @@ subroutine subtractcommentout(n,lines)
 implicit none
 integer(4),    intent(in)    :: n
 character(200),intent(inout) :: lines(n)
-character(200)               :: lines_out(n)
+character(200),allocatable,dimension(:)  :: lines_out
 integer(4) :: i,j
+allocate(lines_out(n)) !2025.06.24
 j=0
 do i=1,n
 if ( lines(i)(1:2) .ne. "##" ) then
   j=j+1
   lines_out(j) = lines(i)
-!  write(*,'(a)')trim(lines_out(j))
+  write(*,'(a)')trim(lines_out(j))
  end if
 end do
 

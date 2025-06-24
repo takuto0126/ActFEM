@@ -646,8 +646,7 @@ integer(4)                          :: iboundflag
 integer(4)                          :: icheck = 0
 type(model)                         :: ki,kiref
 type(model)                         :: m0,m_ref
-type(watch) :: t_watch ! 2017.12.22
-type(watch) :: t_watch1 ! 2018.01.23
+type(watch) :: t_watch, t_watch1 ! 2025.06.25
 
  call watchstart(t_watch) ! 2017.12.22
  write(*,'(a,f9.4)') " alpha =",alpha," is adopted in GETNEWMODEL"  ! 2020.09.29

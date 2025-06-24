@@ -141,14 +141,14 @@ B%msglvl   = 0 ! not print statistical info
 
 nite = nmodel/nrhsmax
 if ( nmodel .gt. nrhsmax*nite ) nite = nite + 1
-write(*,*) "nite=",nite
+!write(*,*) "nite=",nite ! commented out 2025.06.24
 allocate(bb(nmodel,nrhsmax),x(nmodel,nrhsmax))
 
 icount=0
 allocate(xccs(nite))
 
 do i=1,nmodel/nrhsmax
-  write(*,*) "i",i,"nmodel/nrhsmax",nmodel/nrhsmax
+  !write(*,*) "i",i,"nmodel/nrhsmax",nmodel/nrhsmax ! commented out 2015.06.24
   bb(:,:)=0.d0 ; x(:,:) = 0.d0
   do j=1,nrhsmax
    icount = icount + 1
@@ -160,27 +160,27 @@ do i=1,nmodel/nrhsmax
 ! write(*,*) 'i=',i,'Solve completed ... '
 ! if (icount .gt. 3000 ) write(*,*) "x(:,1)=",x(:,1)
  IF (B%error /= 0) goto 99
- write(*,*) "nmodel 4",nmodel
- write(*,*) "nrhsmax 4",nrhsmax
- write(*,*) "size(x)",size(x)
+ !write(*,*) "nmodel 4",nmodel   ! commented out 2024.06.24
+ !write(*,*) "nrhsmax 4",nrhsmax ! commented out 2024.06.24
+ !write(*,*) "size(x)",size(x)   ! commented out 2024.06.24
  call conv_full2ccs(x,nmodel,nrhsmax,xccs(i),threshold)
 ! write(*,*) "i=",i,"xccs(i) end"
 end do
 
 if ( nmodel .gt. int(nmodel/nrhsmax)*nrhsmax ) then
  nres = nmodel - int(nmodel/nrhsmax)*nrhsmax
- write(*,*) "nres=",nres
+ ! write(*,*) "nres=",nres ! commented out 2025.06.24
  bb(:,:)=0.d0; x(:,:) = 0.d0
  do i=1,nres
   icount = icount + 1
   bb(icount,i)=1.d0
  end do
- write(*,*) "icount=",icount,"nmodel=",nmodel
+ !write(*,*) "icount=",icount,"nmodel=",nmodel
  CALL pardiso (B%pt, B%maxfct, B%mnum, B%mtype, phase, B%n, B%AMAT, B%ia, B%ja, &
               B%idum, nres, B%iparm, B%msglvl, bb(:,1:nres), x(:,1:nres), B%error)
  call conv_full2ccs(x(:,1:nres),nmodel,nres,xccs(nite),threshold)
 end if
-write(*,*) "## xccs are generated! ##"
+!write(*,*) "## xccs are generated! ##" ! commented out 2025.06.24
 
 !# assemble CM
 CMCCS%nrow  = nmodel

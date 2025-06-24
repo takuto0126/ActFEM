@@ -21,7 +21,7 @@ call system_clock(t_watch%t1)
 return
 end subroutine watchstart
 
-!################ start
+!################ watch sttop
 subroutine watchstop(t_watch)
 implicit none
 type(watch),intent(inout) :: t_watch
@@ -56,7 +56,7 @@ real(8)      :: diff
   time = time + diff/dble(t_rate)/60.d0
 
 !#[3]# output
-  t_watch%time = time
+  t_watch%time = time !"[min]" 2025.06.24
 
 return
 end subroutine calt

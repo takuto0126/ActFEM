@@ -5,7 +5,7 @@ type watch
  integer(4) :: t1
  integer(4) :: t2
  integer(4) :: t3
- integer(4) :: t_rate
+ integer(4) :: t_rate ! 2025.06.25
  integer(4) :: t_max
  real(8)    :: time  ! [min]
 end type
@@ -27,6 +27,13 @@ implicit none
 type(watch),intent(inout) :: t_watch
 
 call system_clock(t_watch%t2,t_watch%t_rate,t_watch%t_max)
+!write(*,*) "t_watch%t1",t_watch%t1
+!write(*,*) "t_watch%t2",t_watch%t2
+!write(*,*) "t_watch%t_rate",t_watch%t_rate
+!write(*,*) "diff", t_watch%t2 - t_watch%t1 
+!write(*,*) "diff/t_rate/60", (t_watch%t2 - t_watch%t1)/t_watch%t_rate/60. 
+
+
 call calt(t_watch)
 
 return
@@ -38,7 +45,7 @@ subroutine calt(t_watch)
 implicit none
 type(watch),intent(inout) :: t_watch
 integer(4)   :: t1,t2,t_rate,t_max
-real(8)      :: time ! [min]
+real(8)      :: time=0.d0 ! [min]
 real(8)      :: diff
 
 !#[1]# set

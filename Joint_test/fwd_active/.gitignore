@@ -1,5 +1,8 @@
 result/*
+data/*
 tmp.ctl
 
+!data/
+!data/.gitkeep
 !result/
 !result/.gitkeep

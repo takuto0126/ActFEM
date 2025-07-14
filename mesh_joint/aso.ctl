@@ -38,9 +38,9 @@ north bound        !1.7
 lenout [km]        !8.0
 upz in [km]  (>0)  !1.5
 downz in [km](<0)  !0.0
-zmax   [km]        !50.0
-zmin   [km]        !-50.0
-sizein [km]        !0.12
+zmax   [km]        !25.0
+zmin   [km]        !-25.0
+sizein [km]        !0.1
 sizebo [km]        !3.0
 sigma_obs [km]     !0.3
 A_obs     [km]     !0.01

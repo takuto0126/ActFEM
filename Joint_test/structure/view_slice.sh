@@ -196,5 +196,5 @@ gmt text -R0/20/0/20 -JX20/20 -F+f13p,Helvetica+jCM << EOF
 9.5 10.3  (@~W@~m)
 EOF
 
-gmt end show
+gmt end
 rm test*.ctl *.dat

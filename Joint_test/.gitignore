@@ -1,7 +1,4 @@
 tmp.ctl
 tmp0.ctl
 result_inv/*
-
-
-!result_inv/
-!result_inv/.gitkeep
+*.pdf

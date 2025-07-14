@@ -1,3 +1,3 @@
 #!/bin/bash
 
-rm *.msh
+rm *.msh test*.ctl *.pdf tmp.ctl

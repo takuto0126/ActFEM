@@ -604,8 +604,10 @@ implicit none
 type(mesh),            intent(inout) :: em_mesh ! 2021.10.13
 type(param_forward_mt),intent(inout) :: g_param_mt ! 2021.12.15
 real(8) :: xmin,xmax,ymin,ymax,zmin,zmax
-real(8) :: xyz(3,em_mesh%node),xyzminmax(6)
+real(8) :: xyzminmax(6)
+real(8), allocatable, dimension(:,:) :: xyz ! 2025.07.15
 integer(4) :: i
+allocate(xyz(3,em_mesh%node))   ! 2025.07.15
 xyz = em_mesh%xyz ! normal
 xmin=xyz(1,1) ; xmax=xyz(1,1)
 ymin=xyz(2,1) ; ymax=xyz(2,1)

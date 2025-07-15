@@ -184,9 +184,9 @@ logical        ::  found
     integer(4),intent(in) :: ip, enod, doftot
     integer(4),intent(in) :: nodtot, intnodtot
     integer(4),intent(in) :: elmtot, elmid(elmtot,enod) !  total element count on this PE
-    integer(4), parameter :: max_retry    = 10                 !   max. retry count
+    integer(4), parameter :: max_retry    = 11                 !   max. retry count
     integer(4), parameter :: dofn = 1               ! 2021.09.16
-    integer(4)            :: table_dof(nodtot,dofn) ! 2021.09.16
+    integer(4),allocatable,dimension(:,:)    :: table_dof ! 2025.07.15
     integer(4), dimension(max_retry)         ::  max_inum_table  !  max_inum retry table
     integer(4), dimension(:,:), allocatable  ::  index_u_tmp ! freedom number at each term (upper, temporaty)
     integer(4), dimension(:,:), allocatable  ::  index_l_tmp ! freedom number at each term (lower, temporaty)
@@ -194,8 +194,9 @@ logical        ::  found
     integer(4), dimension(:),   allocatable  ::  inum_l_tmp  ! term count at each freedom  (i-th dof)
     integer(4)     ::  i_dof, num, max_inum,  retry_count   ! retry count
     logical        ::  inum_overflow                                         !  table overflow status key
-    data max_inum_table / 98,120,160,200,300,400,500,600,800,1000/
+    data max_inum_table / 98,120,160,200,300,400,500,600,800,1000,2000/
 !     data max_inum_table / 2000, 3000, 4000, 8000, 5*10000/
+    allocate(table_dof(nodtot,dofn)) ! 2025.07.15
     do i_dof=1,doftot         ! 2021.09.16
      table_dof(i_dof,1)=i_dof ! 2021.09.16
     end do                    ! 2021.09.16

@@ -37,7 +37,7 @@ south bound        !-1.8
 north bound        !1.7
 lenout [km]        !8.0
 upz in [km]  (>0)  !1.5
-downz in [km](<0)  !0.0
+downz in [km](<0)  !-0.1
 zmax   [km]        !25.0
 zmin   [km]        !-25.0
 sizein [km]        !0.1
@@ -50,13 +50,13 @@ A_src     [km]     !0.006
 # of observatory   !12
 lonlat(1),xyz (2)  !1
 1  Name            !A02
-1  xyz             ! 131.0834110     32.8867060     -0.0010000
+1  xyz             !131.0834110     32.8867060     -0.0010000
 2  Name            !A04
-2  xyz,sigma,A[km] ! 131.0819390     32.8848080     -0.0010000
+2  xyz,sigma,A[km] !131.0819390     32.8848080     -0.0010000
 3  Name            !A01
-3  xyz,sigma,A[km] ! 131.0833670     32.8827250     -0.0010000
+3  xyz,sigma,A[km] !131.0833670     32.8827250     -0.0010000
 4  Name            !A03
-4  xyz,sigma,A[km] ! 131.0868470     32.8819810     -0.0010000
+4  xyz,sigma,A[km] !131.0868470     32.8819810     -0.0010000
 5  Name            !DUM
 5  xyz,sigma,A[km] !131.0847820     32.8848820     -0.1000000
 5  Name            !DM1

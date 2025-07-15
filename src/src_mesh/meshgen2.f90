@@ -260,10 +260,9 @@ type(mesh),             intent(inout) :: h_mesh
 type(param_water_level),intent(in)    :: g_param_water
 ! 0: default, 1: water level set
 integer(4),             intent(in)    :: iflag_water 
-real(8),dimension(h_mesh%node)        :: x, y, z,x1,y1 !2024.08.28
+real(8),     allocatable,dimension(:) :: x, y, z,x1,y1, lon,lat !2025.07.15
 integer(4)    :: node,lonlatflag,iflag_map ! 2025.06.10
 real(8)       :: calz,lon_c,lat_c,x_c,y_c,rlat,rlon,x_utm,y_utm
-real(8), dimension(h_mesh%node) :: lon,lat
 real(8),      allocatable,dimension(:,:) :: lon1,lat1, z1
 character(50),allocatable,dimension(:)   :: files           ! 2017.09.25
 integer(4),   allocatable,dimension(:)   :: nt,nsouth,neast ! 2017.09.25
@@ -290,6 +289,8 @@ files       = g_param%topofile        ! 2017.09.25
 lonlatshift = g_param%lonlatshift     ! 2017.09.26
 !write(*,*) "[0.1]"
 node        = h_mesh%node
+allocate(x(node),y(node),z(node),x1(node),y1(node)) ! 2025.07.15
+allocate(lon(node),lat(node)) ! 2025.07.15
 header2d    = g_param%header2d
 header3d    = g_param%header3d
 !write(*,*) "[0.2]"
@@ -356,17 +357,21 @@ allocate( z1(ntmax,nfile) ) ! x1(i,j) is x coord of j-th node of i-th file
 
 !# [4] ### calculate depth "z" at all the horizontal nodes
  !#[4-1]## calculate lon lat for all the 2-D node
-   rlon=lonorigin !copy because lonorigin and latorigin are parameters
-   rlat=latorigin
+   rlon = lonorigin !copy because lonorigin and latorigin are parameters
+   rlat = latorigin
    lonlatflag = g_param%lonlatflag ! 1:obs/src is lonlat, 2:xyz
    iflag_map  = g_param%iflag_map ! 1:ECP, 2*UTM
    if (     iflag_map .eq. 1 ) then ! ECP 2025.06.09
      write(*,*) "iflag_map =",iflag_map," ECP: Triangular (x,y) -> (lon, lat)"
      x1 = x ; y1 = y ! [km] 2025.06.10
+     write(*,*) "Angle is",g_param%angle,"[deg] in ECP calz" ! 2025.07.15
      do i=1,node     ! 2024.08.24
        call rotate(x1(i),y1(i),-g_param%angle) ! rotate (- angle)  ! 2024.08.24
      end do  ! 2024.08.24
      call ECPGMT(node,rlon,rlat,x1,y1,lon,lat,1) ! x1,x2 to lon1 and lat1 [km] -> [deg]
+     !do i=1,10
+     ! write(*,*) "i",i,"x1,y1",x1(i),y(i),"lon,lat",lon(i),lat(i)
+     !end do
 
    else if ( iflag_map .eq. 2 ) then ! 2025.06.09
      write(*,*) "iflag_map =",iflag_map," UTM: Triangular (x,y) -> (lon, lat)"
@@ -433,8 +438,16 @@ allocate( z1(ntmax,nfile) ) ! x1(i,j) is x coord of j-th node of i-th file
        latn = lat1(ii,             ifile) ! north lat      2017.09.26
        lats = lat1(ii+neast(ifile),ifile) ! south lat      2017.09.26
        z(k)=calz(lon(k),lat(k),lonw,lone,latn,lats,zz1,zz2,zz3,zz4) ! 2017.09.26
-       if (z(k)  .lt. 0.d0 ) z(k)=0.d0
-       if ( .not. ( z(k) .ge. 0.d0 ) ) goto 997
+       if ( k == 2 .and. .false. ) then ! 2025.07.15 
+        write(*,*) "z1,--z4",zz1,zz2,zz3,zz4
+        write(*,*) "lon(k),lat(k)",lon(k),lat(k)
+        write(*,*) "ii=",ii
+        write(*,*) "lon1(neast1),lat1(ii)",lon1(neast1,ifile),lat1(ii,ifile)
+        write(*,*) "z(k)",z(k)
+        stop
+       end if
+       !if (z(k)  .lt. 0.d0 ) z(k)=0.d0 ! commented out 2025.07.15 for Martian topo
+       !if ( .not. ( z(k) .ge. 0.d0 ) ) goto 997 ! commented out 2025.07.15 for Martian topo
        if ( ifile .eq. 1) write(1,'(a,i5,2x,a,f9.3)')"file",ifile,"z",z(k)
        goto 100  ! 2017.09.26
      end if     ! 2017.09.26  if within area
@@ -465,7 +478,7 @@ end do
 
 do k=1,node
  read(1,*)
- write(2,'(i10,3g15.7)') k,lon(k),lat(k),z(k)/10.D0
+ write(2,'(i10,3g15.7)') k,lon(k),lat(k),z(k)*1.d-3
 end do
 
 do
@@ -480,13 +493,13 @@ close(2)
 if (.false.) then          ! 2021.09.29
 open(3,file="lonlat.dat")  ! 2021.09.29
  do k=1,node               ! 2021.09.29
-  write(3,'(3g15.7)') lon(k),lat(k),z(k)*1.d3
+  write(3,'(3g15.7)') lon(k),lat(k),z(k)
  end do                    ! 2021.09.29
 close(3)                   ! 2021.09.29
 end if                     ! 2021.09.29
 
 !#[]## set output
-h_mesh%xyz(3,:) = z
+h_mesh%xyz(3,1:node) = z(1:node)
 
 write(*,*) "### CALZTOPO2 END!! ###"
 
@@ -499,6 +512,7 @@ stop
 write(*,*) "GEGEGE stop! cannot find lon",lon(k),"lat",lat(k),"in file",ifile
 stop
 997 continue
+write(*,*) "GEGEGE stop! z(k)=",z(k),"is not positive at node k=",k ! 2025.07.20
 write(*,*) k,"lon(k),lat(k)",lon(k),lat(k),"z=",z(k),"ifile=",ifile
 write(*,*) "lonw,lone",lonw,lone,"lats,latn",lats,latn
 write(*,*) "zz1,zz2,zz3,zz4=",zz1,zz2,zz3,zz4
@@ -529,26 +543,26 @@ character(50) ::  mshfile,polyzfile,poly_zfile
 character(100) :: line
 open(1,file=mshfile)
 open(2,file=polyzfile)
-!open(3,file=poly_zfile) !commented out 2022.10.14
-do i=1,4
-read(1,'(a100)') line
-write(2,'(a100)') line
-!write(3,'(a100)') line !commented out 2022.10.14
-end do
-read(1,*) node
-write(2,*) node
-!write(3,*) node
-do i=1,node
-read(1,*) j,x1,y1,z1 ! 2018.06.14
-write(2,'(i10,3g15.7)') j,x1,y1,z(i)*1.d0 ! 2018.06.14
-!write(3,'(i10,3g15.7)') j,x1,y1,z(i)*5.d0 ! 2018.06.14 commented out 2022.10.14
-end do
-do while ( i .ge. 0)
-read(1,'(a100)',end=99) line
-write(2,'(a100)') line
-!write(3,'(a100)') line !commented out 2022.10.14
-end do
-99 continue
+ !open(3,file=poly_zfile) !commented out 2022.10.14
+ do i=1,4
+   read(1,'(a100)') line
+   write(2,'(a100)') line
+   !write(3,'(a100)') line !commented out 2022.10.14
+ end do
+ read(1,*) node
+ write(2,*) node
+ !write(3,*) node
+ do i=1,node
+   read(1,*) j,x1,y1,z1 ! 2018.06.14
+   write(2,'(i10,3g15.7)') j,x1,y1,z(i)*1.d0 ! 2018.06.14
+   !write(3,'(i10,3g15.7)') j,x1,y1,z(i)*5.d0 ! 2018.06.14 commented out 2022.10.14
+ end do
+ do while ( i .ge. 0)
+   read(1,'(a100)',end=99) line
+   write(2,'(a100)') line
+   !write(3,'(a100)') line !commented out 2022.10.14
+ end do
+ 99 continue
 close(1)
 close(2)
 !close(3) commented out 2022.10.14

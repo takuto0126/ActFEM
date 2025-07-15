@@ -641,7 +641,7 @@ integer(4),intent(in)  :: iflag ! 0: LONLAT2XY, 1:XY2LONLAT
 integer(4) :: i
 real(8) :: dlat
 
-if ( iflag .eq. 0 ) then ![deg] -> [km]
+if ( iflag .eq. 0 ) then     ! [deg] -> [km]
 
  do i=1,N
    dlat=latorigin*d2r
@@ -654,7 +654,7 @@ else if ( iflag .eq. 1) then ! [km]  -> [deg]
  do i=1,N
    dlat=latorigin*d2r
    xout(i) = xin(i)/ (planetrad * cos(dlat) *d2r)  + lonorigin ! lon  [deg]
-   yout(i)=  yin(i)/ (planetrad *d2r)               + latorigin ! lat  [deg]
+   yout(i)=  yin(i)/ (planetrad *d2r)              + latorigin ! lat  [deg]
  end do
 
 else

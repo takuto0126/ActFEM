@@ -103,23 +103,24 @@ xyz_r   = g_meshpara%xyz_r
  if ( x .lt. x1 .or. x2 .lt. x .or. &
    &  y .lt. y1 .or. y2 .lt. y .or. &
    &  z .lt. z1 .or. z2 .lt. z ) then
-!  robs=dsqrt(x**2.d0 + y**2.d0 + z**2.d0)
-  v_3d_r = sb ! 2017.09.08
-!  value_3d_r = g_meshpara%sizein/(2.*g_meshpara%sigma_src + 0.25)*(robs + 0.25)
-!  if (  x2 .lt. x .and. y1 .lt. y .and. y .lt. y2) value_3d_r= si + (sb-si)/(x02-x2)*(x-x2)
-!  if (  x .lt. x1 .and. y1 .lt. y .and. y .lt. y2) value_3d_r= si + (sb-si)/(x02-x2)*(x1-x)
-!  if (  y2 .lt. y .and. x1 .lt. x .and. x .lt. x2) value_3d_r= si + (sb-si)/(y02-y2)*(y-y2)
-!  if (  y .lt. y1 .and. x1 .lt. x .and. x .lt. x2) value_3d_r= si + (sb-si)/(y02-y2)*(y1-y)
+   !  robs=dsqrt(x**2.d0 + y**2.d0 + z**2.d0)
+   v_3d_r = sb ! 2017.09.08
+   !  value_3d_r = g_meshpara%sizein/(2.*g_meshpara%sigma_src + 0.25)*(robs + 0.25)
+   !  if (  x2 .lt. x .and. y1 .lt. y .and. y .lt. y2) value_3d_r= si + (sb-si)/(x02-x2)*(x-x2)
+   !  if (  x .lt. x1 .and. y1 .lt. y .and. y .lt. y2) value_3d_r= si + (sb-si)/(x02-x2)*(x1-x)
+   !  if (  y2 .lt. y .and. x1 .lt. x .and. x .lt. x2) value_3d_r= si + (sb-si)/(y02-y2)*(y-y2)
+   !  if (  y .lt. y1 .and. x1 .lt. x .and. x .lt. x2) value_3d_r= si + (sb-si)/(y02-y2)*(y1-y)
  else
-!#[2]## value for focus area or near observatories
-  v_3d_r=si   ! 2017.09.08
+
+   !#[2]## value for focus area or near observatories
+   v_3d_r=si   ! 2017.09.08
   do i=1,nobsr
    robs=dsqrt((xyz_r(1,i)-x)**2.d0 + (xyz_r(2,i)-y)**2.d0 + (xyz_r(3,i)-z)**2.d0)
    if ( robs .le. 3.*sigma_r(i) ) then
-    v_3d_r = min(v_3d_r, si - (si - A_r(i))*exp(-robs**2./2./sigma_r(i)**2.) )
-!     v_3d_r = min(value_3d_r, si/7.389*exp(-robs**2./2./0.33/0.33))
+     v_3d_r = min(v_3d_r, si - (si - A_r(i))*exp(-robs**2./2./sigma_r(i)**2.) )
+     !     v_3d_r = min(value_3d_r, si/7.389*exp(-robs**2./2./0.33/0.33))
    else
-    v_3d_r = min(v_3d_r,si) ! 2017.09.08
+     v_3d_r = min(v_3d_r,si) ! 2017.09.08
    end if
   end do
  end if

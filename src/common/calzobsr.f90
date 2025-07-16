@@ -64,10 +64,10 @@ write(*,*) "" !2021.09.29
 
 !#[5]## reflect topo
  call findtriwithgrid(h_mesh,glist,(/0.d0,0.d0/),iele,a3)
- zorigin = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3)
+ zorigin = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) ! altitude of origin
  g_param%zorigin = zorigin
- g_param%upzin   = g_param%upzin   + zorigin
- g_param%downzin = g_param%downzin + zorigin
+ g_param%upzin   = g_param%upzin   !+ zorigin ! commented out 2025.07.16
+ g_param%downzin = g_param%downzin !+ zorigin ! commented out 2025.07.16
 
 write(*,'(a)') " ### CALZOBSR END!! ###"
 return

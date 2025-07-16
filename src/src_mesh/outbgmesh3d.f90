@@ -15,6 +15,7 @@ real(8)                            :: xgrd(nxmax+1),ygrd(nymax+1),zgrd(nzmax+1)
 real(8)                            :: dd,dx(-11:11)
 real(8)                            :: v1,v2,v3,v4,v5,v6,v7,v8,x0,y0,z0
 real(8)                            :: xx,yy,zz,r2,sigma,v(8)
+real(8)                            :: x1,y1,z1 ! 2025.07.16
 integer(4)                         :: nobsr
 real(8),allocatable,dimension(:,:) :: xyz_r        ! 2017.09.08
 real(8),allocatable,dimension(:)   :: sigma_r, A_r ! 2017.09.08
@@ -103,6 +104,18 @@ do k=1,nz-1
          call value_3d_r(xgrd(i+1),ygrd(j+1),zgrd(k+1),g_meshpara,v8)
          v(1:8)=(/v1,v2,v3,v4,v5,v6,v7,v8/)
          call SHWRITE(ifile,xgrd(i),xgrd(i+1),ygrd(j),ygrd(j+1),zgrd(k),zgrd(k+1), v)
+         if (.false.) then ! 2025.07.16
+           x1=0.d0; y1=0.d0; z1=0.2d0 !2025.07.16
+           if (xgrd(i) .le. x1 .and. x1 .lt. xgrd(i+1) .and. & !2025.07.16
+              ygrd(j) .le. y1 .and. y1 .lt. ygrd(j+1) .and. & !2025.07.16
+              zgrd(k) .le. z1 .and. z1 .lt. zgrd(k+1)) then !2025.07.16
+             write(*,10) "v1=",v1,"v2=",v2,"v3=",v3,"v4=",v4 !2025.07.16
+             write(*,10) "v5=",v5,"v6=",v6,"v7=",v7,"v8=",v8 !2025.07.16
+             write(*,11) "xgrd(",i,")=",xgrd(i),"ygrd(",j,")=",ygrd(j),"zgrd(",k,")=",zgrd(k) !2025.07.16
+             write(*,11) "xgrd(",i+1,")=",xgrd(i+1),"ygrd(",j+1,")=",ygrd(j+1),"zgrd(",k+1,")=",zgrd(k+1) !2025.07.16
+             write(*,'(3(a,f7.3,1x))') "x1=",x1,"y1=",y1,"z1=",z1 !2025.07.16
+           end if
+          end if ! 2025.07.16 for debug
        end do
    end do
 end do
@@ -110,6 +123,8 @@ write(ifile,*)"};"
 close(ifile)
 write(*,*) "### outbgmesh3d end! ###"
 return
+10 format(4(a,f7.3,1x))      !2025.07.16
+11 format(3(a,i4,a,f7.3,1x)) ! 2025.07.16
 end subroutine outbgmesh3d
 
 !######################################################### SHWRITE

@@ -88,16 +88,18 @@ if (iflag_ele .eq. 1 ) read(input,10) g_info_cond_model%topo_2d_mshfile
    read(input,13) g_info_cond_model%g_cuboid(i)%zminmax(1:2)
    read(input,11) g_info_cond_model%g_cuboid(i)%rho
    write(*,*) "cuboid",i
-   write(*,*) "xminmax",g_info_cond_model%g_cuboid(i)%xminmax(1:2)
-   write(*,*) "yminmax",g_info_cond_model%g_cuboid(i)%yminmax(1:2)
-   write(*,*) "zminmax",g_info_cond_model%g_cuboid(i)%zminmax(1:2)
-   write(*,*) "rho",g_info_cond_model%g_cuboid(i)%rho,"[Ohm.m]"
+   write(*,14) "xminmax",g_info_cond_model%g_cuboid(i)%xminmax(1:2)! 2025.07.16
+   write(*,14) "yminmax",g_info_cond_model%g_cuboid(i)%yminmax(1:2)! 2025.07.16
+   write(*,14) "zminmax",g_info_cond_model%g_cuboid(i)%zminmax(1:2)! 2025.07.16
+   write(*,15) "rho",g_info_cond_model%g_cuboid(i)%rho," [Ohm.m]"
  end do
 
 10 format(20x,a)
 11 format(20x,g15.7)
 12 format(20x,i10)
 13 format(20x,2g15.7)
+14 format(a,2f15.7)  ! 2025.07.16
+15 format(a,f15.7,a) ! 2025.07.16
 return
 end
 

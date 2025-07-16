@@ -36,8 +36,8 @@ east bound         !1.7
 south bound        !-1.8
 north bound        !1.7
 lenout [km]        !8.0
-upz in [km]  (>0)  !1.5
-downz in [km](<0)  !-0.1
+upz in [km]        !1.4
+downz in [km]      !0.3
 zmax   [km]        !25.0
 zmin   [km]        !-25.0
 sizein [km]        !0.1

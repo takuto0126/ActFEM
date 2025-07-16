@@ -183,10 +183,10 @@ gmt basemap -JX8/8 -R-1/1/-1/1 -Bxa0.25+l"Distance[km]" -Bya0.25+l"Distance[km]"
 if [ -e  "${ID}_03.dat" ];then
  gmt plot "${ID}_03.dat" -C -L 
 fi
-gmt text -JX$scl -R$range2  -F+f12,Helvetica+jLM -G255 <<EOF 
-0.9  4.6   $ID
-0.15  4.6  S
-7.0  4.6  N
+gmt text -JX8/8 -R0/8/0/8  -F+f12,Helvetica+jLM -G255 <<EOF 
+0.9   7.5  $ID
+0.15  4.0  W
+7.5   4.0  E
 EOF
 
 gmt colorbar -Dx9.1/0+w9/0.3 -B0.2  -C 
@@ -196,5 +196,5 @@ gmt text -R0/20/0/20 -JX20/20 -F+f13p,Helvetica+jCM << EOF
 9.5 10.3  (@~W@~m)
 EOF
 
-gmt end
+gmt end show
 rm test*.ctl *.dat

@@ -44,7 +44,7 @@ subroutine MKFACE(l_face, node, ne, enod, n4)
 implicit none
 integer(4),            intent(in)     :: node, ne, enod, n4(ne,enod)
 type(face_info),       intent(out)    :: l_face
-integer(4),            parameter      :: maxnface=6000000
+integer(4),            parameter      :: maxnface=10000000
 integer(4),allocatable,dimension(:,:) :: face_item_work
 integer(4),allocatable,dimension(:)   :: face_stack
 integer(4) :: i,j,k,l,m,n1,n2,n3,nface,icount,n1o,n2o,iele

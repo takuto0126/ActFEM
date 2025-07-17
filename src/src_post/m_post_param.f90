@@ -72,7 +72,8 @@ character(100)              :: paramfile ! 2020.12.10
 write(*,*) ""
 write(*,*) "<Please input the forward parameter file>" ! 2020.12.10
 read(*,'(a)') paramfile                 ! 2020.12.10
-call readcontrolfile(paramfile,n,lines,ikeep=1) ! 2020.12.10 see m_param.ctl
+!call readcontrolfile(paramfile,n,lines,ikeep=1) ! 2020.12.10 see m_param.ctl
+call readcontrolfile(paramfile,ikeep=1) ! 2020.12.10 see m_param.ctl 2025.07.17
 
 open(input,file="tmp.ctl") ! 2020.12.10
 !# read parameter

@@ -92,7 +92,7 @@ character(200),dimension(n) :: lines    ! 2020.09.28
 write(*,*) ""
 write(*,*) "<Please input the forward parameter file>" ! 2020.09.28
 read(*,'(a)') paramfile           ! 2020.09.28
-call readcontrolfile(paramfile,n,lines) ! 2020.09.28
+call readcontrolfile(paramfile,2) ! 2025.07.17
 
 open(input,file="tmp.ctl")
 !#[2]# read mesh_param file

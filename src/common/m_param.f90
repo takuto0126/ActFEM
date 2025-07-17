@@ -133,13 +133,13 @@ integer(4)                  :: i,j,nobs,input=2,nsource,iflag_map,lonlatflag!202
 character(50)               :: site
 real(8)                     :: lonorigin,latorigin,a
 character(100)              :: paramfile
-integer(4),    parameter    :: n = 1000 ! 2020.09.28
-character(200),dimension(n) :: lines    ! 2020.09.28
+integer(4)                  :: ikeep=2 ! 2025.07.17
 !#
 write(*,*) ""
 write(*,*) "<Please input the forward parameter file>" ! 2020.09.28
-read(*,'(a)') paramfile           ! 2020.09.28
-call readcontrolfile(paramfile,n,lines) ! 2020.09.28
+read(*,'(a)') paramfile                 ! 2020.09.28
+!call readcontrolfile(paramfile,n,lines) ! commented out on 2025.07.17
+call readcontrolfile(paramfile,ikeep) ! 2025.07.17 see m_param.ctl
 
 open(input,file="tmp.ctl")
 !#[2]# read mesh_param file
@@ -1000,43 +1000,49 @@ end subroutine
   end subroutine utm_geo_tm
 
 !############################################ whoelread ! 2020.09.28
-subroutine readcontrolfile(filename,n,lines,ikeep) ! 2021.10.04 ikeep is added
+!subroutine readcontrolfile(filename,n,lines,ikeep) ! 2021.10.04 ikeep is added
+subroutine readcontrolfile(filename,ikeep) ! 2021.10.04 ikeep is added
 implicit none
 character(100),intent(in)  :: filename
-integer(4),    intent(in)  :: n
-character(200),intent(out) :: lines(n)
-integer(4) :: i
+!integer(4),    intent(in)  :: n
+!character(200),intent(out) :: lines(n)
+character(200),allocatable,dimension(:) :: lines
+integer(4) :: i,n,nn
 integer(4),optional,intent(in) ::  ikeep ! 1 means keep 20 columns 2021.10.04
-i=0
 write(*,'(a,a)') " file is ",trim(filename)
-lines(:)=" " ! initialize 2020.12.10
 
 open(1,file=filename)
-do
-i=i+1
-read(1,'(a)',end=99) lines(i)
-write(*,'(a)') trim(lines(i))
-end do
-99 continue
-
+ n=0
+ do 
+  read(1,*,end=99)
+  n=n+1
+ end do
+ 99 continue
+ rewind(1)
+ write(*,*) "n=",n
+ allocate(lines(n)) ! 2025.07.17
+ do i=1,n
+   read(1,'(a)') lines(i)
+   !write(*,'(a)') trim(lines(i)) ! commented out on 2025.07.17
+ end do
+nn= i-1 ! 2025.07.17
 close(1)
 
-!do i=1,20
-!write(*,'(a)') trim(lines(i))
-!end do
 write(*,*)"subtractcomment start, n=",n
 call subtractcommentout(n,lines)
 
 open(1,file="tmp.ctl")
+write(*,*) "ikeep=",ikeep ! 2025.07.17
 do i=1,n
-if ( present(ikeep) ) then !2025.04.24
- if ( ikeep == 1  ) write(1,'(a)')  lines(i)(1:len_trim(lines(i))) 
- if ( ikeep .ne. 1) write(1,'(a)')  lines(i)(21:len_trim(lines(i))) !2025.04.24
-else   ! 2021.10.04
- write(1,'(a)')  lines(i)(21:len_trim(lines(i)))
-end if ! 2021.10.04
-! write(1,'(a)') trim(lines(i))
+ if ( present(ikeep) ) then !2025.04.24
+   if ( ikeep == 1  ) write(1,'(a)')  lines(i)(1:len_trim(lines(i))) 
+   if ( ikeep .ne. 1) write(1,'(a)')  lines(i)(21:len_trim(lines(i))) !2025.04.24
+ else   ! 2021.10.04
+   write(1,'(a)')  lines(i)(21:len_trim(lines(i)))
+ end if ! 2021.10.04
+ ! write(1,'(a)') trim(lines(i))
 end do
+
 close(1)
 
 write(*,'(a)') " ### readcontrolfile END!! ###"
@@ -1053,10 +1059,10 @@ integer(4) :: i,j
 allocate(lines_out(n)) !2025.06.24
 j=0
 do i=1,n
-if ( lines(i)(1:2) .ne. "##" ) then
-  j=j+1
-  lines_out(j) = lines(i)
-  write(*,'(a)')trim(lines_out(j))
+ if ( lines(i)(1:2) .ne. "##" ) then
+   j=j+1
+   lines_out(j) = lines(i)
+   write(*,'(a)')trim(lines_out(j))
  end if
 end do
 

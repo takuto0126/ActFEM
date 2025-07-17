@@ -1,0 +1,1172 @@
+ 
+:: initializing oneAPI environment ...
+   meshgen.sh: BASH_VERSION = 5.2.21(1)-release
+   args: Using "$@" for setvars.sh arguments: intel64
+:: advisor -- latest
+:: ccl -- latest
+:: compiler -- latest
+:: dal -- latest
+:: debugger -- latest
+:: dev-utilities -- latest
+:: dnnl -- latest
+:: dpcpp-ct -- latest
+:: dpl -- latest
+:: ipp -- latest
+:: ippcp -- latest
+:: ishmem -- latest
+:: mkl -- latest
+:: mpi -- latest
+:: pti -- latest
+:: tbb -- latest
+:: umf -- latest
+:: vtune -- latest
+:: oneAPI environment initialized ::
+ 
+gfortran -O -c ../common/m_param.f90 -o m_param.o
+gfortran -O m_constants.o m_param.o m_horizontalresolution.o outbgmesh3d.o m_gmsh_geo.o 3dgeo.o -o 3dgeo.exe
+gfortran -O m_horizontalresolution.o m_constants.o m_param.o m_matrix_gfort.o m_outerinnerproduct.o m_fem_util.o m_fem_edge_util.o m_line_type.o sort_index.o m_mesh_type.o mkline.o -o mkline.exe
+gfortran -O m_constants.o m_param.o m_water_level.o m_topo_tool.o m_horizontalresolution.o outbgmesh2d.o outbgfield2d.o meshgen1.o -o meshgen1.exe
+gfortran -O m_constants.o m_param.o m_water_level.o m_topo_tool.o m_horizontalresolution.o outbgmesh3d.o m_outerinnerproduct.o sort_index.o m_fem_util.o m_mesh_type.o m_triangle.o calzobsr.o m_bell.o meshgen2.o -o meshgen2.exe
+gfortran -O m_constants.o m_param.o m_outerinnerproduct.o sort_index.o m_fem_util.o m_mesh_type.o outmodel.o -o outmodel.exe
+gfortran -O m_horizontalresolution.o m_constants.o m_param.o m_matrix_gfort.o m_outerinnerproduct.o m_fem_util.o m_fem_edge_util.o m_face_type.o sort_index.o m_mesh_type.o mkface.o -o mkface.exe
+gfortran -O sort_index.o m_outerinnerproduct.o m_fem_util.o m_mesh_type.o compmodel.o -o compmodel.exe
+gfortran -O compcond.o -o compcond.exe
+/mnt/c/Users/owner/Dropbox/study/volcano/ActFEM/mesh_flat
+ 
+ <Please input the forward parameter file>
+ file is aso.ctl
+ i=           1
+## lines starting with "##" work as lines for comments
+ i=           2
+##-----10!-------20!
+ i=           3
+## itopofile controls whether topo file is provided or not
+ i=           4
+## itopofile = 0   : no topo file and z=0 surface is assumed
+ i=           5
+##                   obs and src coordinates should be provided by cartesian position
+ i=           6
+## itopofile = 1   : topofile(s) is(are) provided, iflag_map should be provided
+ i=           7
+   itopofile       !1
+ i=           8
+## iflag_map controls the type of Map projection
+ i=           9
+## iflag_map = 1 (ECP) : lon lat topo + Equidistant Cylindrical Projection  (ECP)
+ i=          10
+##                 x=planetrad*cos(latorigin)*(lon-lonorigin), y=planetrad*(lat-latorigin)
+ i=          11
+##                 one additional line: lonlat origin (2f15.7)
+ i=          12
+## iflag_map = 2 (UTM) : lon lat topo + Universal Transvers Mercatol (UTM) projection
+ i=          13
+##                 two additional line: UTM zone like 52S (a3) and lonlat origin (2f15..7)
+ i=          14
+iflag_map          !2
+ i=          15
+UTM zone           !52S
+ i=          16
+lonlatorigin       !131.084782     32.884882
+ i=          17
+# of topo file     !1
+ i=          18
+topofile           !../topo/topo_aso_flat.dat
+ i=          19
+lon lat shift      !0.0            0.0
+ i=          20
+mesh file          !../mesh_flat/nakadake3d.msh
+ i=          21
+2d triangle z file !../mesh_flat/nakadake2d_z.msh
+ i=          22
+local mesh file    !../mesh_flat/lineinfo.dat
+ i=          23
+angle              !0.0
+ i=          24
+water level        !0
+ i=          25
+output folder      !-
+ i=          26
+header2d  (a50)    !nakadake2d
+ i=          27
+header3d  (a50)    !nakadake3d
+ i=          28
+# of frequency     !3
+ i=          29
+Frequency [Hz]     !1.d0
+ i=          30
+Frequency [Hz]     !10.d0
+ i=          31
+Frequency [Hz]     !100.d0
+ i=          32
+west bound         !-15.0
+ i=          33
+east bound         !15.0
+ i=          34
+south bound        !-15.0
+ i=          35
+north bound        !15.0
+ i=          36
+lenout [km]        !5.0
+ i=          37
+upz in [km]  (>0)  !1.0
+ i=          38
+downz in [km](<0)  !-3.0
+ i=          39
+zmax   [km]        !50.0
+ i=          40
+zmin   [km]        !-50.0
+ i=          41
+sizein [km]        !0.30
+ i=          42
+sizebo [km]        !3.0
+ i=          43
+sigma_obs [km]     !0.3
+ i=          44
+A_obs     [km]     !0.006
+ i=          45
+dlen_source [km]   !0.3
+ i=          46
+sigma_src [km]     !0.32
+ i=          47
+A_src     [km]     !0.3
+ i=          48
+# of observatory   !7
+ i=          49
+lonlat(1),xyz (2)  !1
+ i=          50
+1  Name            !A02
+ i=          51
+1  xyz             !131.083411   32.886706  -0.001
+ i=          52
+2  Name            !A04
+ i=          53
+2  xyz,sigma,A[km] !131.081939   32.884808  -0.001
+ i=          54
+3  Name            !A01
+ i=          55
+3  xyz,sigma,A[km] !131.083367   32.882725  -0.001
+ i=          56
+4  Name            !A03
+ i=          57
+4  xyz,sigma,A[km] !131.086847   32.881981  -0.001
+ i=          58
+5  Name            !DUM
+ i=          59
+5  xyz,sigma,A[km] !131.084782   32.884882  -0.100
+ i=          60
+6  Name            !DM2
+ i=          61
+6  xyz,sigma,A[km] !131.083335   32.884882  -0.100
+ i=          62
+7  Name            !DM3
+ i=          63
+7  xyz,sigma,A[km] !131.079672   32.884945  -0.100
+ i=          64
+ixyflg 0:no,1:surfv!0
+ i=          65
+# of sources       !1
+ i=          66
+Source Name        !S2
+ i=          67
+source start point !131.0784333  32.8908028  -0.001
+ i=          68
+source end   point !131.0814639  32.8912333  -0.001
+ i=          69
+Elcetric current[A]! 1.0
+ i=          70
+sigma_air    [S/m] !1.e-8
+ i=          71
+condflag 0:home,1: !1
+ i=          72
+condfile           !../mesh_aso/cond.msh
+ subtractcomment start, n=        1000
+   itopofile       !1
+iflag_map          !2
+UTM zone           !52S
+lonlatorigin       !131.084782     32.884882
+# of topo file     !1
+topofile           !../topo/topo_aso_flat.dat
+lon lat shift      !0.0            0.0
+mesh file          !../mesh_flat/nakadake3d.msh
+2d triangle z file !../mesh_flat/nakadake2d_z.msh
+local mesh file    !../mesh_flat/lineinfo.dat
+angle              !0.0
+water level        !0
+output folder      !-
+header2d  (a50)    !nakadake2d
+header3d  (a50)    !nakadake3d
+# of frequency     !3
+Frequency [Hz]     !1.d0
+Frequency [Hz]     !10.d0
+Frequency [Hz]     !100.d0
+west bound         !-15.0
+east bound         !15.0
+south bound        !-15.0
+north bound        !15.0
+lenout [km]        !5.0
+upz in [km]  (>0)  !1.0
+downz in [km](<0)  !-3.0
+zmax   [km]        !50.0
+zmin   [km]        !-50.0
+sizein [km]        !0.30
+sizebo [km]        !3.0
+sigma_obs [km]     !0.3
+A_obs     [km]     !0.006
+dlen_source [km]   !0.3
+sigma_src [km]     !0.32
+A_src     [km]     !0.3
+# of observatory   !7
+lonlat(1),xyz (2)  !1
+1  Name            !A02
+1  xyz             !131.083411   32.886706  -0.001
+2  Name            !A04
+2  xyz,sigma,A[km] !131.081939   32.884808  -0.001
+3  Name            !A01
+3  xyz,sigma,A[km] !131.083367   32.882725  -0.001
+4  Name            !A03
+4  xyz,sigma,A[km] !131.086847   32.881981  -0.001
+5  Name            !DUM
+5  xyz,sigma,A[km] !131.084782   32.884882  -0.100
+6  Name            !DM2
+6  xyz,sigma,A[km] !131.083335   32.884882  -0.100
+7  Name            !DM3
+7  xyz,sigma,A[km] !131.079672   32.884945  -0.100
+ixyflg 0:no,1:surfv!0
+# of sources       !1
+Source Name        !S2
+source start point !131.0784333  32.8908028  -0.001
+source end   point !131.0814639  32.8912333  -0.001
+Elcetric current[A]! 1.0
+sigma_air    [S/m] !1.e-8
+condflag 0:home,1: !1
+condfile           !../mesh_aso/cond.msh
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ikeep=           0
+ ### readcontrolfile END!! ###

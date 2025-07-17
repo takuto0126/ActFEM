@@ -83,6 +83,13 @@ do i=1,g_param_mt%nobs
 end do
  CALL PREPOBSCOEFF(g_param_mt,g_mesh,g_line,coeffobs) ! for bx,by,bz,ex,ey component
 
+!#[3]## Prepare coefficients for values at xyplane !2025.07.17 <under construction>
+!  if ( ixyflag .eq. 1 ) then
+!   CALL PREPOBSCOEFF_XY(g_param,g_mesh,h_mesh,g_line,obs_xy) ! 2018.02.22
+!   allocate( resp_xy(5,nsr,nfreq),resp_xy_mt(nfreq) )        ! 225.07.17
+!   CALL ALLOCATERESP(obs_xy%nobs,nsr,resp_xy,ip,nfreq)       ! 2018.02.22
+!  end if
+
 !#[7]## set resp5
 allocate( resp5(5,nsr,nfreq), resp_mt(nfreq)) ! 2018.02.22
 allocate( resp_tip(nfreq))                    ! 2025.04.21 resp_tip is added

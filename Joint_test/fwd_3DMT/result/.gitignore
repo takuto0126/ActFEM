@@ -1,0 +1,4 @@
+*.dat
+
+# .gitkeep
+# This file is intentionally left empty to keep the directory structure in git.

@@ -144,7 +144,7 @@ C23 zminmax [km]   !-500.0           2.00
 C23 rho    [Ohm.m] !100.0
 EOF
 
-ctlfile=cond_G3.ctl
+ctlfile=test6.ctl
 
 SRC=../../src/src_post
 cd $SRC

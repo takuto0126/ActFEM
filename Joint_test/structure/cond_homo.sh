@@ -16,3 +16,5 @@ make -f Makefile_gfort
 cd -
 
 ${SRC}/change_model2cond.exe < cond_homo.ctl
+
+rm cond_homo.ctl

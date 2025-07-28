@@ -153,3 +153,5 @@ make -f Makefile_gfort
 cd -
 
 ${SRC}/change_model2cond.exe < $ctlfile
+
+rm $ctlfile

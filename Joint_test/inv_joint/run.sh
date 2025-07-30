@@ -10,7 +10,7 @@ cd -
 
 export OMP_NUM_THREADS=8
 
-time mpiexec -n 2 ${src}/ebfem_inv_joint.exe <<EOF
+time mpiexec -n 1 ${src}/ebfem_inv_joint.exe <<EOF
 3
 active.ctl
 mt.ctl

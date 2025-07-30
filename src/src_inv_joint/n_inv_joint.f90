@@ -98,7 +98,7 @@ program inversion_joint
   type(respmt),  allocatable,dimension(:)     :: timp_mt      ! 2022.01.02 see ../common/m_outresp.f90
   integer(4)                                  :: nsr_mt=2     ! 2021.12.30
   character(1) :: num
-  real(8)      :: nrms_mt=0, nrms_mt0 ! 2022.01.04
+  real(8)      :: nrms_mt=0.d0, nrms_mt0 ! 2022.01.04
   real(8)      :: misfit_mt       ! 2022.01.04
   real(8)      :: misfit_tipper   ! 2023.12.22
   real(8)      :: nrms_mt_ini     ! 2018.06.25
@@ -164,10 +164,17 @@ program inversion_joint
  !# [7] solve beta in eq. 1 (by PARDISO)
  !# [8] m_k+1 = m_ref + Cm*J*beta
 
+ip = -1
+np = -1
+errno = 0
+write(*,*) "np, ip = ", np, ip ! 2025.07.30
+write(*,*) "n_ebfem_joint start!!"! 2025.07.30
 !#[-1]## START MPI on 2017.05.29
  CALL MPI_INIT(errno)
+ write(*,*) "MPI_INIT done!!" ! 2025.07.30
  CALL MPI_COMM_RANK(mpi_comm_world, ip, errno)  ! ip starts with 0 in the following
  CALL MPI_COMM_SIZE(mpi_comm_world, np, errno)
+ write(*,*) "np, ip = ", np, ip ! 2025.07.30
  write(*,'(a,i3,a,i3)') " ip =",ip," /",np ! 2020.09.17
 
 if ( ip .eq. 0) then !################################################# ip = 0

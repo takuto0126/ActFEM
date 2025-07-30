@@ -2,8 +2,8 @@ result/*
 data/*
 *.pdf
 tmp.ctl
+*.log
+*.dat
 
-!data/
-!data/.gitkeep
-!result/
 !result/.gitkeep
+!data/.gitkeep

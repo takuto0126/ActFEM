@@ -22,3 +22,5 @@ gfortran generr_active.f90 -o generr_active.exe
 cd -
 
 ./src/generr_active.exe < err.ctl
+
+rm err.ctl

@@ -60,5 +60,5 @@ sigma_air    [S/m] !1.e-8
 condflag 0:home,1: !1
 ##nvolume            !1
 ##cond               !0.01
-condfile           !./structure/cond_homo.msh
+condfile           !../structure/cond_homo.msh
 

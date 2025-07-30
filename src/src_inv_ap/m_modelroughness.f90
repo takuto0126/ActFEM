@@ -442,7 +442,7 @@ write(*,*) "### GENRI_MSG START!! ###" !2017.12.28
  do i=1,RE%nrow
   do j=RE%stack(i-1)+1,RE%stack(i)
    if ( RE%item(j) .eq. i ) then ! only diagonal
-   RE%val(j) = RE%val(j) + ee                 ! epsilon -> ee 2025.06.24
+   RE%val(j) = RE%val(j) + ee   ! epsilon -> ee 2025.06.24
    end if
   end do
  end do

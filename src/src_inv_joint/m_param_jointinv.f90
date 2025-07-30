@@ -258,7 +258,7 @@ subroutine readparaJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_pa
    write(*,*) "<Please input the inversion parameter file>" ! 2020.09.29
    read(*,'(a)') paramfile           ! 2020.09.29
    ikeep = 1 !2021.10.04
-   call readcontrolfile(paramfile,n,lines,ikeep) ! 2021.10.04 see src/common/m_param.f90
+   call readcontrolfile(paramfile,ikeep) ! 2025.07.29 src/common/m_param.f90 is modified
 
  open(input,file="tmp.ctl")
 

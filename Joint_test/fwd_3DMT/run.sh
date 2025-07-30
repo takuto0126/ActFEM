@@ -15,3 +15,4 @@ time ${src}/n_ebfem_3DMT.exe <<EOF #> result_3DMT/mt.log
 mt.ctl
 EOF
 
+rm tmp.ctl

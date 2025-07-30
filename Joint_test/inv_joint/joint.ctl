@@ -1,11 +1,11 @@
 ## lines starting with "##" work as lines for comments ! 2020.09.28
 ## this file is joint inversion control file
 ##-----10!-------20! inv201408_ap.ctl
-face info file     !../mesh_joint/faceinfo.dat
+face info file     !../../mesh_joint/faceinfo.dat
 1:cond,2:model     !1
-ref  cond file     !./structure/cond_homo.msh
+ref  cond file     !../structure/cond_homo.msh
 1:cond,2:model     !1
-init cond file     !./structure/cond_homo.msh
+init cond file     !../structure/cond_homo.msh
 output folder      |./result_inv/
 Roughness type     |1
 1:L,2:Cl,3:Mi,4:Gr !2
@@ -24,38 +24,39 @@ Bx,By,Bz,Ex,Ey(5i2)!0 0 1 0 0
 Act err floor [0-1]!0.010
 index of source(S1)!1
 # of obesrvatories !4
-A02 amp data       !   1 ./fwd_active_check/data/A02_S1_amp.dat
-A04 amp data       !   2 ./fwd_active_check/data/A04_S1_amp.dat
-A01 amp data       !   3 ./fwd_active_check/data/A01_S1_amp.dat
-A03 amp data       !   4 ./fwd_active_check/data/A03_S1_amp.dat
-A02 pha data       !   1 ./fwd_active_check/data/A02_S1_pha.dat
-A04 pha data       !   2 ./fwd_active_check/data/A04_S1_pha.dat
-A01 pha data       !   3 ./fwd_active_check/data/A01_S1_pha.dat
-A03 pha data       !   4 ./fwd_active_check/data/A03_S1_pha.dat
+A02 amp data       !   1 ../fwd_active/data/A02_S1_amp.dat
+A04 amp data       !   2 ../fwd_active/data/A04_S1_amp.dat
+A01 amp data       !   3 ../fwd_active/data/A01_S1_amp.dat
+A03 amp data       !   4 ../fwd_active/data/A03_S1_amp.dat
+A02 pha data       !   1 ../fwd_active/data/A02_S1_pha.dat
+A04 pha data       !   2 ../fwd_active/data/A04_S1_pha.dat
+A01 pha data       !   3 ../fwd_active/data/A01_S1_pha.dat
+A03 pha data       !   4 ../fwd_active/data/A03_S1_pha.dat
 index of source(S1)!2
 # of obesrvatories !4
-A02 amp data       !   1 ./fwd_active_check/data/A02_S2_amp.dat
-A04 amp data       !   2 ./fwd_active_check/data/A04_S2_amp.dat
-A01 amp data       !   3 ./fwd_active_check/data/A01_S2_amp.dat
-A03 amp data       !   4 ./fwd_active_check/data/A03_S2_amp.dat
-A02 pha data       !   1 ./fwd_active_check/data/A02_S2_pha.dat
-A04 pha data       !   2 ./fwd_active_check/data/A04_S2_pha.dat
-A01 pha data       !   3 ./fwd_active_check/data/A01_S2_pha.dat
-A03 pha data       !   4 ./fwd_active_check/data/A03_S2_pha.dat
+A02 amp data       !   1 ../fwd_active/data/A02_S2_amp.dat
+A04 amp data       !   2 ../fwd_active/data/A04_S2_amp.dat
+A01 amp data       !   3 ../fwd_active/data/A01_S2_amp.dat
+A03 amp data       !   4 ../fwd_active/data/A03_S2_amp.dat
+A02 pha data       !   1 ../fwd_active/data/A02_S2_pha.dat
+A04 pha data       !   2 ../fwd_active/data/A04_S2_pha.dat
+A01 pha data       !   3 ../fwd_active/data/A01_S2_pha.dat
+A03 pha data       !   4 ../fwd_active/data/A03_S2_pha.dat
 ## MT data #############################################################
 ## initial version support only impedance data 2021.12.13
 imp: 0, 1:amp,pha  !0
 MT errfloor SSQ*   !0.010
 # of observatories |4
-MT1 impedance      !   1 ./fwd_3DMT_check/result/MT1_MT_imp.dat
-MT2 impedance      !   2 ./fwd_3DMT_check/result/MT2_MT_imp.dat
-MT3 impedance      !   3 ./fwd_3DMT_check/result/MT3_MT_imp.dat
-MT4 impedance      !   4 ./fwd_3DMT_check/result/MT4_MT_imp.dat
-MT1 impedance err  !   1 ./fwd_3DMT_check/mt_err/MT1_MT_imp_err.dat
-MT2 impedance err  !   2 ./fwd_3DMT_check/mt_err/MT2_MT_imp_err.dat
-MT3 impedance err  !   3 ./fwd_3DMT_check/mt_err/MT3_MT_imp_err.dat
-MT4 impedance err  !   4 ./fwd_3DMT_check/mt_err/MT4_MT_imp_err.dat
+MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat
+MT2 impedance      !   2 ../fwd_3DMT/result/MT2_MT_imp.dat
+MT3 impedance      !   3 ../fwd_3DMT/result/MT3_MT_imp.dat
+MT4 impedance      !   4 ../fwd_3DMT/result/MT4_MT_imp.dat
+MT1 impedance err  !   1 ../fwd_3DMT/mt_err/MT1_MT_imp_err.dat
+MT2 impedance err  !   2 ../fwd_3DMT/mt_err/MT2_MT_imp_err.dat
+MT3 impedance err  !   3 ../fwd_3DMT/mt_err/MT3_MT_imp_err.dat
+MT4 impedance err  !   4 ../fwd_3DMT/mt_err/MT4_MT_imp_err.dat
 ########################################################################
+iflag_tipper       !0
 icombine:0,1,2:fix !0
 10
 -1.5

@@ -3,4 +3,5 @@ rm gmt.conf gmt.history
 rm *.ps *.pdf
 rm tmp.ctl
 rm result_inv/*
+rm out.dat
 

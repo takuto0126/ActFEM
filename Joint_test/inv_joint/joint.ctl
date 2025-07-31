@@ -21,7 +21,7 @@ iflag_replace 0,1  |1
 ## ACTIVE data #########################################################
 # of srces for inv !2
 Bx,By,Bz,Ex,Ey(5i2)!0 0 1 0 0
-Act err floor [0-1]!0.010
+Act err floor [0-1]!0.01
 index of source(S1)!1
 # of obesrvatories !4
 A02 amp data       !   1 ../fwd_active/data/A02_S1_amp.dat
@@ -46,7 +46,7 @@ A03 pha data       !   4 ../fwd_active/data/A03_S2_pha.dat
 ## initial version support only impedance data 2021.12.13
 imp: 0, 1:amp,pha  !0
 unit:1Ohm,2mV/km/nT!2
-MT errfloor SSQ*   !0.010
+MT errfloor SSQ*   !0.05
 # of observatories |4
 MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat
 MT2 impedance      !   2 ../fwd_3DMT/result/MT2_MT_imp.dat

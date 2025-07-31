@@ -38,7 +38,7 @@ open(2,file=trim(outputfolder)//file2(k))
   zyx = e + iunit*f
   zyy = g + iunit*h
 !  write(*,*) freq,zxx,zxy,zyx,zyy
-  zssq = sqrt((zxx**2. + zxy**2. + zyx**2. + zyy**2.)/4.)
+  zssq = sqrt((zxx**2. + zxy**2. + zyx**2. + zyy**2.)/2.) ! 2025.07.31
   assq = sqrt(real(zssq)**2. + imag(zssq)**2.)
   write(2,'(f15.7,a,8g15.7)') freq," 1 1 1 1 ",(assq*ratio,j=1,8)
  end do

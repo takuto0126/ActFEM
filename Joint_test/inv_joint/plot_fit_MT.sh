@@ -1,6 +1,6 @@
 #!/bin/bash
 
-it=01 # iteration number
+it=04 # iteration number
 
 #=========================================================== function plot_ap
 plot_ap(){

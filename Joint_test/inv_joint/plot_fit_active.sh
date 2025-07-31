@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ite=01
+ite=04
 b=bz
 echo $b
 F=result_inv

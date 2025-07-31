@@ -180,4 +180,4 @@ cd -
 
 ${SRC}/change_model2cond.exe < $ctlfile
 
-rm $ctlfile
+rm $ctlfile test*.ctl

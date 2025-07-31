@@ -62,7 +62,7 @@ CALL SET_BC_ICCG(A, doftot, nsr, b_vec, Avalue_bc, line_bc, ip) !2017.07.11
 !call solveMUMPS(doftot,A,b_vec,bs,ip)  ! for MacbookPro 15inch
 call solvePARDISO(doftot,nsr,A,b_vec,bs,ip) !　2017.07.11
 
-write(*,*) "### forward_bxyz END !! ip=",ip,"freq=",freq,"###"
+write(*,'(a,i3,a,f10.5,a)') " ### forward_bxyz END!! ### ip=",ip," freq=",freq," Hz" ! 2025.07.31
 return
 end subroutine forward_bxyz
 
@@ -239,7 +239,7 @@ do iele=1, h_mesh%ntet  ! start elemetn loop
   end do  ! nsource loop, 2017.07.11
 end do    ! element loop end
 
-write(*,*) "### GENMAT END !! ###"
+write(*,*) "### GENMAT       END !!###" ! 2025.07.31
 
 !  do i=1,l_line%nline
 !   if (b_vec(i) .ne. 0.d0) write(*,*) i,"b=",b_vec(i)
@@ -456,7 +456,7 @@ end do    ! line loop
 !#[3]## Output .msh file to confirm which lines are selected
 CALL OUTBCLINES(line_bc,l_line%line,l_line%nline,h_mesh%xyz,h_mesh%node,line_group)
 
-write(*,*) "### GENBCCSEM END!! ###"
+write(*,*) "### GENBCCSEM    END!! ###" ! 2025.07.31
 return
 end subroutine
 !################################################  OUTBCLINES
@@ -573,7 +573,7 @@ complex(8)      ::  temp
           enddo
         endif
       enddo
-if (ip .eq. 0) write(*,*) "### SET_BC_ICCG END!! ###"
+if (ip .eq. 0) write(*,*) "### SET_BC_ICCG  END!! ###" ! 2025.07.31
 RETURN
 END
 !

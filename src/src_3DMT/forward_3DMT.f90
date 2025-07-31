@@ -81,7 +81,7 @@ end if
 !call solveMUMPS(doftot,A,b_vec,bs,ip)  ! for MacbookPro 15inch
 call solvePARDISO(nline,nsr,A,b_vec,al_MT,ip) !　2017.07.11
 
-write(*,'(a,i3,a,f8.4,a)') "### forward_bxyz END !! ip=",ip," freq=",freq," [Hz]###"!2025.06.25
+write(*,'(a,i3,a,f8.4,a)') " ### forward_3DMT END !!### ip=",ip," freq=",freq," [Hz]"!2025.07.31
 return
 end subroutine forward_3DMT
 

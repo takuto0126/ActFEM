@@ -1,7 +1,6 @@
 # Coded on August 15, 2015 by T. MINAMI
 
 FC=ifx
-MPIFC=mpif90
 #OPT=-i-dynamic
 VPATH = ../common
 OPT0= -O3 -xAVX -qmkl=parallel

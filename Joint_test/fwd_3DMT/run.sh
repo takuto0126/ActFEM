@@ -9,7 +9,7 @@ make clean
 make
 cd -
 
-export OMP_NUM_THREADS=12
+export OMP_NUM_THREADS=24
 
 time ${src}/n_ebfem_3DMT.exe <<EOF #> result_3DMT/mt.log
 mt.ctl

@@ -1,6 +1,6 @@
 #!/bin/bash
 # generate forward result of ACTIVE and MT for test joint inversion test
-source /opt/intel/oneapi/setvars.sh
+source /opt/intel/oneapi/setvars.sh --force
 ## ACTIVE 2 sources ####################################################
 src=../../src/solver
 cd $src

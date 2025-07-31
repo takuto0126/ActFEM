@@ -279,7 +279,7 @@ real(8)        :: freq
   end do
  end do
 
- write(*,*) "### OUTOBSFILESFWD END!! ###"
+ write(*,*) "### OUTOBSFILESFWD END!!##"
 
 return
 end subroutine

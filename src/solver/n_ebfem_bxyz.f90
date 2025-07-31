@@ -91,7 +91,7 @@ do i=1,nfreq
 
   freq  = g_param%freq(i)   ! 2018.02.22
   omega = 2.d0*(4.d0*datan(1.d0))*freq
-  write(*,*) "frequency =",g_param%freq(i),"[Hz]"
+  write(*,'(a,f15.7,a)') " < frequency =",g_param%freq(i)," Hz >" ! 2025.07.31
 
  !#[7]## conduct forward calculation with model
  CALL forward_bxyz(A,g_mesh,g_line,nline,nsr,fs,g_param%freq(i),sparam,g_param,g_cond,ip)
@@ -426,7 +426,7 @@ do i=1,resp%nobs
 ! resp%fsobsphase(i)=phase(fsobs(i)) ! phase of bz ! commented out on 2021.09.15
 end do
 
-write(*,*) "### CALOBSRESP END!! ###"
+!write(*,*) "### CALOBSRESP END!! ###" !2025.07.31 commented out
 return
 end
 !######################################## function phase
@@ -790,13 +790,14 @@ CALL classifytri2grd(h_mesh,glist)   ! classify ele to glist,see
 
 
 !#[3] search for the triangle including (x1,y1)
+write(*,*)"< Final x,y,z corrdinates of receivers and sources >"
 do j=1,nobs
     call findtriwithgrid(h_mesh,glist,xyzobs(1:2,j),iele,a3)
     n1 = n3k(iele,1); n2 = n3k(iele,2) ; n3 = n3k(iele,3)
     znew(j) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + xyzobs(3,j)
 !
-    write(*,*) "xyobs(1:2,j)=",xyzobs(1:2,j)
-    write(*,*) j,"/nobs",xyzobs(3,j),"->",znew(j),"[km]"
+    write(*,'(i3,1x,a3,a,f12.5,3x,f12.5,a)') j,trim(g_param%obsname(j))," x,y=",xyzobs(1:2,j)," [km]" ! 2025.07.31
+    write(*,'(8x,a,f12.5,a,f12.5,a)') "  z=",xyzobs(3,j)," ->",znew(j)," [km]" ! 2025.07.31
 end do
 
 !#[3-2]## source z
@@ -806,16 +807,16 @@ end do
     n1 = n3k(iele,1); n2 = n3k(iele,2) ; n3 = n3k(iele,3)
     xs1(3,k) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + xs1(3,k) ! 2017.07.11
     !
-    write(*,*) "k",k,"xs1(1:2,k)=",xs1(1:2,k)                             ! 2017.07.11
-    write(*,*) "z",s_param%xs1(3,k),"->",xs1(3,k),"[km]"                  ! 2017.07.11
+    write(*,'(a,i2,a,f12.5,3x,f12.5,a)')     " source",k," start point x,y=",xs1(1:2,k)," [km]"             ! 2025.07.31
+    write(*,'(a,f12.5,a,f12.5,a)')    "          start point   z=",s_param%xs1(3,k)," ->",xs1(3,k)," [km]" ! 2017.07.31
 
 !#  end point
     call findtriwithgrid(h_mesh,glist,xs2(1:2,k),iele,a3)                 ! 2017.07.11
     n1 = n3k(iele,1); n2 = n3k(iele,2) ; n3 = n3k(iele,3)
     xs2(3,k) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + xs2(3,k) ! 2017.07.11
     !
-    write(*,*) "k",k,"xs2(1:2,k)=",xs2(1:2,k)                             ! 2017.07.11
-    write(*,*) "z",s_param%xs2(3,k),"->",xs2(3,k),"[km]"                  ! 2017.07.11
+    write(*,'(a,i2,a,f12.5,3x,f12.5,a)')" source",k," end   point x,y=",xs2(1:2,k)," [km]"             ! 2025.07.31
+    write(*,'(a,f12.5,a,f12.5,a)')         "          end   point   z=",s_param%xs2(3,k)," ->",xs2(3,k)," [km]" ! 2025.07.31
  end do                                                                   ! 2017.07.11
 
 

@@ -46,7 +46,7 @@ A03 pha data       !   4 ../fwd_active/data/A03_S2_pha.dat
 ## initial version support only impedance data 2021.12.13
 imp: 0, 1:amp,pha  !0
 unit:1Ohm,2mV/km/nT!2
-MT errfloor SSQ*   !0.05
+MT errfloor SSQ*   !0.01
 # of observatories |4
 MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat
 MT2 impedance      !   2 ../fwd_3DMT/result/MT2_MT_imp.dat

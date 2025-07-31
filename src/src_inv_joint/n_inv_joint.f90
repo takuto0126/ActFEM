@@ -451,7 +451,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
   end if
   if(MT ) then
      !write(*,'(a,i2)') " ### genjacobian1_mt st main ###  ip =",ip ! commented out 2025.07.31
-     if ( ip == 4 .or. ip == 1  .and. .false. ) then
+     if ( (ip == 4 .or. ip == 1)  .and. .false. ) then
        write(*,'(2(a,i8))')     "    nobs_mt",nobs_mt,    " | ip =",ip
        write(*,'(2(a,i8))')     "      nline",nline,      " | ip =",ip
        write(*,'(2(a,i8))')     "size(fs_mt)",size(fs_mt)," | ip =",ip
@@ -465,7 +465,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
                   &g_line,omega,g_mtdm(i_mt),g_tipdm(i_mt),g_param_joint,ip,np) !2022.10.20
      !write(*,'(a,i2)') " ### genjacobian1_mt en main ###  ip =",ip ! commented out 2025.07.31
   end if!                                            |###
-  write(*,'(a,i2)') " ### genjacobian1 and *_mt end!! ### ip =",ip! 2025.07.31
+  !write(*,'(a,i2)') " ### genjacobian1 and *_mt end!! ### ip =",ip! 2025.07.31
   end do ! nfreq_tot_ip loop end
 
 !# check jacobian ! false is added 2023.12.23

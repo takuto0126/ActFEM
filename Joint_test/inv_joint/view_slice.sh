@@ -157,7 +157,7 @@ outpdf=slice_ms0.pdf
 xshift=2.5   ; yshift=2.5 # x=2.5 is default
 
 gmt begin $ID pdf
-gmt makecpt -Crainbow -T-0.3/2.5/0.01 -I -Dred,purple
+gmt makecpt -Crainbow -T1.0/2.5/0.01 -I -Dred,purple
 
 scl2=20/20
 range3=0/20/0/20

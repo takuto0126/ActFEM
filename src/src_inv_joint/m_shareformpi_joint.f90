@@ -53,7 +53,7 @@ subroutine sharemt(g_param_mt,g_surface,ip)
   do i=1,6
    call sharesurface(g_surface(i),ip)
   end do
-  write(*,*) "### SHARE SURFACE END!! ###"
+  if ( ip == 0 ) write(*,*) "### SHARE SURFACE END!! ###" ! 2025.07.31
 
   call shareparamforwardmt(g_param_mt,ip)
   
@@ -66,7 +66,7 @@ subroutine sharemt(g_param_mt,g_surface,ip)
    g_surface(6)%facetype="xy" ! bottom
   end if
   
-  write(*,*) "### SHAREMT END!! ###" ! 2024.08.30
+  if (ip == 0) write(*,*) "### SHAREMT END!! ###" ! 2025.07.31
   return
   end
 !############################################################

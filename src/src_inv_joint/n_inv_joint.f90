@@ -2325,7 +2325,6 @@ subroutine PREPOBSCOEFF(g_param,h_mesh,l_line,coeffobs)
 
  !#[2]# find element and set values to coeffobs
  ii=0
- write(*,*)
  do i=1,g_param%nobs
    if (g_param%lonlatflag .eq. 2 ) then ! xyobs is already set
      x3(1:3)=(/g_param%xyzobs(1,i),g_param%xyzobs(2,i),g_param%xyzobs(3,i)/) ! [km]

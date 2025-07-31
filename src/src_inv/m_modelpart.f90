@@ -554,7 +554,7 @@ h_cond%index     = g_model%index
 h_cond%condflag  = 1         ! 2017.05.18 (not homogeneous solid earth)
 h_cond%condfile  = condfile  ! 2017.05.18
 h_cond%sigma_air = sigma_air ! 2017.05.18
-write(*,*) size(logrho_model)
+!write(*,*) size(logrho_model) ! commented out on 2025.07.31
 do i=1,nphys2
 ! write(*,*) "i",i,ele2model(i),ele2model(i),logrho_model(ele2model(i))
  if (present(iflag) .and. iflag .eq. 1 ) then         ! 2018.11.08

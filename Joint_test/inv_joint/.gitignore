@@ -3,4 +3,5 @@ result_inv/*
 *.log
 tmp.ctl
 *.pdf
+pullresult.sh
 !result_inv/.gitkeep

@@ -94,6 +94,7 @@ type param_joint  ! 2021.12.25
  real(8)                                  :: errorfloor_mt   ! 2021.12.27
  real(8)                                  :: errorfloor_tipper ! 2023.10.05
  integer(4)                               :: mt_imp_ap_flag  ! 0:imp, 1:amp, phase 2021.12.27
+ integer(4)                               :: mt_imp_unit     ! 1:Ohm, 2:mV/km/nT 2025.07.31
 
  !# output level 0:default, 1;output Jacobian  2018.06.25
  integer(4)    :: ioutlevel      ! 2018.06.25
@@ -476,7 +477,20 @@ subroutine readparaJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_pa
    write(*,*) "< input mt_imp_ap_flag for mt data [0:imp, 1:amp, phase] >" ! 2021.12.27
    read(input,12) g_param_joint%mt_imp_ap_flag ! error floor
    write(*,'(a,i10)') " mt_imp_ap_flag      =",g_param_joint%mt_imp_ap_flag ! 2021.12.22
+   write(*,*) "" !2025.07.31 
 
+   write(*,*) "Specify the unit of MT impedance data: 1:Ohm, 2:mV/km/nT" ! 2025.07.31
+   read(input,12) g_param_joint%mt_imp_unit ! 2025.07.31
+   if (g_param_joint%mt_imp_unit == 1) then
+      write(*,*) "MT impedance data is in Ohm with mt_imp_unit = 1" ! 2025.07.31
+    else if (g_param_joint%mt_imp_unit == 2) then
+      write(*,*) "MT impedance data is in mV/km/nT with mt_imp_unit = 2" ! 2025.07.31
+    else
+      write(*,*) "Invalid unit for MT impedance data. Use 1 or 2." ! 2025.07.31
+      write(*,*) "Provided mt_imp_unit = ", g_param_joint%mt_imp_unit ! 2025.07.31
+      write(*,*) "Exiting the program." ! 2025.07.31
+      stop
+    end if !2025.07.31
    !##[errorfloor_mt]
    write(*,*) "" ! 2021.12.27
    write(*,*) "< input error floor for active data [0-1] >" ! 2021.12.27
@@ -740,9 +754,10 @@ subroutine readdata_mt(g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
 
      open(1,file=trim(g_param_joint%obsmtinfo%impfile(   i)),status='old')
      open(2,file=trim(g_param_joint%obsmtinfo%imperrfile(i)),status='old')
-
+     write(*,*)"mt obs",i
      do j=1,nfreq_mt
        read(1,*) freq,a(1:8)
+       write(*,*) "j",freq,a(1:8)
        read(2,*) freq,iavail(1:4),e(1:8)
        if ( iavail(1) ) data_avail(1:2,1,i,j)=.true. ! zxx available
        if ( iavail(2) ) data_avail(1:2,2,i,j)=.true. ! zxy available
@@ -761,7 +776,7 @@ subroutine readdata_mt(g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
        zxy = a(3) + iunit*a(4) ! 2022.12.12
        zyx = a(5) + iunit*a(6) ! 2022.12.12
        zyy = a(7) + iunit*a(8) ! 2022.12.12
-       assq = abs(sqrt((zxx**2. + zxy**2. + zyx**2. + zyy**2.)/4.)) ! 2022.12.12
+       assq = abs(sqrt((zxx**2. + zxy**2. + zyx**2. + zyy**2.)/2.)) ! 2022.12.12
        do k=1,4                                                      ! 2022.12.12
          if ( err(1,k,i,j) .lt. assq*errorfloor_mt ) err(1:2,k,i,j)= assq*errorfloor_mt ! 2022.12.12
        end do ! 2022.12.12
@@ -775,8 +790,16 @@ subroutine readdata_mt(g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
    allocate( err_mt(2*4*nobs_mt*nfreq_mt))
    ii       = 0
    idata_mt = 0      ! 2022.12.12
-   !coef = 1.d0          ! Case for input in [mV/km/nT] for Nakaya 2022.12.13
-   coef = 1./dmu*1.e-3 ! case for input in [V/A]=[Ohm],coef is used for conversion from [Ohm]=[V/A] -> [mV/km/nT]
+   if (     g_param_joint%mt_imp_unit == 1) then ! impedance unit is Ohm
+    ! case for input in [V/A]=[Ohm],coef is used for conversion from [Ohm]=[V/A] to [mV/km/nT]
+      coef = 1./dmu*1.e-3 
+   else if (g_param_joint%mt_imp_unit == 2) then ! impedance  unit is mV/km/nT
+      coef = 1.d0          ! Case for input in [mV/km/nT] for Nakaya 2022.12.13
+   else
+      write(*,*) "Invalid mt_imp_unit. Use 1 for Ohm or 2 for mV/km/nT." ! 2025.07.31
+      stop
+   end if !2025.07.31
+
    open(1,file=trim(g_param_joint%outputfolder)//"dvec_mt.dat") ! 2022.12.05
    do i=1,nfreq_mt
      do j=1,nobs_mt
@@ -786,7 +809,7 @@ subroutine readdata_mt(g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
            ii=ii+1
            idata_mt(l,k,j,i) = ii           ! 2022.12.12
            dvec_mt(ii) = coef*data(l,k,j,i) ! Impedance [Ohm] -> [mV/km/nT] 2022.12.12
-           err_mt(ii) = coef* err(l,k,j,i) ! Impedance [Ohm] -> [mV/km/nT] 2022.12.12
+           err_mt(ii) = coef* err(l,k,j,i)  ! Impedance [Ohm] -> [mV/km/nT] 2022.12.12
            ! write(*,'(i5,2x,a,2x,a,2f15.7,2(a,i3))') ii,z(k),realimag(l),dvec_mt(ii),err_mt(ii),&
            ! & " obs#",j," freq#",i !
            write(1,'(i5,2x,a,2x,a,2f15.7,2(a,i3))') ii,z(k),realimag(l),dvec_mt(ii),err_mt(ii),&

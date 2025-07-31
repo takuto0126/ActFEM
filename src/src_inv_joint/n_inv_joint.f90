@@ -164,11 +164,9 @@ program inversion_joint
  !# [7] solve beta in eq. 1 (by PARDISO)
  !# [8] m_k+1 = m_ref + Cm*J*beta
 
-ip = -1
-np = -1
-errno = 0
-write(*,*) "np, ip = ", np, ip ! 2025.07.30
-write(*,*) "n_ebfem_joint start!!"! 2025.07.30
+ip = -1 ; np = -1 ; errno = 0
+!write(*,*) "np, ip = ", np, ip ! 2025.07.30
+!write(*,*) "n_ebfem_joint start!!"! 2025.07.30
 !#[-1]## START MPI on 2017.05.29
  CALL MPI_INIT(errno)
  write(*,*) "MPI_INIT done!!" ! 2025.07.30
@@ -452,7 +450,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
                   &  omega,g_apdm(i_act),g_param_joint,ip,np)     ! 2022.10.20
   end if
   if(MT ) then
-     write(*,'(a,i2)') " ### genjacobian1_mt st main ###  ip =",ip
+     !write(*,'(a,i2)') " ### genjacobian1_mt st main ###  ip =",ip ! commented out 2025.07.31
      if ( ip == 4 .or. ip == 1  .and. .false. ) then
        write(*,'(2(a,i8))')     "    nobs_mt",nobs_mt,    " | ip =",ip
        write(*,'(2(a,i8))')     "      nline",nline,      " | ip =",ip
@@ -465,9 +463,9 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
        end if
      CALL genjacobian1_mt(nobs_mt,nline,ut_mt,fs_mt,PT_mt,h_model,g_mesh,&
                   &g_line,omega,g_mtdm(i_mt),g_tipdm(i_mt),g_param_joint,ip,np) !2022.10.20
-     write(*,'(a,i2)') " ### genjacobian1_mt en main ###  ip =",ip
-  end if
-  write(*,'(a,i2)') " ### genjacobian1 / genjacobian1_mt / both end!! ### ip =",ip! 2022.12.05
+     !write(*,'(a,i2)') " ### genjacobian1_mt en main ###  ip =",ip ! commented out 2025.07.31
+  end if!                                            |###
+  write(*,'(a,i2)') " ### genjacobian1 and *_mt end!! ### ip =",ip! 2025.07.31
   end do ! nfreq_tot_ip loop end
 
 !# check jacobian ! false is added 2023.12.23

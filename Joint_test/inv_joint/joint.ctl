@@ -9,7 +9,7 @@ init cond file     !../structure/cond_homo.msh
 output folder      |./result_inv/
 Roughness type     |1
 1:L,2:Cl,3:Mi,4:Gr !2
-alpha init         !1
+alpha init         !100
 iflag_replace 0,1  |1
 ## iboundflag can set upper and lower limit of the conductivity value in inversion
 ## iboundflag = 0 : off : no boundary for conductivity value
@@ -45,6 +45,7 @@ A03 pha data       !   4 ../fwd_active/data/A03_S2_pha.dat
 ## MT data #############################################################
 ## initial version support only impedance data 2021.12.13
 imp: 0, 1:amp,pha  !0
+unit:1Ohm,2mV/km/nT!2
 MT errfloor SSQ*   !0.010
 # of observatories |4
 MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat

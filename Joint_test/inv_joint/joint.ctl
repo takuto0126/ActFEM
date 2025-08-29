@@ -32,7 +32,7 @@ A02 pha data       !   1 ../fwd_active/data/A02_S1_pha.dat
 A04 pha data       !   2 ../fwd_active/data/A04_S1_pha.dat
 A01 pha data       !   3 ../fwd_active/data/A01_S1_pha.dat
 A03 pha data       !   4 ../fwd_active/data/A03_S1_pha.dat
-index of source(S1)!2
+index of source(S2)!2
 # of obesrvatories !4
 A02 amp data       !   1 ../fwd_active/data/A02_S2_amp.dat
 A04 amp data       !   2 ../fwd_active/data/A04_S2_amp.dat
@@ -59,26 +59,44 @@ MT4 impedance err  !   4 ../fwd_3DMT/mt_err/MT4_MT_imp_err.dat
 ########################################################################
 iflag_tipper       !0
 icombine:0,1,2:fix !0
-10
+19
 -1.5
 -1.2
+-0.9
 -0.75
+-0.6
 -0.45
--0.15
-0.15
+-0.3
+-0.2
+-0.1
+0.0
+0.1
+0.2
+0.3
 0.45
+0.6
 0.75
+0.9
 1.2
 1.5
-10
+19
 -1.5
 -1.2
+-0.9
 -0.75
+-0.6
 -0.45
--0.15
-0.15
+-0.3
+-0.2
+-0.1
+0.0
+0.1
+0.2
+0.3
 0.45
+0.6
 0.75
+0.9
 1.2
 1.5
 21

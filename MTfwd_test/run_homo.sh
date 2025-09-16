@@ -4,7 +4,7 @@ source /opt/intel/oneapi/setvars.sh --force
 
 src=../src/src_3DMT
 cd $src
-#make clean
+make clean
 make
 cd -
 

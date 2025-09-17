@@ -2,7 +2,7 @@
 
 FC=mpiifort
 #OPT=-i-dynamic
-VPATH = ../common ../common_mpi/ ../solver  ../src_2D/ ../src_3DMT/ ../src_inv/ ../src_inv_ap/
+VPATH = ../common ../common_mpi/ ../solver  ../src_2D/ ../src_3DMT/
 OPT0= -O3 -xAVX -mkl=parallel
 OPT0= -O -check bounds -traceback -g -qmkl=parallel
 
@@ -24,7 +24,7 @@ $(target1) : $(objs1)
 	$(FC) -c $< -o $@
 
 clean:
-	rm -f *.o    ../solver/*.o    ../src_2D/*.o   ../src_inv/*.o    ../src_3DMT/*.o
-	rm -f *.mod  ../solver/*.mod  ../src_2D/*.mod ../src_inv/*.mod  ../src_3DMT/*.mod
-	rm -f *.exe  ../solver/*.exe  ../src_2D/*.exe ../src_inv/*.exe  ../src_3DMT/*.exe
+	rm -f *.o    ../solver/*.o    ../src_2D/*.o   ../src_3DMT/*.o
+	rm -f *.mod  ../solver/*.mod  ../src_2D/*.mod ../src_3DMT/*.mod
+	rm -f *.exe  ../solver/*.exe  ../src_2D/*.exe ../src_3DMT/*.exe
 

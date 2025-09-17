@@ -1,6 +1,6 @@
 #!/bin/bash
 
-ite=04
+ite=10
 b=bz
 echo $b
 F=result_inv
@@ -78,6 +78,7 @@ gmt end
 
 
 done
+
 
 open ${b}_S1_fit.pdf &
 open ${b}_S2_fit.pdf &

@@ -64,8 +64,8 @@ Source Name        !S1
 source start point !131.0784333  32.8908028  -0.001
 source end   point !131.0814639  32.8912333  -0.001
 Source Name        !S2
-source start point !131.0784333  32.8908028  -0.001
-source end   point !131.0814639  32.8912333  -0.001
+source start point !131.078109   32.889686   -0.001
+source end   point !131.082206   32.891490   -0.001
 Elcetric current[A]! 1.0
 sigma_air    [S/m] !1.e-8
 condflag 0:home,1: !1

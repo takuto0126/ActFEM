@@ -1,5 +1,6 @@
-! coded on 2021.06.08
-program ebfem_3DMT
+! coded on 2025.09.16
+! based on src_3DMT/n_ebfem_3DMT.f90
+program ebfem_3DMT_mpi
 use mesh_type
 use param    ! 2021.12.15
 use param_mt ! 2021.12.15
@@ -11,28 +12,43 @@ use surface_type ! see src_2D/m_surface_type.f90
 use obs_type     ! see m_obs_type.f90
 use constants, only: pi,dmu
 use face_type
+use shareformpi_mt     ! common_mpi/m_shareformpi_mt.f90 2025.09.16
 implicit none
 type(param_forward_mt)  :: g_param_mt ! 2021.12.15
-type(param_cond)        :: g_cond  ! see src/common/m_param.f90
-type(mesh)              :: g_mesh  ! see src/common/m_mesh_type.f90
-type(mesh)              :: h_mesh  ! topography file
-type(line_info)         :: g_line  ! m_line_type.f90
-type(global_matrix)     :: A       ! see m_iccg_var_takuto.f90
+type(param_cond)        :: g_cond   ! see src/common/m_param.f90
+type(mesh)              :: g_mesh   ! see src/common/m_mesh_type.f90
+type(mesh)              :: h_mesh   ! topography file
+type(line_info)         :: g_line   ! m_line_type.f90
+type(freq_info_mt)      :: g_freq_mt! see m_freq_mt_mpi.f90 2025.09.16
+type(global_matrix)     :: A        ! see m_iccg_var_takuto.f90
 type(real_crs_matrix)   :: coeffobs(2,3) !m_matrix.f90; 1:edge,
 type(surface)           :: g_surface(6)
 type(face_info)         :: g_face  ! see m_face_type.f90
-integer(4)              :: nface,node,ntri,doftot,ntet
+integer(4)              :: nface,node,ntri,doftot,ntet,nobs ! 2025.09.17
 integer(4)              :: nline,nsr,nfreq,nfreq_ip
 integer(4)              :: i,j,iresfile,i_surface,k
 integer(4)              :: ixyflag
 real(8)                 :: omega,freq
-type(respdata),allocatable,dimension(:,:,:) :: resp5  ! 2018.02.22
-type(respmt),  allocatable,dimension(:)     :: resp_mt !see m_outresp.f90
-type(resptip), allocatable,dimension(:)     :: resp_tip! m_outresp.f90 2025.04.21
+type(respdata),allocatable,dimension(:,:,:) :: resp5_mt  ! 2025.09.16 5 comp * 2 MT polarization 
+type(respdata),allocatable,dimension(:,:,:) :: tresp_mt  ! 2025.09.16 see ../common/m_outresp.f90
+type(respmt),  allocatable,dimension(:)     :: imp_mt    ! 2025.09.16 MT imp
+type(respmt),  allocatable,dimension(:)     :: timp_mt   ! 2025.09.16 see ../common/m_outresp.f90
+type(resptip), allocatable,dimension(:)     :: tip_mt    ! 2025.09.17 MT imp
+type(resptip), allocatable,dimension(:)     :: ttip_mt   ! 2025.09.17 ../common/m_outresp.
 integer(4),    allocatable,dimension(:,:)   :: n4
 complex(8),    allocatable,dimension(:,:)   :: al_MT ! 2021.09.14
-integer(4)                                  :: ip=0,iele
+integer(4)                                  :: ip=0,iele,np,errno,ierr  !2025.09.16
 character(1) ::num
+
+!#[-1]## START MPI on 2025.09.16
+ ip = -1 ; np = -1 ; errno = 0
+ CALL MPI_INIT(errno)
+ write(*,*) "MPI_INIT done!!" 
+ CALL MPI_COMM_RANK(mpi_comm_world, ip, errno)  ! ip starts with 0 in the following
+ CALL MPI_COMM_SIZE(mpi_comm_world, np, errno)
+ write(*,'(a,i3,a,i3)') " ip =",ip," /",np 
+
+if ( ip .eq. 0) then !########################################### 2025.09.16
 
 !#[0]## read param
  CALL READPARAM_MT(g_param_mt,g_cond)!get parameter info and conductivity info
@@ -72,6 +88,24 @@ character(1) ::num
 !        Face4
  CALL EXTRACT6SURFACES(g_mesh,g_line,g_face,g_surface) ! ../src_2D/m_surface_type.f90
  CALL FINDBOUNDARYLINE(g_mesh,g_surface)  ! Find boudnary line m_surface_type.f90
+
+end if !########################################### ip = 0 end           2025.09.16
+
+ CALL MPI_BCAST(ierr,1, MPI_INTEGER4,0,MPI_COMM_WORLD,errno) ! share ierr 2025.09.16
+ if ( ierr .ne. 0 ) goto 999                                            ! 2025.09.16
+ call SHARECOND(g_cond,ip)             ! src_inv_ap/m_shareformpi_ap.f90  2025.09.16
+ CALL SHAREMESHLINE(g_mesh,g_line,ip)  ! see m_shareformpi_ap.f90         2025.09.16
+ CALL SHAREMT(g_param_mt,g_surface,ip) ! see m_shareformpi_joint.f90      2025.09.16
+  nline        = g_line%nline
+  ntet         = g_mesh%ntet
+  nsr          = 2                     ! 2025.09.16
+  nobs         = g_param_mt%nobs       ! 2025.09.17 
+
+!#[8]## set frequency
+  call SETFREQIP_MT(g_param_mt,ip,np,g_freq_mt) ! see below, 2025.09.16
+  nfreq    = g_freq_mt%nfreq              ! 2025.09.16
+  nfreq_ip = g_freq_mt%nfreq_ip           ! 2025.09.16
+
  CALL PREPAOFSURFACE(g_surface(2:5),4,ip) ! allocate A and table_dof for 2DMT
 
 !#[5]## allocate global matrix
@@ -91,9 +125,15 @@ end do
 !  end if
 
 !#[7]## set resp5
-allocate( resp5(5,nsr,nfreq), resp_mt(nfreq)) ! 2018.02.22
-allocate( resp_tip(nfreq))                    ! 2025.04.21 resp_tip is added
-CALL ALLOCATERESP_MT(g_param_mt%nobs,nsr,resp5,resp_mt,resp_tip,ip,nfreq)!2025.04.21,see below
+allocate( resp5_mt(5,nsr,nfreq_ip) ) ! 2025.09.16
+allocate( tresp_mt(5,nsr,nfreq)    ) ! 2025.09.16
+allocate(    imp_mt(         nfreq_ip) ) ! type(respmt)  imp data
+allocate(   timp_mt(         nfreq   ) ) ! type(respmt)
+allocate(    tip_mt(         nfreq_ip) ) ! type(resptip) tipper data
+allocate(   ttip_mt(         nfreq   ) ) ! type(resptip) 2023.12.22
+
+CALL ALLOCATERESP_MT(nobs,nsr,resp5_mt, imp_mt, tip_mt,ip,nfreq_ip) !2025.09.17,see below
+CALL ALLOCATERESP_MT(nobs,nsr,tresp_mt,timp_mt,ttip_mt,ip,nfreq   ) !2025.09.17
 
 allocate( al_MT(nline,2) ) ! 2021.09.14 for ex and ey source
 
@@ -101,9 +141,9 @@ allocate( al_MT(nline,2) ) ! 2021.09.14 for ex and ey source
 CALL COND3DTO2D(g_mesh,g_surface,g_cond) ! see m_surface_type.f90 2021.06.01
 
 !#[9]## frequency loop
-do i = 1,nfreq
- freq  = g_param_mt%freq(i)
- write(*,*) "Freq",freq,"Hz" ! 2021.12.15
+do i = 1,nfreq_ip             ! 2025.09.16
+ freq  = g_freq_mt%freq_ip(i) ! 2025.09.16
+ write(*,*) "Freq",freq,"Hz"  ! 2021.12.15
  omega = 2.*pi*freq
 
 !#[9-1]## prepare boundary condition by 2DMT calculation at each freq
@@ -127,18 +167,123 @@ do i = 1,nfreq
    end if
 
 !#[9-3]## calculate E,B at obs
- CALL CALOBSEBCOMP(al_MT,nline,nsr,omega,coeffobs,resp5(:,:,i)) !see below
+ CALL CALOBSEBCOMP(al_MT,nline,nsr,omega,coeffobs,resp5_mt(:,:,i)) !see below
 
 !#[9-4]## cal MT impedance
- call CALRESPMT( resp5(:,1:2,i),resp_mt(i),omega )
- call CALRESPTIP(resp5(:,1:2,i),resp_tip(i),omega,ip) ! 2025.04.21
+ call CALRESPMT( resp5_mt(:,1:2,i),imp_mt(i),omega )
+ call CALRESPTIP(resp5_mt(:,1:2,i),tip_mt(i),omega,ip) ! 2025.04.21
 
 end do ! end frequency loop
 
- call OUTOBSRESPMT(g_param_mt,resp_mt,nfreq)
- call OUTOBSRESP_TIP(g_param_mt,resp_tip,nfreq) ! 2025.04.21
+!#[10]## GATHER ACTIVE and MT results to ip = 0
+  CALL SENDRECVRESULT(resp5_mt,tresp_mt,ip,np,nfreq,nfreq_ip,nsr) !see bleow 2025.09.16
+  CALL SENDRECVIMP(imp_mt,timp_mt,ip,np,nfreq,nfreq_ip)     !2025.09.16
+  CALL SENDRECVTIP(tip_mt,ttip_mt,ip,np,nfreq,nfreq_ip)     !2025.09.16
+  CALL MPI_BARRIER(mpi_comm_world, errno) ! 2017.09.03
 
-end program ebfem_3DMT
+if ( ip == 0 ) then 
+ call OUTOBSRESPMT(g_param_mt,timp_mt,nfreq)
+ call OUTOBSRESP_TIP(g_param_mt,ttip_mt,nfreq) ! 2025.09.16
+end if
+
+999 continue ! 2025.09.17
+
+CALL MPI_FINALIZE(errno) ! 2025.09.16
+
+stop ! 2025.09.17
+
+contains
+
+!############################################# SENDRECVTIP ! 2023.12.26
+!based on SENDRECVRESULT in n_inv_joint.f90
+subroutine SENDRECVTIP(tip_mt,ttip_mt,ip,np,nfreq,nfreq_ip) 
+  use outresp
+  use shareformpi_mt ! 2021.12.25
+  implicit none
+  !include 'mpif.h'
+  integer(4),        intent(in)    :: ip,np,nfreq,nfreq_ip
+  type(resptip),     intent(in)    ::  tip_mt(nfreq_ip) ! 2022.10.20
+  type(resptip),     intent(inout) :: ttip_mt(nfreq)    ! 2022.10.20
+  integer(4)         :: errno,i,j,k,l,ip_from,ifreq ! 2020.08.06
+  
+  !#[1]##
+   do i=1,nfreq
+     if (mod(i,np) .eq. 1 ) ip_from = -1
+     ip_from = ip_from + 1 ; ifreq = (i-1)/np + 1
+
+     if ( ip .eq. ip_from ) then
+       ttip_mt(i) = tip_mt(ifreq) ! 20200807
+     end if
+     call sharetipdata(ttip_mt(i),ip_from) ! m_shareformpi_joint 2023.12.26
+   end do
+   if ( ip .eq. 0 ) write(*,*) "### SENDRECVTIP END!! ###"
+  
+  return
+  end
+
+!############################################# SENDRECVIMP
+subroutine SENDRECVIMP(imp_mt,timp_mt,ip,np,nfreq,nfreq_ip) 
+ !2022.10.20
+  use outresp
+  use shareformpi_mt ! 2021.12.25
+  implicit none
+  !include 'mpif.h'
+  integer(4),    intent(in)     :: ip,np,nfreq,nfreq_ip
+  type(respmt),  intent(in)     ::  imp_mt(nfreq_ip) ! 2022.10.20
+  type(respmt),  intent(inout)  :: timp_mt(nfreq   ) ! 2022.10.20
+  integer(4)                    :: errno,i,j,k,l,ip_from,ifreq ! 2020.08.06
+  
+  !#[1]##
+   do i=1,nfreq
+     if (mod(i,np) .eq. 1 ) ip_from = -1
+     ip_from = ip_from + 1 ; ifreq = (i-1)/np + 1
+
+     if ( ip .eq. ip_from ) then
+       timp_mt(i) = imp_mt(ifreq) ! 20200807
+     end if
+     call shareimpdata(timp_mt(i),ip_from) ! see m_shareformpi_ap 2022.01.02
+   end do
+   if ( ip .eq. 0 ) write(*,*) "### SENDRECVIMP END!! ###" ! 2022.01.02
+  
+  return
+  end
+
+!############################################# 2025.09.16
+!# copied from n_inv_ap.f90 on 2025.09.16
+subroutine SENDRECVRESULT(resp5,tresp,ip,np,nfreq,nfreq_ip,nsr)
+use outresp
+use shareformpi_mt ! 2025.09.17
+implicit none
+!include 'mpif.h'
+integer(4),    intent(in)    :: ip,np,nfreq,nfreq_ip
+integer(4),    intent(in)    :: nsr                   ! 2017.09.03
+type(respdata),intent(in)    :: resp5(5,nsr,nfreq_ip) ! 2017.09.03
+type(respdata),intent(inout) :: tresp(5,nsr,nfreq)    ! 2017.09.03
+integer(4)                   :: errno,i,j,k,l,ip_from,ifreq             ! 2020.08.06
+
+!#[1]##
+ do i=1,nfreq
+  if (mod(i,np) .eq. 1 ) ip_from = -1
+  ip_from = ip_from + 1 ; ifreq = (i-1)/np + 1
+
+if ( ip .eq. ip_from ) then
+   do k=1,nsr; do j=1,5 ! 20200807
+    tresp(j,k,i) = resp5(j,k,ifreq) ! 20200807
+   end do ; end do     ! 20200807
+  end if
+
+
+do j=1,5
+   do k=1,nsr ! 2017.09.03
+   call sharerespdata(tresp(j,k,i),ip_from) ! 2025.09.17 see m_shareformpi_mt.f90
+   end do     ! 2017.09.03
+  end do
+ end do
+
+if ( ip .eq. 0 ) write(*,*) "### SENDRECVRESULT END!! ###"
+
+return
+end
 
 !#############################################
 ! coded on 2021.09.15
@@ -244,7 +389,7 @@ complex(8),allocatable,dimension(:,:) :: be5_ex,be5_ey ! be5 = bx,by,bz,ex,ey
 complex(8) :: a,b,c,d,iunit=(0.d0,1.d0)
 complex(8) :: det,z(2,2),bi(2,2),e(2,2)
 integer(4) :: i,j,nobs
-real(8)    :: coef,amp,phase
+real(8)    :: coef !,amp,phase
 
 nobs = resp_mt%nobs
 allocate(be5_ex(5,nobs),be5_ey(5,nobs))
@@ -282,7 +427,7 @@ do j=1,nobs
  resp_mt%zyy(j) = z(2,2)
 ! rho and pha, rhoa = mu/omega*|Z|**2.
 coef = dmu/omega*1.d+6
- resp_mt%rhoxx(j) = coef*amp(z(1,1))**2. ! [Ohm.m]
+ resp_mt%rhoxx(j) = coef*amp(z(1,1))**2. ! [Ohm.m] !see below for amp, phase
  resp_mt%rhoxy(j) = coef*amp(z(1,2))**2. ! [Ohm.m]
  resp_mt%rhoyx(j) = coef*amp(z(2,1))**2. ! [Ohm.m]
  resp_mt%rhoyy(j) = coef*amp(z(2,2))**2. ! [Ohm.m]
@@ -311,7 +456,7 @@ subroutine calresptip(resp5,resp_tip,omega,ip) ! 2023.12.23
   complex(8)                    :: a,b,c,d,iunit=(0.d0,1.d0)
   complex(8)                    :: det,txy(2,1),bi(2,2),e(2,1)
   integer(4)                    :: i,j,nobs
-  real(8)                       :: coef,amp,phase
+  real(8)                       :: coef
   
   nobs = resp_tip%nobs
   allocate(be5_ex(5,nobs),be5_ey(5,nobs))
@@ -355,21 +500,22 @@ subroutine calresptip(resp5,resp_tip,omega,ip) ! 2023.12.23
 
 
 !######################################## function phase
-real(8) function phase(c) ! [deg]
+function phase(c) ! [deg]
 implicit none
 complex(8),intent(in) :: c
+real(8) :: phase
 real(8),parameter :: pi=4.d0*datan(1.d0), r2d=180.d0/pi
  phase=datan2(dimag(c),dreal(c))*r2d
  return
 end function phase
 !######################################## function amp
-real(8) function amp(c)
+function amp(c)
 implicit none
 complex(8),intent(in) :: c
-!real(8) :: amp
+real(8) :: amp
  amp=dsqrt(dreal(c)**2.d0 + dimag(c)**2.d0)
  return
-end function
+end function amp
 
 
 !#############################################
@@ -503,7 +649,7 @@ complex(8),           intent(in)    :: ft(nline) ! 2021.09.15
 type(real_crs_matrix),intent(in)    :: coeffobs ! see m_matrix.f90
 type(respdata),       intent(inout) :: resp   ! see m_outresp.f90
 complex(8),allocatable,dimension(:) :: ftobs
-real(8) :: amp,phase
+!real(8) :: amp,phase ! 2025.09.17
 integer(4) :: i
 allocate(ftobs(resp%nobs)) ! 2021.09.15
 
@@ -715,3 +861,6 @@ subroutine PREPZOBSMT(h_mesh,g_param_mt)
  write(*,*) "### PREPZOBSMT  END!! ###"
  return
  end
+
+end program ebfem_3DMT_mpi ! 2025.09.16
+!#############################################

@@ -13,7 +13,7 @@ OPT0=-L${MKLROOT}/lib/intel64 -O3 -traceback -lmkl_intel_lp64 -lmkl_intel_thread
 #-fc=ifx
 #2016.03.03 solver with many modules
 target1=ebfem_inv_joint.exe
-objs1= m_caltime.o m_constants.o  m_param_ana.o m_outerinnerproduct.o m_matrix.o m_fem_util.o m_fem_edge_util.o m_line_type.o  m_param.o m_obs_type.o m_outresp.o m_mesh_type.o  m_triangle.o m_face_type.o m_modelpart.o  m_iccg_var_takuto.o m_param_mt.o m_param_jointinv.o solvePARDISOjointinv.o m_solveCM_ap.o solvebeta.o sort_index.o m_jacobian_joint.o   m_freq_mpi_joint.o m_surface_type.o m_shareformpi_joint.o forward_joint.o m_solvePARDISO_2D.o forward_2DTMinv.o m_spectral.o m_modelroughness_joint.o n_inv_joint.o
+objs1= m_caltime.o m_constants.o  m_param_ana.o m_outerinnerproduct.o m_matrix.o m_fem_util.o m_fem_edge_util.o m_line_type.o  m_param.o m_obs_type.o m_outresp.o m_mesh_type.o  m_triangle.o m_face_type.o m_modelpart.o  m_iccg_var_takuto.o m_param_mt.o m_param_jointinv.o solvePARDISOjointinv.o m_solveCM_ap.o solvebeta.o sort_index.o m_jacobian_joint.o   m_freq_mpi_joint.o m_surface_type.o  m_shareformpi_mt.o m_shareformpi_joint.o forward_joint.o m_solvePARDISO_2D.o forward_2DTMinv.o m_spectral.o m_modelroughness_joint.o n_inv_joint.o
 
 $(target1) : $(objs1)
 	$(FC) $(OPT0) $(objs1) -o $(target1)

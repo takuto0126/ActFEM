@@ -1,0 +1,11 @@
+*.dat
+*.pdf
+*.msh
+result_homo/*
+result_lateral/*
+tmp.ctl
+
+!result_homo/
+!result_lateral/
+!result_homo/.gitkeep
+!result_lateral/.gitkeep

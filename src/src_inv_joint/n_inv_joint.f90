@@ -22,6 +22,7 @@ program inversion_joint
  use surface_type     ! 2021.12.25
  use param_mt         ! 2021.12.25
  use param_jointinv   ! 2021.12.25
+ use shareformpi_mt ! see ../common_mpi/m_shareformpi_mt.f90 2025.09.16
 ! declaration
  implicit none
  type(param_forward)    :: g_param      ! see m_param.f90
@@ -1548,6 +1549,7 @@ subroutine SENDRECVTIP(tip_mt,ttip_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)
   use outresp
   use shareformpi_joint ! 2021.12.25
   use freq_mpi_joint    ! 2022.10.20
+  use shareformpi_mt    ! 2025.09.17 see ../common_mpi/m_shareformpi_mt.f90
   implicit none
   !include 'mpif.h'
   integer(4),           intent(in)    :: ip,np,nfreq_mt,nfreq_mt_ip
@@ -1563,7 +1565,7 @@ subroutine SENDRECVTIP(tip_mt,ttip_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)
      if ( ip .eq. ip_from ) then
        ttip_mt(i) = tip_mt(ifreq) ! 20200807
      end if
-     call sharetipdata(ttip_mt(i),ip_from) ! m_shareformpi_joint 2023.12.26
+     call sharetipdata(ttip_mt(i),ip_from) ! m_shareformpi_mt.f90 2025.09.17
    end do
    if ( ip .eq. 0 ) write(*,*) "### SENDRECVTIP END!! ###"
   

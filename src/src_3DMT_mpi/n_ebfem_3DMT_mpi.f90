@@ -12,7 +12,8 @@ use surface_type ! see src_2D/m_surface_type.f90
 use obs_type     ! see m_obs_type.f90
 use constants, only: pi,dmu
 use face_type
-use shareformpi_mt     ! common_mpi/m_shareformpi_mt.f90 2025.09.16
+use shareformpi_mt    ! common_mpi/m_shareformpi_mt.f90 2025.09.16
+use caltime           ! 2025.09.17
 implicit none
 type(param_forward_mt)  :: g_param_mt ! 2021.12.15
 type(param_cond)        :: g_cond   ! see src/common/m_param.f90
@@ -26,8 +27,7 @@ type(surface)           :: g_surface(6)
 type(face_info)         :: g_face  ! see m_face_type.f90
 integer(4)              :: nface,node,ntri,doftot,ntet,nobs ! 2025.09.17
 integer(4)              :: nline,nsr,nfreq,nfreq_ip
-integer(4)              :: i,j,iresfile,i_surface,k
-integer(4)              :: ixyflag
+integer(4)              :: i,j,iresfile,i_surface,k,ixyflag
 real(8)                 :: omega,freq
 type(respdata),allocatable,dimension(:,:,:) :: resp5_mt  ! 2025.09.16 5 comp * 2 MT polarization 
 type(respdata),allocatable,dimension(:,:,:) :: tresp_mt  ! 2025.09.16 see ../common/m_outresp.f90
@@ -38,12 +38,13 @@ type(resptip), allocatable,dimension(:)     :: ttip_mt   ! 2025.09.17 ../common/
 integer(4),    allocatable,dimension(:,:)   :: n4
 complex(8),    allocatable,dimension(:,:)   :: al_MT ! 2021.09.14
 integer(4)                                  :: ip=0,iele,np,errno,ierr  !2025.09.16
-character(1) ::num
+character(1) :: num
+type(watch)  :: t_watch ! 2025.09.17
+call watchstart(t_watch) ! 2025.09.17
 
 !#[-1]## START MPI on 2025.09.16
  ip = -1 ; np = -1 ; errno = 0
- CALL MPI_INIT(errno)
- write(*,*) "MPI_INIT done!!" 
+ CALL MPI_INIT(errno) 
  CALL MPI_COMM_RANK(mpi_comm_world, ip, errno)  ! ip starts with 0 in the following
  CALL MPI_COMM_SIZE(mpi_comm_world, np, errno)
  write(*,'(a,i3,a,i3)') " ip =",ip," /",np 
@@ -143,13 +144,14 @@ CALL COND3DTO2D(g_mesh,g_surface,g_cond) ! see m_surface_type.f90 2021.06.01
 !#[9]## frequency loop
 do i = 1,nfreq_ip             ! 2025.09.16
  freq  = g_freq_mt%freq_ip(i) ! 2025.09.16
- write(*,*) "Freq",freq,"Hz"  ! 2021.12.15
+ if ( freq .lt. 0. ) cycle ! 2025.09.17
+   write(*,'(a,i3,a,i3,a,f9.4,a)') " ip =",ip,"/",np," freq =",freq," [Hz] start!!" ! 2025.09.17
  omega = 2.*pi*freq
 
 !#[9-1]## prepare boundary condition by 2DMT calculation at each freq
  do j=2,5 ! surface 2DTM loop, 2:north,3:west,4:south,5:east surface
   CALL forward_2DTM(g_surface(j),freq,g_param_mt,g_cond,ip,j)!## solve 2DTM for BC
- write(num,'(i1)') j
+  write(num,'(i1)') j
  !open(1,file="2D"//num//".dat")
  ! write(1,'(i4,2g15.7)') (k,g_surface(j)%bs(k),k=1,g_surface(j)%nline)
  !close(1)
@@ -160,17 +162,17 @@ do i = 1,nfreq_ip             ! 2025.09.16
  !write(*,*) "ip",ip
  !write(*,*) "g_param",g_param_mt%xbound(4)
  call forward_3DMT(A,g_param_mt,g_mesh,g_line,nline,al_MT,freq,g_cond,g_surface,ip)
- if (ip .eq. 0 .and. .false. ) then ! fs_mt01.dat
-   open(1,file="fs_mt01.dat")
-   write(1,'(i6,4f15.7)') (j,al_mt(j,1:2),j=1,nline)
-   close(1)
-   end if
+ !if (ip .eq. 0 .and. .false. ) then ! fs_mt01.dat
+ ! open(1,file="fs_mt01.dat")
+ !write(1,'(i6,4f15.7)') (j,al_mt(j,1:2),j=1,nline)
+ !close(1)
+ !end if
 
 !#[9-3]## calculate E,B at obs
  CALL CALOBSEBCOMP(al_MT,nline,nsr,omega,coeffobs,resp5_mt(:,:,i)) !see below
 
 !#[9-4]## cal MT impedance
- call CALRESPMT( resp5_mt(:,1:2,i),imp_mt(i),omega )
+ call CALRESPMT( resp5_mt(:,1:2,i),imp_mt(i),omega,ip) ! 2025.09.17
  call CALRESPTIP(resp5_mt(:,1:2,i),tip_mt(i),omega,ip) ! 2025.04.21
 
 end do ! end frequency loop
@@ -189,6 +191,9 @@ end if
 999 continue ! 2025.09.17
 
 CALL MPI_FINALIZE(errno) ! 2025.09.16
+
+call watchstop(t_watch) ! 2025.09.17
+if (ip == 0) write(*,'(2(a,i2),a,f6.2,a)') " ### ebfem_3DMT_mpi END!! ### Time =",t_watch%ihour,"h ",t_watch%imin,"m ",t_watch%sec,"s"  ! 2025.09.17
 
 stop ! 2025.09.17
 
@@ -216,7 +221,7 @@ subroutine SENDRECVTIP(tip_mt,ttip_mt,ip,np,nfreq,nfreq_ip)
      end if
      call sharetipdata(ttip_mt(i),ip_from) ! m_shareformpi_joint 2023.12.26
    end do
-   if ( ip .eq. 0 ) write(*,*) "### SENDRECVTIP END!! ###"
+   if ( ip .eq. 0 ) write(*,*) "### SENDRECVTIP    END!! ###"
   
   return
   end
@@ -243,7 +248,7 @@ subroutine SENDRECVIMP(imp_mt,timp_mt,ip,np,nfreq,nfreq_ip)
      end if
      call shareimpdata(timp_mt(i),ip_from) ! see m_shareformpi_ap 2022.01.02
    end do
-   if ( ip .eq. 0 ) write(*,*) "### SENDRECVIMP END!! ###" ! 2022.01.02
+   if ( ip .eq. 0 ) write(*,*) "### SENDRECVIMP    END!! ###" ! 2022.01.02
   
   return
   end
@@ -331,7 +336,7 @@ real(8)        :: freq
    close(32) ! 2021.12.15
   end do
 
- write(*,*) "### OUTOBSRESPMT END!! ###"
+ write(*,*) "### OUTOBSRESPMT   END!! ###"
 
 return
 end
@@ -378,13 +383,14 @@ subroutine OUTOBSRESP_TIP(g_param_mt,resp_tip,nfreq)
 
 !#############################################
 ! coded on 2021.09.15
-subroutine calrespmt(resp5,resp_mt,omega)
+subroutine calrespmt(resp5,resp_mt,omega,ip)! 2025.09.17
 use outresp
 use constants ! dmu,pi
 implicit none
 real(8),       intent(in)    :: omega
 type(respdata),intent(in)    :: resp5(5,2) ! 1 for ex, 2 for ey polarization
 type(respmt),  intent(inout) :: resp_mt
+integer(4),    intent(in)    :: ip     ! 2025.09.17
 complex(8),allocatable,dimension(:,:) :: be5_ex,be5_ey ! be5 = bx,by,bz,ex,ey
 complex(8) :: a,b,c,d,iunit=(0.d0,1.d0)
 complex(8) :: det,z(2,2),bi(2,2),e(2,2)
@@ -438,7 +444,7 @@ coef = dmu/omega*1.d+6
  resp_mt%phayy(j) = phase(z(2,2))
 end do
 
-write(*,*) "### CALRESPMT END!! ###" ! 2024.10.06
+write(*,'(a,i2)') " ### CALRESPMT      END!! ### ip=",ip ! 2025.09.17
 return
 end
 !#############################################
@@ -476,7 +482,6 @@ subroutine calresptip(resp5,resp_tip,omega,ip) ! 2023.12.23
    end do
   end do
   
-  write(*,*)
   !# calculate tipper
   do j=1,nobs
    a = be5_ex(1,j) ! Bx_ex
@@ -494,7 +499,7 @@ subroutine calresptip(resp5,resp_tip,omega,ip) ! 2023.12.23
    resp_tip%ty(j) = txy(2,1)
   end do
   
-  write(*,'(a,i2)') " ### CALRESPTIP     END !! ###  ip =",ip  ! 2023.12.23
+  write(*,'(a,i2)') " ### CALRESPTIP     END!! ### ip=",ip  ! 2023.12.23
   return
   end
 

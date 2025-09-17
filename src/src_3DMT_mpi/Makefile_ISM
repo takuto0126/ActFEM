@@ -1,11 +1,11 @@
 # Coded on Oct. 12, 2021 Takuto Minami
 
-FC=ifx# for ISM
+FC=mpiifort# for ISM
 #OPT=-i-dynamic
 VPATH = ../common ../common_mpi/ ../solver  ../src_2D/ ../src_3DMT/
 #OPT0= -O3 -xAVX -mkl=parallel
 OPT0= -O -check bounds -traceback -g -qmkl=parallel
-OPT0=-L${MKLROOT}/lib/intel64 -O3 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -ldl # for ISM
+OPT0=-L${MKLROOT}/lib/intel64 -O3 -traceback -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -ldl # for ISM server
 
 #OPT0= -O3 -xCORE-AVX2 -mkl=parallel -lmpi
 

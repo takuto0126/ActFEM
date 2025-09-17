@@ -10,6 +10,9 @@ type watch
  integer(ikind) :: t_rate ! 2025.06.25
  integer(ikind) :: t_max
  real(8)    :: time  ! [min]
+ integer(ikind) :: imin  ! 2025.09.17
+ integer(ikind) :: ihour ! 2025.09.17
+ real(8)        :: sec  ! 2025.09.17
 end type
 
 contains
@@ -56,11 +59,14 @@ real(8)      :: diff
   else
     diff = t2 - t1
   endif
-  time = diff/dble(t_rate)/60.d0
+  time = diff/dble(t_rate)/60.d0 ! [min]
 
 !#[3]# output
   t_watch%time = time !"[min]" 2025.06.24
-
+  t_watch%imin = int(time) ! [min] 2025.09.17
+  t_watch%ihour= int(time)/60  ! [hour] 2025.09.17
+  t_watch%imin = mod(int(time),60) ! [min] 2025.09.17
+  t_watch%sec = (time - int(time))*60  ! [sec] 2025.09
 return
 end subroutine calt
 

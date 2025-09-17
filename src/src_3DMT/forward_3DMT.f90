@@ -30,6 +30,8 @@ logical,   allocatable,dimension(:,:) :: line_bc   ! 2021.09.14
 integer(4) :: i,j,k,nsr=2
 real(8)    :: omega,zmin,zmax,xout,yout
 type(watch) :: t_watch ! 2025.06.24
+
+call watchstart(t_watch) ! 2025.09.17
 allocate( b_vec(nline,2),Avalue_bc(nline,2),line_bc(  nline,2) )
 
 !#[1]## set
@@ -81,7 +83,8 @@ end if
 !call solveMUMPS(doftot,A,b_vec,bs,ip)  ! for MacbookPro 15inch
 call solvePARDISO(nline,nsr,A,b_vec,al_MT,ip) !　2017.07.11
 
-write(*,'(a,i3,a,f8.4,a)') " ### forward_3DMT END !!### ip=",ip," freq=",freq," [Hz]"!2025.07.31
+call watchstop(t_watch) ! 2025.09.17
+write(*,'(a,i2,a,f8.4,a,f6.3,a)') " ### forward_3DMT   END!! ### ip=",ip," freq=",freq," [Hz] Time=",t_watch%time,"[min]"!2025.09.17
 return
 end subroutine forward_3DMT
 
@@ -294,7 +297,7 @@ end do    ! element loop end
 b_vec(:,:)=0.d0 ! 2021.12.15
 
 call watchstop(t_watch) ! 2025.06.25
-write(*,'(a,f8.5,a)') "### GENMAT_MT END !! ### Time=",t_watch%time," [min]" !2025.06.25
+write(*,'(a,f8.5,a)') " ### GENMAT_MT END !! ### Time=",t_watch%time," [min]" !2025.06.25
 
 !  do i=1,l_line%nline
 !   if (b_vec(i) .ne. 0.d0) write(*,*) i,"b=",b_vec(i)

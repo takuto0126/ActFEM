@@ -472,6 +472,12 @@ subroutine readparaJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_pa
 
  !#[3]## read mt parameters and mt impedance and tipper data 2021.12.27
  if ( ijoint == 2 .or. ijoint == 3 ) then ! MT or Joint inversion 2022.10.14
+
+  !#[2]## read data files ! 2018.10.04
+   g_param_joint%nobs     = g_param%nobs
+   g_param_joint%nfreq    = g_param%nfreq
+   g_param_joint%nfreq_mt = g_param_mt%nfreq ! 2022.10.21
+
    !##[mt_imp_ap_flag]
    write(*,*) "" ! 2021.12.27
    write(*,*) "< input mt_imp_ap_flag for mt data [0:imp, 1:amp, phase] >" ! 2021.12.27
@@ -750,11 +756,12 @@ subroutine readdata_mt(g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
 
   !#[2]## read and gen data vector
   !#[2-1]## read mt impedance data 2022.12.12
+   write(*,*) "nobs_mt",nobs_mt," nfreq_mt",nfreq_mt ! 2025.09.18
    do i=1,nobs_mt ! nobs_mt should be set as including both only impedance and tipper sites
 
      open(1,file=trim(g_param_joint%obsmtinfo%impfile(   i)),status='old')
      open(2,file=trim(g_param_joint%obsmtinfo%imperrfile(i)),status='old')
-     write(*,*)"mt obs",i
+     write(*,*)"mt obs",i, "nfreq_mt",nfreq_mt ! 2025.09.18
      do j=1,nfreq_mt
        read(1,*) freq,a(1:8)
        write(*,*) "j",freq,a(1:8)
@@ -874,6 +881,7 @@ subroutine readdata_mt(g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
    g_param_joint%data_avail_mt = data_avail  ! 2022.01.02
    g_param_joint%ndat_mt       = ndat_mt     ! 2022.01.02
 
+   write(*,'(a)') " ### READDATA_MT END!! ### " ! 2025.09.18
  return
  end
 

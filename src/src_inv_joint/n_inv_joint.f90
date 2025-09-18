@@ -1856,6 +1856,7 @@ subroutine CALRMS_MT(g_data_mt,h_data_mt,Cd_mt,misfit_mt,nrms_mt)
   ndat_mt  = g_data_mt%ndat_mt
   ndat_mt1 = h_data_mt%ndat_mt
   ndat_mt2 = Cd_mt%ntot
+  write(*,*) "ndat_mt",ndat_mt,"ndat_mt1",ndat_mt1,"ndat_mt2",ndat_mt2
   if (ndat_mt .ne. ndat_mt1 .or. ndat_mt .ne. ndat_mt2 ) goto 99
   allocate(dvec_mt1(ndat_mt),dvec_mt2(ndat_mt),dvec_mt(ndat_mt))
   dvec_mt1 = g_data_mt%dvec_mt

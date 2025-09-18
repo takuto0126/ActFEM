@@ -118,7 +118,7 @@ end do ! freq loop end
    CALL OUTOBSFILESFWD(g_param,sparam,nsr,resp5,nfreq) !2017.07.11 m_outresp.f90
 
 call watchstop(t_watch) ! 2025.09.17
-if (ip == 0) write(*,'(2(a,i2),a,f6.3,a)') " ### ebfem_bxyz END!! ### Time =",t_watch%ihour,"h ",t_watch%imin,"m ",t_watch%sec,"s"  ! 2025.09.17
+if (ip == 0) write(*,'(2(a,i2),a,f6.3,a)') " ### ebfem_bxyz   END!! ### Time =",t_watch%ihour,"h ",t_watch%imin,"m ",t_watch%sec,"s"  ! 2025.09.17
 
 end program n_ebfem_bxyz
 !#############################################

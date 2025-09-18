@@ -297,7 +297,7 @@ end do    ! element loop end
 b_vec(:,:)=0.d0 ! 2021.12.15
 
 call watchstop(t_watch) ! 2025.06.25
-write(*,'(a,f8.5,a)') " ### GENMAT_MT END !! ### Time=",t_watch%time," [min]" !2025.06.25
+write(*,'(a,f8.5,a)') " ### GENMAT_MT      END!! ### Time=",t_watch%time," [min]" ! 2025.09.18
 
 !  do i=1,l_line%nline
 !   if (b_vec(i) .ne. 0.d0) write(*,*) i,"b=",b_vec(i)
@@ -628,7 +628,7 @@ complex(8)  ::  temp
           enddo
         endif
       enddo
-if (ip .eq. 0) write(*,*) "### SET_BC_3DMT END!! ###"
+if (ip .eq. 0) write(*,'(a)') " ### SET_BC_3DMT END!! ###" ! 2025.09.18
 RETURN
 END
 !

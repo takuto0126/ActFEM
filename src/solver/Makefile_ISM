@@ -6,8 +6,8 @@ MPIFC=mpif90
 VPATH = ../common
 #OPT0= -O3 -xAVX -qmkl=parallel
 #OPT0= -O -fpe0 -check bounds -traceback -g  -mkl=parallel
-OPT0=-L${MKLROOT}/lib/intel64 -O3 -xAVX -lmkl_intel_lp64 -lmkl_sequential -lmkl_core -lpthread -ldl # for ISM
-#2016.03.03 solver with many modules
+OPT0=-L${MKLROOT}/lib/intel64 -O3 -traceback -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -ldl # for openMP code in ISM server
+
 
 target1=ebfem_bxyz.exe
 

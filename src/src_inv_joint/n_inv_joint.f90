@@ -193,16 +193,26 @@ if ( ip .eq. 0) then !################################################# ip = 0
   !m_param_jointinv.f90 2022.10.22
 
 !#[1]## read mesh
-  CALL READMESH_TOTAL(g_mesh,g_param%g_meshfile)
-  !if ( access( g_param%z_meshfile, " ") .eq. 0 ) then! if exist, commented out 2024.10.07
-    CALL READMESH_TOTAL(h_mesh,g_param%z_meshfile)
+    if (ACT) then
+       CALL READMESH_TOTAL(g_mesh,g_param%g_meshfile)
+       CALL READMESH_TOTAL(h_mesh,g_param%z_meshfile)
+    else 
+       CALL READMESH_TOTAL(g_mesh,g_param_mt%g_meshfile)
+       CALL READMESH_TOTAL(h_mesh,g_param_mt%z_meshfile);end if
+
     if (ACT) CALL PREPZSRCOBS(h_mesh,g_param,sparam)! see below, include
     if (MT)  CALL PREPZOBSMT(h_mesh,g_param_mt)     ! see below 2024.10.07
     CALL OUTSITEINFO(g_param,sparam,g_param_mt,g_param_joint,ACT,MT) ! see below 2025.09.18
-  !end if
-  CALL GENXYZMINMAX(g_mesh,g_param) ! see below 2021.12.27
+
+    if (ACT) then
+       CALL GENXYZMINMAX(g_mesh,g_param) ! see below 2021.12.27
        g_param_mt%xyzminmax = g_param%xyzminmax ! 2021.12.27
-  CALL READLINE(g_param%g_lineinfofile,g_line)       ! see m_line_type.f90
+       CALL READLINE(g_param%g_lineinfofile,g_line)      ! see m_line_type.f90
+    else 
+        CALL GENXYZMINMAX_MT(g_mesh,g_param_mt)          ! see below 2025.09.18
+        CALL READLINE(g_param_mt%g_lineinfofile,g_line)  ! see m_line_type.f90
+        g_param%xyzminmax = g_param_mt%xyzminmax         ! 2025.09.18
+      end if  
 
   !=================================================================
   nline   = g_line%nline      ! 2021.09.14
@@ -669,7 +679,50 @@ end do ! alpha loop end! 2017.09.08
 
  10 format(a,i3,a,i3,a,f8.3,a) !2022.01.04
 
-contains 
+contains
+!###################################################################
+! modified for spherical on 2016.11.20
+! iflag = 0 for xyz
+! iflag = 1 for xyzspherical
+subroutine GENXYZMINMAX_MT(em_mesh,g_param_mt)
+use param_mt ! 2016.11.20
+use mesh_type
+implicit none
+type(mesh),            intent(inout) :: em_mesh ! 2021.10.13
+type(param_forward_mt),intent(inout) :: g_param_mt ! 2021.12.15
+real(8) :: xmin,xmax,ymin,ymax,zmin,zmax
+real(8) :: xyzminmax(6)
+real(8), allocatable, dimension(:,:) :: xyz ! 2025.07.15
+integer(4) :: i
+allocate(xyz(3,em_mesh%node))   ! 2025.07.15
+xyz = em_mesh%xyz ! normal
+xmin=xyz(1,1) ; xmax=xyz(1,1)
+ymin=xyz(2,1) ; ymax=xyz(2,1)
+zmin=xyz(3,1) ; zmax=xyz(3,1)
+
+do i=1,em_mesh%node
+ xmin=min(xmin,xyz(1,i))
+ xmax=max(xmax,xyz(1,i))
+ ymin=min(ymin,xyz(2,i))
+ ymax=max(ymax,xyz(2,i))
+ zmin=min(zmin,xyz(3,i))
+ zmax=max(zmax,xyz(3,i))
+end do
+
+write(*,*) "xmin,xmax",xmin,xmax ! 2021.10.13
+write(*,*) "ymin,ymax",ymin,ymax ! 2021.10.13
+write(*,*) "zmin,zmax",zmin,zmax ! 2021.10.13
+
+xyzminmax(1:6)=(/xmin,xmax,ymin,ymax,zmin,zmax/)
+
+!# set output
+g_param_mt%xyzminmax = xyzminmax ! 2021.12.15
+em_mesh%xyzminmax = xyzminmax    ! 2021.10.13
+
+write(*,*) "### GENXYZMINMAX END!! ###"
+return
+end
+
 !############################################ OUTSITEINFO 
 ! coded on 2025.09.18
 subroutine OUTSITEINFO(g_param,sparam,g_param_mt,g_param_joint,ACT,MT)
@@ -1810,7 +1863,7 @@ subroutine CALRMS_MT(g_data_mt,h_data_mt,Cd_mt,misfit_mt,nrms_mt)
   dvec_mt  = dvec_mt2 - dvec_mt1
   
   !# check
-  if (.false.) then
+  if (.true.) then
    write(*,'(5x,a)') " obs          |  cal         | d^2           | d^2/e^2"
    write(*,*) "ndat1"
    do i=1,ndat_mt1

@@ -4,7 +4,7 @@ source /opt/intel/oneapi/setvars.sh --force
 ## ACTIVE 2 sources ####################################################
 src=../../src/solver
 cd $src
-#make clean
+make clean
 make
 cd -
 

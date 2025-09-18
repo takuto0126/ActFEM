@@ -61,7 +61,7 @@ real(8)                 :: threshold = 1.d-10
      stop
     end if
  end do                      ! 2018.10.04
- if ( nobs .eq. 0 ) goto 998 ! 2018.10.04
+ !if ( nobs .eq. 0 ) goto 998 ! commented out on 2025.09.18
  n      = nline             ! number of equations
  nnz    = A%iau_tot + nline ! upper triangle + diagonal
  nrhs   = nsr               ! # of ACTIVE src for rhs vector, 2021.12.30
@@ -172,39 +172,38 @@ real(8)                 :: threshold = 1.d-10
 
 !#[3-1]## forward solving ACTIVE
   if ( ACT ) then !2022.10.14
-  CALL pardiso (pt, maxfct, mnum, mtype, phase, n, AMAT, ia, ja, &
+   CALL pardiso (pt, maxfct, mnum, mtype, phase, n, AMAT, ia, ja, &
               idum, nrhs, iparm, msglvl, b, x, error)
-  if ( present(ip) ) then ! 2020.09.18
-   WRITE(*,'(a,i2)') ' Solve completed ... [ACTIVE Forward]  ip =',ip !," /",np ! 2020.09.18
-  else   ! 2020.09.18
-   WRITE(*,*) 'Solve completed ... [ACTIVE Forward]' ! 2018.10.04
-  end if ! 2020.09.19
-  xout(1:n,1:nsr)=x(1:n,1:nsr)  ! 2017.07.13
+   if ( present(ip) ) then ! 2020.09.18
+     WRITE(*,'(a,i2)') ' Solve completed ... [ACTIVE Forward]  ip =',ip !," /",np ! 2020.09.18
+   else   ! 2020.09.18
+     WRITE(*,*) 'Solve completed ... [ACTIVE Forward]' ! 2018.10.04
+   end if ! 2020.09.19
+   xout(1:n,1:nsr)=x(1:n,1:nsr)  ! 2017.07.13
   end if ! 2022.10.14
 
 !#[3-2]## forward solving MT
   if (MT) then ! 2022.10.14
-  CALL pardiso (pt, maxfct, mnum, mtype, phase, n, AMAT, ia, ja, &
+   CALL pardiso (pt, maxfct, mnum, mtype, phase, n, AMAT, ia, ja, &
               idum, 2, iparm, msglvl, b_mt, x_mt, error)
-  if ( present(ip) ) then ! 2020.09.18
-   WRITE(*,'(a,i2)') ' Solve completed ... [MT Forward] ip =',ip !," /",np ! 2021.12.30
-  else   ! 2020.09.18
-   WRITE(*,*) 'Solve completed ... [MT Forward]' ! 2018.10.04
-  end if ! 2020.09.19
-  xout_mt(1:n,1:2)=x_mt(1:n,1:2)  ! 2017.07.13
+   if ( present(ip) ) then ! 2020.09.18
+     WRITE(*,'(a,i2)') ' Solve completed ... [MT Forward] ip =',ip !," /",np ! 2021.12.30
+   else   ! 2020.09.18
+     WRITE(*,*) 'Solve completed ... [MT Forward]' ! 2018.10.04
+   end if ! 2020.09.19
+   xout_mt(1:n,1:2)=x_mt(1:n,1:2)  ! 2017.07.13
 
-  IF (error /= 0) THEN
-   WRITE(*,*) 'The following ERROR was detected: ', error
-   GOTO 1000
-  ENDIF
-
+   IF (error /= 0) THEN
+     WRITE(*,*) 'The following ERROR was detected: ', error
+     GOTO 1000
+   ENDIF
   end if !2022.10.14
 
 !#[3-2]## deallocate forward and allocate for Jacobian
-if (ACT)  DEALLOCATE(b,   x )   ! 2022.10.14
-if (MT)  DEALLOCATE(b_mt,x_mt) ! 2022.10.14
-if (ACT)  ALLOCATE(  b1(   n,nobs),   x1(   n,nobs   ) ) ! used once 2018.10.04
-if (MT)  ALLOCATE(  b1_mt(n,nobs_mt),x1_mt(n,nobs_mt) ) ! used four fimes 2021.12.30
+ if (ACT)  DEALLOCATE(b,   x )   ! 2022.10.14
+ if (MT)  DEALLOCATE(b_mt,x_mt) ! 2022.10.14
+ if (ACT)  ALLOCATE(  b1(   n,nobs),   x1(   n,nobs   ) ) ! used once 2018.10.04
+ if (MT)  ALLOCATE(  b1_mt(n,nobs_mt),x1_mt(n,nobs_mt) ) ! used four fimes 2021.12.30
 
 !#[4]## solve for ACTIVE Jacobian
 !#[4-1]## ACTIVE: 1 to 5 component solving for ACTIVE jacobian calculation

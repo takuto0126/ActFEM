@@ -193,7 +193,7 @@ end if
 CALL MPI_FINALIZE(errno) ! 2025.09.16
 
 call watchstop(t_watch) ! 2025.09.17
-if (ip == 0) write(*,'(2(a,i2),a,f6.2,a)') " ### ebfem_3DMT_mpi END!! ### Time =",t_watch%ihour,"h ",t_watch%imin,"m ",t_watch%sec,"s"  ! 2025.09.17
+if (ip == 0) write(*,'(2(a,i2),a,f6.3,a)') " ### ebfem_3DMT_mpi END!! ### Time =",t_watch%ihour,"h ",t_watch%imin,"m ",t_watch%sec,"s"  ! 2025.09.17
 
 stop ! 2025.09.17
 

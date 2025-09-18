@@ -10,6 +10,7 @@ use line_type  ! see m_line_type.f90
 use iccg_var_takuto
 use outresp
 use obs_type     ! see m_obs_type.f90 added on 2016.10.27
+use caltime      ! 2025.09.18
 implicit none
 type(param_forward)                         :: g_param
 type(param_source)                          :: sparam
@@ -30,6 +31,8 @@ integer(4),parameter                        :: icomp = 2 ! 1 for b field, 2 for 
 integer(4)                                  :: i,j,ip,iresfile,dofn
 real(8)                                     :: omega, freq ! 2018.02.22
 integer(4)                                  :: ixyflag     ! 2017.10.11
+type(watch)                                 :: t_watch     ! 2025.09.18
+call watchstart(t_watch) ! 2025.09.18
 !##
 
 !#[0]## read parameters
@@ -113,6 +116,9 @@ end do ! freq loop end
 
   !#[8]## output resp to obs file
    CALL OUTOBSFILESFWD(g_param,sparam,nsr,resp5,nfreq) !2017.07.11 m_outresp.f90
+
+call watchstop(t_watch) ! 2025.09.17
+if (ip == 0) write(*,'(2(a,i2),a,f6.3,a)') " ### ebfem_bxyz END!! ### Time =",t_watch%ihour,"h ",t_watch%imin,"m ",t_watch%sec,"s"  ! 2025.09.17
 
 end program n_ebfem_bxyz
 !#############################################

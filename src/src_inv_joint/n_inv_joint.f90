@@ -198,6 +198,7 @@ if ( ip .eq. 0) then !################################################# ip = 0
     CALL READMESH_TOTAL(h_mesh,g_param%z_meshfile)
     if (ACT) CALL PREPZSRCOBS(h_mesh,g_param,sparam)! see below, include
     if (MT)  CALL PREPZOBSMT(h_mesh,g_param_mt)     ! see below 2024.10.07
+    CALL OUTSITEINFO(g_param,sparam,g_param_mt,g_param_joint,ACT,MT) ! see below 2025.09.18
   !end if
   CALL GENXYZMINMAX(g_mesh,g_param) ! see below 2021.12.27
        g_param_mt%xyzminmax = g_param%xyzminmax ! 2021.12.27
@@ -667,6 +668,46 @@ end do ! alpha loop end! 2017.09.08
  if (ip == 0) write(*,'(2(a,i2),a,f6.3,a)') " ### inv_joint END!! ### Time =",t_watch%ihour,"h ",t_watch%imin,"m ",t_watch%sec,"s"  ! 2025.09.18
 
  10 format(a,i3,a,i3,a,f8.3,a) !2022.01.04
+
+contains 
+!############################################ OUTSITEINFO 
+! coded on 2025.09.18
+subroutine OUTSITEINFO(g_param,sparam,g_param_mt,g_param_joint,ACT,MT)
+implicit none
+type(param_forward),       intent(in) :: g_param
+type(param_source),        intent(in) :: sparam
+type(param_forward_mt),    intent(in) :: g_param_mt
+type(param_joint),         intent(in) :: g_param_joint
+logical,                   intent(in) :: ACT,MT
+integer(4) :: i
+
+if (ACT) then
+  !# site info for ACTIVE
+  open(1,file=trim(g_param_joint%outputfolder)//"site_act.dat")
+  do i=1,g_param%nobs 
+    write(1,'(3f15.7,1x,a)') g_param%xyzobs(1:3,i),trim(g_param%obsname(i))
+  end do
+  close(1)
+
+  !# source info for ACTIVE
+  do i=1,sparam%nsource
+    open(1,file=trim(g_param_joint%outputfolder)//trim(sparam%sourcename(i))//"_site.dat")
+    write(1,'(3f15.7,1x,a)') sparam%xs1(1:3,i)
+    write(1,'(3f15.7,1x,a)') sparam%xs2(1:3,i)
+    close(1)
+  end do
+
+end if
+
+if (MT) then
+  !# site info for MT
+  open(1,file=trim(g_param_joint%outputfolder)//"site_mt.dat")
+  do i=1,g_param_mt%nobs
+    write(1,'(3f15.7,1x,a)') g_param_mt%xyzobs(1:3,i),trim(g_param_mt%obsname(i))
+  end do
+  close(1)
+end if
+end subroutine
 
 end program inversion_joint ! 2021.12.25
 

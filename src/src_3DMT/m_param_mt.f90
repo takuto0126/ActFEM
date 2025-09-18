@@ -267,8 +267,7 @@ end do
    end if
   end do
   
-
-!#[2]# xy reading  2017.10.11
+!#[2]# ixyflag reading  2017.10.11
  write(*,*) ""
  write(*,*) "< input ixyflag: 0 for nothing, 1 for xy plan view >"
  read(input,*) c_param%ixyflag    ! 12->* 2021.09.02

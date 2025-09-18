@@ -2,13 +2,14 @@
 
 inmt=result_inv/rms_mt.dat
 inact=result_inv/rms.dat
-nite=`wc $inmt | awk -F" " '{print($1 -1)}'`
+#nite=`wc $inmt | awk -F" " '{print($1 -1)}'`
+nite=`wc $inact | awk -F" " '{print($1 -1)}'`
 echo $nite
 gmt begin rms pdf
 
 gmt basemap -JX5/10 -R0/10/0/20 -Bxa1+l"Iteration" -Bya1+l"Normalized RMS misfit"
 tail -$nite $inact | awk -F" " '{print($1, $2)}' | gmt plot -W1,green -l"nrms_mt"
-tail -$nite $inmt | awk -F" " '{print($1, $2)}' | gmt plot -W1,red -l"nrms_active"
+#tail -$nite $inmt | awk -F" " '{print($1, $2)}' | gmt plot -W1,red -l"nrms_active"
 gmt plot -W1,gray,- <<EOF
 0 1
 10 1

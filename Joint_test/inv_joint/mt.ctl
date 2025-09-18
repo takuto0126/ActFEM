@@ -50,13 +50,13 @@ A_src     [km]     !0.005
 # of observatory   !4
 lonlat(1),xyz (2)  !1
 1  Name            !MT1
-1  xyz,sigma,A[km] !131.0745870     32.8929300     -0.001000000
+1  xyz,sigma,A[km] !131.079780      32.887800      -0.001000000
 2  Name            !MT2
-2  xyz,sigma,A[km] !131.0945430     32.8929300     -0.001000000
+2  xyz,sigma,A[km] !131.090989      32.887800      -0.001000000
 3  Name            !MT3
-3  xyz,sigma,A[km] !131.0745870     32.8763960     -0.001000000
+3  xyz,sigma,A[km] !131.079780      32.880280      -0.001000000
 4  Name            !MT4
-4  xyz,sigma,A[km] !131.0945430     32.8763960     -0.001000000
+4  xyz,sigma,A[km] !131.090989      32.880280      -0.001000000
 ixyflg 0:no,1:surfv!0
 sigma_air    [S/m] !1.e-8
 condflag 0:homo,1: !1

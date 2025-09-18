@@ -61,8 +61,8 @@ lonlat(1),xyz (2)  !1
 ixyflg 0:no,1:surfv!0
 # of sources       !2
 Source Name        !S1
-source start point !131.0784333  32.8908028  -0.001
-source end   point !131.0814639  32.8912333  -0.001
+source start point !131.086490   32.877356   -0.001
+source end   point !131.090840   32.877658   -0.001
 Source Name        !S2
 source start point !131.078109   32.889686   -0.001
 source end   point !131.082206   32.891490   -0.001

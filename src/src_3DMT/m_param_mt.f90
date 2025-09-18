@@ -254,7 +254,7 @@ end do
     write(*,'(1x,a,2f15.7,a)') " UTM>",c_param%xyzobs(1:2,i)," [km]" ! 2021.09.29
     write(*,*) ""  ! 2021.09.29
 
-   ! [2] xyz
+   ! [3] xyz
    else if ( lonlatflag .eq. 2 ) then ! xyz
     read(input,*) (c_param%xyzobs(j,i),j=1,3)
 

@@ -78,7 +78,7 @@ program inversion_joint
  real(8)                                     :: nrms_init    ! 2017.07.19
  character(50)                               :: head         ! 2017.07.25
  character(1)                                :: num2         ! 2017.09.11
- type(watch)                                 :: t_watch      ! 2017.09.11
+ type(watch)                                 :: t_watch,t_watch1 ! 2025.09.18
  type(watch)                                 :: t_watch0     ! 2018.03.02
  real(8)                                     :: nrms_ini     ! 2018.06.25
  real(8)                                     :: frms         ! 2018.06.25
@@ -164,6 +164,7 @@ program inversion_joint
  !# [6] cal data misfit F(m)
  !# [7] solve beta in eq. 1 (by PARDISO)
  !# [8] m_k+1 = m_ref + Cm*J*beta
+call watchstart(t_watch1) ! 2025.09.17
 
 ip = -1 ; np = -1 ; errno = 0
 !write(*,*) "np, ip = ", np, ip ! 2025.07.30
@@ -662,6 +663,8 @@ end do ! alpha loop end! 2017.09.08
 
  CALL MPI_FINALIZE(errno) ! 2017.06.05
 
+ call watchstop(t_watch1)  ! 2025.09.18
+ if (ip == 0) write(*,'(2(a,i2),a,f6.3,a)') " ### inv_joint END!! ### Time =",t_watch%ihour,"h ",t_watch%imin,"m ",t_watch%sec,"s"  ! 2025.09.18
 
  10 format(a,i3,a,i3,a,f8.3,a) !2022.01.04
 

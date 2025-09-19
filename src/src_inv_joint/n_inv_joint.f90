@@ -270,12 +270,9 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
   CALL sharemt(g_param_mt,g_surface,ip) ! 2021.12.30
 
 !#[8.5]## link globalmodel2surface
-  if (ip == 0) write(*,*) "8.5 start"
   !call linkglobalmodel2surface(g_model_ini,g_surface(2:6)) ! 2022.01.16 Is this necessary? 2024.08.30 ! commented out 2025.07.31
-  if (ip == 0) write(*,*) "8.5 end"
 !#[9]## prepare A of surface for 2D TM calculation
   CALL PREPAOFSURFACE(g_surface(2:5),4,ip) ! allocate A and table_dof for 2DMT
-  if (ip == 0) write(*,*) "9 end"
 
 !#[10]## cal Pt: matrix for get data from simulation results
   CALL PREPOBSCOEFF(g_param,g_mesh,g_line,coeffobs) ! for x,y,z component, see below
@@ -605,6 +602,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
    !#[36]## New alpha for cooling strategies
      if ( ite .ge. 2 ) then   ! 2017.12.13
        if ( ialphaflag .eq. 2 .or. ialphaflag .eq. 3 ) then !== cooling strategy
+          alpha_new = alpha ! 2025.09.19
           if ( ACT .and. nrms/nrms0        .gt. 0.9 ) alpha_new = alpha*(10.**(-1./3.d0))   ! 2025.09.19 ACT case
           if ( MT  .and. nrms_mt/nrms_mt0  .gt. 0.9 ) alpha_new = alpha*(10.**(-1.d0/3.d0)) ! 2025.09.19 MT case 
           if ( TIP .and. nrms_tip/nrms_tip .gt. 0.9 ) alpha_new = alpha*(10.**(-1.d0/3.d0)) ! 2025.09.19 MT case 

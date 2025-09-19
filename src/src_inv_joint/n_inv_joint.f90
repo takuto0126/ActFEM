@@ -62,7 +62,7 @@ program inversion_joint
  real(8)                                     :: omega, freq_tot_ip
  integer(4)                                  :: nfreq_tot, nfreq_act, nfreq_tot_ip ! 2022.10.20
  integer(4)                                  :: nfreq_act_ip,nfreq_mt_ip ! 2022.10.20
- real(8)                                     :: nrms=0, nrms0, alpha      ! 2017.09.08
+ real(8)                                     :: nrms=0, nrms0, alpha,alpha_new  ! 2025.09.19
  real(8)                                     :: misfit       ! 2017.12.22
  complex(8),    allocatable,dimension(:,:)   :: fp,fs        ! (nline,nsr_inv) 2017.08.31
  type(obsfiles)                              :: files        ! see m_outresp.f90
@@ -121,7 +121,7 @@ program inversion_joint
 !## Declaration for global integers ==================================================
  integer(4) :: ip,np, itemax = 20, iflag, ierr=0, i_act,i_mt
  integer(4) :: kmax ! maximum lanczos procedure 2017.12.13
- integer(4) :: nalpha, ialphaflag  ! 2017.09.08
+ integer(4) :: nalpha, ialphaflag,iflag_replace  ! 2025.09.19
  integer(4) :: itype_roughness     ! 2017.12.13
 !#[Explanation document]---------------------------------------------------------
  !# Algorithm
@@ -361,7 +361,8 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
   end if
 
 !#[16]## alpha loop start ======================================= alpha loop start
- ialphaflag = g_param_joint%ialphaflag ! 2021.12.25
+ ialphaflag    = g_param_joint%ialphaflag       ! 2021.12.25
+ iflag_replace = g_param_joint%iflag_replace ! 2025.09.19
  ialpha     = 1
  nalpha     = 1
  if ( ialphaflag .eq. 1 ) nalpha = g_param_joint%nalpha ! L-curve 2021.12.25
@@ -391,7 +392,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
  end if ! ip = 0 end
 
 !#[18]## iteration loop start ========================================== iteration loop start
- do ite = 1,10 !itemax
+ do ite = 1,itemax
 !#[19]## output cond and model file, convert h_model to h_cond 
   if ( ip .eq. 0) then
      call watchstart(t_watch0)                   ! 2017.03.02
@@ -538,44 +539,22 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
      if (TIP )call OUTRMS(23,ite,nrms_tip,misfit_tip,alpha,rough1,rough2,0) !Not converged
     end if
     
-    if ( ite >= 2 ) then !2024.08.30
-     if ( ACT .and. frms < nrms .and. nrms_ini < nrms ) then ! 2024.08.30 stop when nrms is larger
-       write(*,*) "GEGEGE, rms exceeded the initial rms under the current inversion setting "!2022.10.31
-       write(*,*) "Consider of changing the current inversion setting " ! 2022.10.31
-       iflag = 1 ; goto 80                            ! 2018.01.25
-     end if                                          ! 2018.01.25
-     if ( MT  .and. frms < nrms_mt .and. nrms_mt_ini < nrms_mt ) then !  stop when nrms is larger
-       write(*,*) "GEGEGE, rms_mt exceeded the initial rms under the current inversion setting "!2022.10.31
-       write(*,*) "Consider of changing the current inversion setting " ! 2022.10.31
-       iflag = 1 ; goto 80                            ! 2018.01.25
-     end if                                          ! 2018.01.25
-     if ( TIP .and. frms < nrms_tip .and. nrms_tip_ini < nrms_tip  ) then !  stop when nrms is larger
-       write(*,*) "GEGEGE, rms_tip exceeded the initial rms under the current inversion setting "!2022.10.31
-       write(*,*) "Consider of changing the current inversion setting " ! 2022.10.31
-       iflag = 1 ; goto 80                            ! 2018.01.25
-     end if                                          ! 2018.01.25
-    end if
+     call warningstop()  !see below if nrsm eceeded the initial nrms when it > 1, inversion will stop 2025.09.19
+     if ( iflag ==1 ) goto 80 ! 2025.09.19
 
-   !#[32]## [Option]## if nrms increased, replace the reference model
-     if ( g_param_joint%iflag_replace .eq. 1 ) then ! 2024.08.30
-       if ( ite .eq. 1 ) then
-          nrms0 = nrms/0.9  +0.01           ! initial     2018.06.26
-          nrms_mt0 = nrms_mt/0.9 +0.01      ! initial     2018.06.26
-          nrms_tip0 = nrms_tip/0.9 +0.01    ! initial     2018.06.26
-       end if
-       ! This condition should be considered in near future 2024.08.30
-       if ( (nrms/nrms0 > 1.0         .and. nrms     > frms ) .or.&
-            (nrms_mt/nrms_mt0 > 1.0   .and. nrms_mt  > frms ) .or.&
-            (nrms_tip/nrms_tip0 > 1.0 .and. nrms_tip > frms )) &
-            & then   !             2018.06.26
-         if (g_param_joint%ialphaflag .eq. 2 ) then ! cooling strategy 2017.07.19
-           g_model_ref = pre_model
-           h_model     = pre_model
-           if (ACT) nrms0 = nrms0 * 1.1         ! 2024.08.30
-           if (MT)  nrms_mt0 = nrms_mt0 * 1.1   ! 2024.08.30
-           if (TIP) nrms_tip0 = nrms_tip0 * 1.1 ! 2024.08.30
+     if (ite == 1) call setinitialrms(nrms0,nrms_mt0,nrms_tip0,nrms,nrms_mt,nrms_tip) ! see below 2025.09.19
+
+    !#[32]## [Option]## if nrms increased, replace the reference model
+     if ( iflag_replace .eq. 1 .and. ialphaflag .eq. 2 ) then ! cooling strategy
+       if ((nrms     / nrms0     > 1.0 .and. nrms     > frms ) .or.&
+           (nrms_mt  / nrms_mt0  > 1.0 .and. nrms_mt  > frms ) .or.&
+           (nrms_tip / nrms_tip0 > 1.0 .and. nrms_tip > frms )) then !  2025.09.19
+           g_model_ref = pre_model ! replace the reference model by previous model
+           h_model     = pre_model ! replace the initial   model by previous model
+           if (ACT) nrms0     = nrms0     * 1.1  ! 2024.08.30
+           if (MT)  nrms_mt0  = nrms_mt0  * 1.1  ! 2024.08.30
+           if (TIP) nrms_tip0 = nrms_tip0 * 1.1  ! 2024.08.30
            goto 80
-         end if
        end if
      end if
 
@@ -626,7 +605,10 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
    !#[36]## New alpha for cooling strategies
      if ( ite .ge. 2 ) then   ! 2017.12.13
        if ( ialphaflag .eq. 2 .or. ialphaflag .eq. 3 ) then !== cooling strategy
-          if ( nrms/nrms0 .gt. 0.9  ) alpha = alpha*(10.**(-1./3.d0))
+          if ( ACT .and. nrms/nrms0        .gt. 0.9 ) alpha_new = alpha*(10.**(-1./3.d0))   ! 2025.09.19 ACT case
+          if ( MT  .and. nrms_mt/nrms_mt0  .gt. 0.9 ) alpha_new = alpha*(10.**(-1.d0/3.d0)) ! 2025.09.19 MT case 
+          if ( TIP .and. nrms_tip/nrms_tip .gt. 0.9 ) alpha_new = alpha*(10.**(-1.d0/3.d0)) ! 2025.09.19 MT case 
+          alpha = alpha_new ! 2025.09.19 any one of ACT, MT, TIP meets the condition results in alpha being updated
        end if ! if ialphaflag = 2 or 3
      end if ! 2017.12.13
      if ( ialphaflag .eq. 4 ) then ! Modified version of Grayver et al. (2013)
@@ -638,14 +620,15 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
     pre_model = h_model ! 2017.06.14 keep previous model
     call getnewmodel_joint(JJ,JJ_mt,g_model_ref,h_model,g_data,h_data,&
     &   g_data_mt,h_data_mt,BMI,CD,CD_mt,alpha,g_param_joint) ! 2022.01.05
-    if (ACT) nrms0 = nrms                                   !  2017.12.25
-    if (MT) nrms_mt0  = nrms_mt                            !  2024.08.30
-    if (TIP) nrms_tip0 = nrms_tip                           !  2024.08.30
+
+    !#[38]## update nrms0, nrms_mt0, nrms_tip0
+    if (ACT) nrms0     = nrms        !  2017.12.25
+    if (MT)  nrms_mt0  = nrms_mt     !  2024.08.30
+    if (TIP) nrms_tip0 = nrms_tip    !  2024.08.30
     80 continue                                    !  2017.12.20
 
   end if ! ip = 0
 
-  CALL MPI_BARRIER(mpi_comm_world, errno)
   CALL MPI_BCAST(iflag,1,MPI_INTEGER4,0,mpi_comm_world,errno)
   if (iflag .eq. 1) goto 100
 
@@ -680,6 +663,41 @@ end do ! alpha loop end! 2017.09.08
  10 format(a,i3,a,i3,a,f8.3,a) !2022.01.04
 
 contains
+!###################################################################
+! 2025.09.19
+subroutine setinitialrms(nrms0,nrms_mt0,nrms_tip0,nrms,nrms_mt,nrms_tip)
+implicit none
+real(8), intent(in)  :: nrms,nrms_mt,nrms_tip
+real(8), intent(out) :: nrms0,nrms_mt0,nrms_tip0
+       ! nrms0 is used for juding cooling and replacing model
+          nrms0     = nrms     / 0.9 + 0.01    ! initial     2018.06.26
+          nrms_mt0  = nrms_mt  / 0.9 + 0.01    ! initial     2018.06.26
+          nrms_tip0 = nrms_tip / 0.9 + 0.01    ! initial     2018.06.26
+return
+end subroutine
+!################################################################### warningstop
+! 2025.09.19
+subroutine warningstop()
+  implicit none
+     iflag=0
+     if ( ite == 1 ) return
+     if ( ACT .and. frms < nrms .and. nrms_ini < nrms ) then ! 2024.08.30 stop when nrms is larger
+       write(*,*) "GEGEGE, rms exceeded the initial rms under the current inversion setting "!2022.10.31
+       write(*,*) "Consider of changing the current inversion setting " ! 2022.10.31
+       iflag = 1 ! goto 80                            ! 2018.01.25
+     end if                                          ! 2018.01.25
+     if ( MT  .and. frms < nrms_mt .and. nrms_mt_ini < nrms_mt ) then !  stop when nrms is larger
+       write(*,*) "GEGEGE, rms_mt exceeded the initial rms under the current inversion setting "!2022.10.31
+       write(*,*) "Consider of changing the current inversion setting " ! 2022.10.31
+       iflag = 1 ! goto 80                            ! 2018.01.25
+     end if                                          ! 2018.01.25
+     if ( TIP .and. frms < nrms_tip .and. nrms_tip_ini < nrms_tip  ) then !  stop when nrms is larger
+       write(*,*) "GEGEGE, rms_tip exceeded the initial rms under the current inversion setting "!2022.10.31
+       write(*,*) "Consider of changing the current inversion setting " ! 2022.10.31
+       iflag = 1 ! goto 80                            ! 2018.01.25
+     end if                                          ! 2018.01.25
+return
+end subroutine
 !###################################################################
 ! modified for spherical on 2016.11.20
 ! iflag = 0 for xyz

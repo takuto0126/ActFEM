@@ -603,8 +603,8 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
      if ( ite .ge. 2 ) then   ! 2017.12.13
        if ( ialphaflag .eq. 2 .or. ialphaflag .eq. 3 ) then !== cooling strategy
           ! 2025.09.19 any one of ACT, MT, TIP meets the condition results in alpha being updated
-          if ( (ACT .and. nrms/nrms0        > 0.9 .and. nrms > frms ) .or. 
-               ( MT  .and. nrms_mt/nrms_mt0  > 0.9 .and. nrms_mt > frms) .or.
+          if ( (ACT .and. nrms/nrms0        > 0.9 .and. nrms > frms ) .or. &
+               ( MT  .and. nrms_mt/nrms_mt0  > 0.9 .and. nrms_mt > frms) .or. &
                ( TIP .and. nrms_tip/nrms_tip0 > 0.9 .and. nrms_tip > frms)) then
                 alpha = alpha*(10.**(-1.d0/3.d0)) ! 2025.09.19 
           end if

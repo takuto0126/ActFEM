@@ -47,7 +47,7 @@ A_obs     [km]     !0.01
 dlen_source [km]   !0.1
 sigma_src [km]     !0.3
 A_src     [km]     !0.005
-# of observatory   !4
+# of observatory   !5
 lonlat(1),xyz (2)  !1
 1  Name            !MT1
 1  xyz,sigma,A[km] !131.079780      32.887800      -0.001000000
@@ -57,6 +57,8 @@ lonlat(1),xyz (2)  !1
 3  xyz,sigma,A[km] !131.079780      32.880280      -0.001000000
 4  Name            !MT4
 4  xyz,sigma,A[km] !131.090989      32.880280      -0.001000000
+5  Name            !MT5
+5  xyz,sigma,A[km] !131.085386      32.884040      -0.001000000
 ixyflg 0:no,1:surfv!0
 sigma_air    [S/m] !1.e-8
 condflag 0:homo,1: !1

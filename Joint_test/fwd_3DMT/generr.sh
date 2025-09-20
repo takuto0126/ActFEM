@@ -5,7 +5,7 @@ gfortran generr_mt_imp.f90  -o ./generr.exe
 
 cat <<EOF > err.ctl
         10     20->|header
-# of obs files     |4
+# of obs files     |5
 # of frequencies   |5
 input folder       |./result/
 output folder      |./mt_err/
@@ -17,6 +17,8 @@ in file3 ***.dat   |MT3_MT_imp.dat
 errfile3           |MT3_MT_imp_err.dat
 in file4 ***.dat   |MT4_MT_imp.dat
 errfile4           |MT4_MT_imp_err.dat
+in file4 ***.dat   |MT5_MT_imp.dat
+errfile4           |MT5_MT_imp_err.dat
 ratio              !0.01
 EOF
 

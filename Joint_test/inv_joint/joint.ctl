@@ -47,15 +47,17 @@ A03 pha data       !   4 ../fwd_active/data/A03_S2_pha.dat
 imp: 0, 1:amp,pha  !0
 unit:1Ohm,2mV/km/nT!2
 MT errfloor SSQ*   !0.01
-# of observatories |4
+# of observatories |5
 MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat
 MT2 impedance      !   2 ../fwd_3DMT/result/MT2_MT_imp.dat
 MT3 impedance      !   3 ../fwd_3DMT/result/MT3_MT_imp.dat
 MT4 impedance      !   4 ../fwd_3DMT/result/MT4_MT_imp.dat
+MT4 impedance      !   5 ../fwd_3DMT/result/MT5_MT_imp.dat
 MT1 impedance err  !   1 ../fwd_3DMT/mt_err/MT1_MT_imp_err.dat
 MT2 impedance err  !   2 ../fwd_3DMT/mt_err/MT2_MT_imp_err.dat
 MT3 impedance err  !   3 ../fwd_3DMT/mt_err/MT3_MT_imp_err.dat
 MT4 impedance err  !   4 ../fwd_3DMT/mt_err/MT4_MT_imp_err.dat
+MT5 impedance err  !   5 ../fwd_3DMT/mt_err/MT5_MT_imp_err.dat
 ########################################################################
 iflag_tipper       !0
 icombine:0,1,2:fix !0

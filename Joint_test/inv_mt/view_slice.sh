@@ -188,7 +188,7 @@ fldr=result_inv/
 #awk '{print($1,$2)}' ${fldr}site_act.dat | gmt plot -Sc0.2 -Gblue # active sites
 #awk '{print($1,$2)}' ${fldr}S1_site.dat  | gmt plot -W2p,red # source S1
 #awk '{print($1,$2)}' ${fldr}S2_site.dat  | gmt plot -W2p,red # source S2
-awk '{print($1,$2)}' ${fldr}site_mt.dat  | gmt plot -Sc0.2 -Ggreen # MT site
+awk '{print($1,$2)}' ${fldr}site_mt.dat  | gmt plot -Sc0.2 -W1,black -Ggreen # MT site
 
 # ID and W E
 gmt text -JX8/10 -R0/8/0/10  -F+f12,Helvetica+jLM -G255 <<EOF 

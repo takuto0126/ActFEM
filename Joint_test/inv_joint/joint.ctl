@@ -64,7 +64,7 @@ iflag_tipper       !0
 ## icombine = 1: integrate the outside blocks to one and assign one model parameter
 ## icombine = 2: integrate the outside blocks to one and fix the modelparameter with given cond
 ## icombine = -1: inner outer mode
-icombine:0,1,2:fix !0
+icombine:0,1,2:fix !1
 19
 -1.5
 -1.2

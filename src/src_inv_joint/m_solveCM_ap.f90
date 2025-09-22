@@ -149,7 +149,7 @@ allocate(xccs(nite))
 
 write(*,*) "size(x)",size(x)
 do i=1,nmodel/nrhsmax
-  if (mod(i,10) .eq. 0 ) write(*,*) "i",i,"nmodel/nrhsmax",nmodel/nrhsmax
+  !if (mod(i,10) .eq. 0 ) write(*,*) "i",i,"nmodel/nrhsmax",nmodel/nrhsmax ! 2025.09.22
   bb(:,:)=0.d0 ; x(:,:) = 0.d0
   do j=1,nrhsmax
    icount = icount + 1

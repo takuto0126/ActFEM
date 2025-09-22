@@ -10,7 +10,7 @@ output folder      |./result_inv/
 Roughness type     |1
 1:L,2:Cl,3:Mi,4:Gr !2
 alpha init         !100.
-iflag_replace 0,1  |1
+iflag_replace 0,1  |0
 ## iboundflag can set upper and lower limit of the conductivity value in inversion
 ## iboundflag = 0 : off : no boundary for conductivity value
 ## iboundflag = 1 : simple upper and lower limit will be specified by cutting
@@ -60,6 +60,10 @@ MT4 impedance err  !   4 ../fwd_3DMT/mt_err/MT4_MT_imp_err.dat
 MT5 impedance err  !   5 ../fwd_3DMT/mt_err/MT5_MT_imp_err.dat
 ########################################################################
 iflag_tipper       !0
+## icombine = 0: normal
+## icombine = 1: integrate the outside blocks to one and assign one model parameter
+## icombine = 2: integrate the outside blocks to one and fix the modelparameter with given cond
+## icombine = -1: inner outer mode
 icombine:0,1,2:fix !0
 19
 -1.5
@@ -103,20 +107,14 @@ icombine:0,1,2:fix !0
 1.5
 21
 0.0
-0.2
-0.4
+0.25
 0.5
 0.6
 0.7
-0.75
 0.8
-0.825
 0.85
-0.875
 0.9
-0.925
 0.95
-0.975
 1.0
 1.025
 1.05
@@ -129,6 +127,7 @@ icombine:0,1,2:fix !0
 1.225
 1.25
 1.50
+##
 ioutlevel:0,1:Jacob|0
 final rms          |1.0
 

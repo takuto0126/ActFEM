@@ -33,7 +33,7 @@ type param_slice ! 2017.12.20
  ! 2: dcond,   3:dmodel    2018.03.19
  integer(4)    :: ifileflag
   !# model file version ( ifileflag = 0 or 2 ) ===== ! 2018.03.12
- integer(4)  :: ncondfile                           ! 2018.01.05
+ integer(4)  :: ncondfile=0                         ! 2025.09.22
  character(50),allocatable,dimension(:) :: condfile ! 2018.01.05
  !# model file version ( ifileflag = 1 ) ========== ! 2018.01.05
  character(50) :: connectfile

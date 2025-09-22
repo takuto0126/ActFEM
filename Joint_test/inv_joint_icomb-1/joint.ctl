@@ -64,69 +64,80 @@ iflag_tipper       !0
 ## icombine = 1: integrate the outside blocks to one and assign one model parameter
 ## icombine = 2: integrate the outside blocks to one and fix the modelparameter with given cond
 ## icombine = -1: inner outer mode
-icombine:0,1,2:fix !0
-19
--1.5
--1.2
--0.9
+icomb:-1,0,1,2:fix !-1
+## normal mode nxdiv, xdiv(:),nydiv, ydiv(:),nzdiv, zdiv(:),
+## x
+9
+-1.0
 -0.75
--0.6
--0.45
--0.3
--0.2
--0.1
-0.0
-0.1
-0.2
-0.3
-0.45
-0.6
-0.75
-0.9
-1.2
-1.5
-19
--1.5
--1.2
--0.9
--0.75
--0.6
--0.45
--0.3
--0.2
--0.1
-0.0
-0.1
-0.2
-0.3
-0.45
-0.6
-0.75
-0.9
-1.2
-1.5
-21
+-0.5
+-0.25
 0.0
 0.25
 0.5
-0.6
-0.7
+0.75
+1.00
+## y
+9
+-1.0
+-0.75
+-0.5
+-0.25
+0.0
+0.25
+0.5
+0.75
+1.00
+## z
+10
+-5.0
+-2.5
+-0.5
+0.0
+0.2
+0.4
+0.60
 0.8
-0.85
-0.9
-0.95
 1.0
-1.025
-1.05
-1.075
-1.1
-1.125
-1.15
-1.175
-1.2
-1.225
-1.25
-1.50
+1.20
+## xdiv_in_start, xdiv_in_end, xdiv_in_inc
+-0.5
+0.5
+0.1
+## ydiv_in_start, ydiv_in_end, ydiv_in_inc
+-0.5
+0.5
+0.1
+## nzdiv_in, zdiv_in(:)
+28
+0.5
+0.55
+0.6
+0.65
+0.7
+0.75
+0.8
+0.825
+0.85
+0.875
+0.9
+0.92
+0.94
+0.96
+0.98
+1.00
+1.02
+1.04
+1.06
+1.08
+1.10
+1.12
+1.14
+1.16
+1.18
+1.20
+1.22
+1.24
 ioutlevel:0,1:Jacob|0
 final rms          |1.0
 

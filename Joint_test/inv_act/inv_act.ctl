@@ -10,7 +10,7 @@ output folder      |./result_inv/
 Roughness type     |1
 1:L,2:Cl,3:Mi,4:Gr !2
 alpha init         !100.
-iflag_replace 0,1  |1
+iflag_replace 0,1  |0
 ## iboundflag can set upper and lower limit of the conductivity value in inversion
 ## iboundflag = 0 : off : no boundary for conductivity value
 ## iboundflag = 1 : simple upper and lower limit will be specified by cutting
@@ -58,6 +58,9 @@ A03 pha data       !   4 ../fwd_active/data/A03_S2_pha.dat
 ##MT4 impedance err  !   4 ../fwd_3DMT/mt_err/MT4_MT_imp_err.dat
 ########################################################################
 ##iflag_tipper       !0
+## icombine = 0: normal
+## icombine = 1: integrate the outside blocks to one and assign one model parameter
+## icombine = 2: integrate the outside blocks to one and fix the modelparameter with given cond
 icombine:0,1,2:fix !0
 19
 -1.5

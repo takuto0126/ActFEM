@@ -44,89 +44,98 @@ A01 pha data       !   3 ../fwd_active/data/A01_S2_pha.dat
 A03 pha data       !   4 ../fwd_active/data/A03_S2_pha.dat
 ## MT data #############################################################
 ## initial version support only impedance data 2021.12.13
-imp: 0, 1:amp,pha  !0
-unit:1Ohm,2mV/km/nT!2
-MT errfloor SSQ*   !0.01
-# of observatories |5
-MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat
-MT2 impedance      !   2 ../fwd_3DMT/result/MT2_MT_imp.dat
-MT3 impedance      !   3 ../fwd_3DMT/result/MT3_MT_imp.dat
-MT4 impedance      !   4 ../fwd_3DMT/result/MT4_MT_imp.dat
-MT4 impedance      !   5 ../fwd_3DMT/result/MT5_MT_imp.dat
-MT1 impedance err  !   1 ../fwd_3DMT/mt_err/MT1_MT_imp_err.dat
-MT2 impedance err  !   2 ../fwd_3DMT/mt_err/MT2_MT_imp_err.dat
-MT3 impedance err  !   3 ../fwd_3DMT/mt_err/MT3_MT_imp_err.dat
-MT4 impedance err  !   4 ../fwd_3DMT/mt_err/MT4_MT_imp_err.dat
-MT5 impedance err  !   5 ../fwd_3DMT/mt_err/MT5_MT_imp_err.dat
+##imp: 0, 1:amp,pha  !0
+##unit:1Ohm,2mV/km/nT!2
+##MT errfloor SSQ*   !0.01
+### of observatories |4
+##MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat
+##MT2 impedance      !   2 ../fwd_3DMT/result/MT2_MT_imp.dat
+##MT3 impedance      !   3 ../fwd_3DMT/result/MT3_MT_imp.dat
+##MT4 impedance      !   4 ../fwd_3DMT/result/MT4_MT_imp.dat
+##MT1 impedance err  !   1 ../fwd_3DMT/mt_err/MT1_MT_imp_err.dat
+##MT2 impedance err  !   2 ../fwd_3DMT/mt_err/MT2_MT_imp_err.dat
+##MT3 impedance err  !   3 ../fwd_3DMT/mt_err/MT3_MT_imp_err.dat
+##MT4 impedance err  !   4 ../fwd_3DMT/mt_err/MT4_MT_imp_err.dat
 ########################################################################
-iflag_tipper       !0
+##iflag_tipper       !0
 ## icombine = 0: normal
 ## icombine = 1: integrate the outside blocks to one and assign one model parameter
 ## icombine = 2: integrate the outside blocks to one and fix the modelparameter with given cond
 ## icombine = -1: inner outer mode
-icombine:0,1,2:fix !0
-19
--1.5
--1.2
--0.9
+icomb:-1,0,1,2:fix !-1
+## normal mode nxdiv, xdiv(:),nydiv, ydiv(:),nzdiv, zdiv(:),
+## x
+9
+-1.0
 -0.75
--0.6
--0.45
--0.3
--0.2
--0.1
-0.0
-0.1
-0.2
-0.3
-0.45
-0.6
-0.75
-0.9
-1.2
-1.5
-19
--1.5
--1.2
--0.9
--0.75
--0.6
--0.45
--0.3
--0.2
--0.1
-0.0
-0.1
-0.2
-0.3
-0.45
-0.6
-0.75
-0.9
-1.2
-1.5
-21
+-0.5
+-0.25
 0.0
 0.25
 0.5
-0.6
-0.7
+0.75
+1.00
+## y
+9
+-1.0
+-0.75
+-0.5
+-0.25
+0.0
+0.25
+0.5
+0.75
+1.00
+## z
+10
+-5.0
+-2.5
+-0.5
+0.0
+0.2
+0.4
+0.60
 0.8
-0.85
-0.9
-0.95
 1.0
-1.025
-1.05
-1.075
-1.1
-1.125
-1.15
-1.175
-1.2
-1.225
-1.25
-1.50
+1.20
+## xdiv_in_start, xdiv_in_end, xdiv_in_inc
+-0.5
+0.5
+0.1
+## ydiv_in_start, ydiv_in_end, ydiv_in_inc
+-0.5
+0.5
+0.1
+## nzdiv_in, zdiv_in(:)
+28
+0.5
+0.55
+0.6
+0.65
+0.7
+0.75
+0.8
+0.825
+0.85
+0.875
+0.9
+0.92
+0.94
+0.96
+0.98
+1.00
+1.02
+1.04
+1.06
+1.08
+1.10
+1.12
+1.14
+1.16
+1.18
+1.20
+1.22
+1.24
 ioutlevel:0,1:Jacob|0
 final rms          |1.0
 

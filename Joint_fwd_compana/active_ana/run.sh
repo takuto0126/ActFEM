@@ -1,11 +1,11 @@
 #!/bin/bash
 
-source /opt/intel/bin/compilervars.sh intel64
+source /opt/intel/oneapi/setvars.sh
 
 SRC=../../src/ana
 
 cd ${SRC}
-#make clean
+make clean
 make
 cd -
 

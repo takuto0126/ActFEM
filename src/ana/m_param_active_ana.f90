@@ -583,18 +583,18 @@ end subroutine
 
   end subroutine utm_geo_tm
 
-!############################################ whoelread ! 2020.09.28
-subroutine readcontrolfile(filename,n,lines,ikeep) ! 2021.10.04 ikeep is added
+!############################################ wholeread ! 2020.09.28
+subroutine readcontrolfile(filename,n,lines) ! 2025.09.22
 implicit none
 character(100),intent(in)  :: filename
 integer(4),    intent(in)  :: n
 character(200),intent(out) :: lines(n)
-integer(4) :: i
-integer(4),optional,intent(in) ::  ikeep ! 1 means keep 20 columns 2021.10.04
+integer(4) :: i,ikeep=0 ! 2025.09.22
+!integer(4),optional,intent(in) ::  ikeep ! 1 means keep 20 columns 2021.10.04
 i=0
 write(*,'(a,a)') " file is ",trim(filename)
 lines(:)=" " ! initialize 2020.12.10
-
+!write(*,*) "check1"
 open(1,file=filename)
 do
 i=i+1
@@ -603,24 +603,27 @@ end do
 99 continue
 
 close(1)
+!write(*,*) "check2"
 
 !do i=1,20
 !write(*,'(a)') trim(lines(i))
 !end do
+!write(*,*) "check3"
 
 call subtractcommentout(n,lines)
+!write(*,*) "check4"
 
 open(1,file="tmp.ctl")
 do i=1,n
-if ( present(ikeep) .and. ikeep .eq. 1 ) then !2021.10.04
+if (  ikeep .eq. 1 ) then !2021.10.04
  write(1,'(a)')  lines(i)(1:len_trim(lines(i))) ! cut initial 20 characters 2021.10.04
 else   ! 2021.10.04
  write(1,'(a)')  lines(i)(21:len_trim(lines(i))) ! cut initial 20 characters 2021.09.02
-end if ! 2021.10.04
+end if ! 2025.09.22
 ! write(1,'(a)') trim(lines(i))
 end do
 close(1)
-
+!write(*,*) "check5"
 write(*,'(a)') " ### readcontrolfile END!! ###"
 
 return

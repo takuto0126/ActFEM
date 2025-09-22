@@ -3,8 +3,9 @@
 #FC=mpif90
 #OPT=-i-dynamic
 #VPATH = OMSP_L/
-FC=ifort
-OPT= -O -fpe0 -check bounds -traceback -g -mkl=parallel
+#FC=ifort
+FC=ifx
+OPT= -O -fpe0 -check bounds -traceback -g -qmkl=parallel
 
 #normal solver
 ftarget=active_ana.exe

@@ -59,6 +59,7 @@ real(8) :: ydiv_in_start,ydiv_in_end,ydiv_in_inc
  write(*,40) " < icombine = 0: not combine the outside model >"
  write(*,40) " < icombine = 1: combine the outside models and make it variable through inversion >"! 2020.09.29
  write(*,40) " < icombine = 2: combine the outside model and fix it to the initial model >"    ! 2020.09.29
+ write(*,40) " < icombine = -1 inner and outer model mode >"    ! 2025.09.22
  read(idev,'(20x,i5)') g_modelpara%icombine              ! 2017.09.20
  write(*,42) " icombine =", g_modelpara%icombine ! 2020.09.29
 !# xdiv

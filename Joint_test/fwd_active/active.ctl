@@ -18,9 +18,9 @@ lonlatorigin       !131.084782     32.884882
 # of topofile      !1
 topofile           !../../topo/topo127_134_29_36.xyz
 lon lat shift      !0.0         0.0
-mesh file          !../../mesh_joint/nakadake3d.msh
-2d triangle z file !../../mesh_joint/nakadake2dz.msh
-local line file    !../../mesh_joint/lineinfo.dat
+mesh file          !../mesh_joint/nakadake3d.msh
+2d triangle z file !../mesh_joint/nakadake2dz.msh
+local line file    !../mesh_joint/lineinfo.dat
 angle              !0.0
 water level        !0
 output folder      !./result/

@@ -16,11 +16,11 @@ iflag_map          !2
 UTM zone           !52S
 lonlatorigin       !131.084782     32.884882
 # of topofile      !1
-topofile           !../../mesh_joint/topo_aso_flat.dat
+topofile           !../mesh_joint/topo_aso_flat.dat
 lon lat shift      !0.0         0.0
-mesh file          !../../mesh_joint/nakadake3d.msh
-2d triangle z file !../../mesh_joint/nakadake2dz.msh
-local line file    !../../mesh_joint/lineinfo.dat
+mesh file          !../mesh_joint/nakadake3d.msh
+2d triangle z file !../mesh_joint/nakadake2dz.msh
+local line file    !../mesh_joint/lineinfo.dat
 angle              !0.0
 output folder      !./result/
 header2d  (a50)    !nakadake2d

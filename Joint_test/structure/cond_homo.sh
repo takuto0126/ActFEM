@@ -1,7 +1,7 @@
 #!/bin/bash
 cat <<EOF > cond_homo.ctl
 !------10!-------20!----
-input 3d mshfile   !../../mesh_joint/nakadake3d.msh
+input 3d mshfile   !../mesh_joint/nakadake3d.msh
 0homo,1cond,2model !0
 homo resistivity   !300.0
 output cond        !./cond_homo.msh

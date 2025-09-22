@@ -1,8 +1,0 @@
-result_inv/*
-*.dat
-*.log
-tmp.ctl
-*.pdf
-*.ps
-pullresult*.sh
-!result_inv/.gitkeep

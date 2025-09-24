@@ -40,10 +40,10 @@ upz in [km]        !1.4
 downz in [km]      !0.3
 zmax   [km]        !25.0
 zmin   [km]        !-25.0
-sizein [km]        !0.1
+sizein [km]        !0.05
 sizebo [km]        !3.0
-sigma_obs [km]     !0.3
-A_obs     [km]     !0.01
+sigma_obs [km]     !0.25
+A_obs     [km]     !0.005
 dlen_source [km]   !0.3
 sigma_src [km]     !0.32
 A_src     [km]     !0.006

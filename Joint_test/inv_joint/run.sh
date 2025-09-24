@@ -11,7 +11,7 @@ cd -
 export OMP_NUM_THREADS=4
 ./clean.sh
 
-time mpiexec -n 6 ${src}/ebfem_inv_joint.exe <<EOF | tee result_inv/joint.log # 2025.07.31
+time mpiexec -n 6 ${src}/ebfem_inv_joint.exe <<EOF | tee result_inv/inv.log # 2025.07.31
 3
 active.ctl
 mt.ctl

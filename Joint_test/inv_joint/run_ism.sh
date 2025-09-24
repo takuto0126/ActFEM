@@ -26,7 +26,7 @@ cd -
 
 echo "Start n_ebfem_joint !"
 ./clean.sh
-time mpirun ${src}/ebfem_inv_joint.exe > result_inv/joint.log 2>&1 <<EOF
+time mpirun ${src}/ebfem_inv_joint.exe > result_inv/inv.log 2>&1 <<EOF
 3
 active.ctl
 mt.ctl

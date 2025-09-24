@@ -24,11 +24,12 @@ rotate angle[NdegE]!0.0
 output folder      !./result_homo/
 header2d  (a50)    !nakadake2d
 header3d  (a50)    !nakadake3d
-# of frequency     !4
+# of frequency     !5
 Frequency [Hz]     !1.d0
 Frequency [Hz]     !3.d0
 Frequency [Hz]     !10.0
 Frequency [Hz]     !30.0
+Frequency [Hz]     !100.0
 west bound         !-1.7
 east bound         !1.7
 south bound        !-1.5

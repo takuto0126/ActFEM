@@ -2,7 +2,7 @@
 
 source /opt/intel/oneapi/setvars.sh --force
 
-src=../src/src_3DMT
+src=../../src/src_3DMT
 cd $src
 make clean -f Makefile_ISM
 make       -f Makefile_ISM

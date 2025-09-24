@@ -1,7 +1,8 @@
+pullresult*.sh
 *.msh
 *.pos
 *.log
 *.geo
 *.dat
 tmp.ctl
-sync.sh
+sync*.sh

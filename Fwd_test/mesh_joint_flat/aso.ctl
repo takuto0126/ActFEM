@@ -15,7 +15,7 @@ iflag_map          !2
 UTM zone           !52S
 lonlatorigin       !131.084782     32.884882
 # of topo file     !1
-topofile           !../topo/topo_aso_flat.dat
+topofile           !../../topo/topo_aso_flat.dat
 lon lat shift      !0.0            0.0
 mesh file          !../mesh_joint_flat/nakadake3d.msh
 2d triangle z file !../mesh_joint_flat/nakadake2d_z.msh

@@ -3,7 +3,7 @@
 #source /opt/intel/oneapi/setvars.sh
 
 
-SRC=../src/src_mesh
+SRC=../../src/src_mesh
 cd $SRC
 make clean
 make -f Makefile_gfort

@@ -31,14 +31,6 @@
 #1  rho    [Ohm.m]  ! 10.0
 #============================================
 
-FC=gfortran
-source /opt/intel/oneapi/setvars.sh --force
-SRC=../src/src_post
-cd $SRC
-make clean
-#make
-make -f Makefile_gfort
-cd -
 
 
 #[1]## model-file input, elevation cuboid
@@ -136,6 +128,15 @@ output cond        !./cond_lateral.msh
 minmax depth [km]  !-100.0          0.0
 1  rho    [Ohm.m]  ! 10.0
 EOF
+
+FC=gfortran
+source /opt/intel/oneapi/setvars.sh --force
+SRC=../../src/src_post
+cd $SRC
+make clean
+#make
+make -f Makefile_gfort
+cd -
 
 
 ctlfile=test6.ctl  # choose control file from test1.ctl to test6.ctl

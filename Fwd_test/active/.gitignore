@@ -2,3 +2,5 @@ tmp.ctl
 *.ps
 *.pdf
 result/*
+
+!result/.gitkeep

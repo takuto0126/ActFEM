@@ -594,7 +594,7 @@ integer(4) :: i,ikeep=0 ! 2025.09.22
 i=0
 write(*,'(a,a)') " file is ",trim(filename)
 lines(:)=" " ! initialize 2020.12.10
-!write(*,*) "check1"
+write(*,*) "check1"
 open(1,file=filename)
 do
 i=i+1
@@ -603,12 +603,12 @@ end do
 99 continue
 
 close(1)
-!write(*,*) "check2"
+write(*,*) "check2"
 
-!do i=1,20
-!write(*,'(a)') trim(lines(i))
-!end do
-!write(*,*) "check3"
+do i=1,20
+write(*,'(a)') trim(lines(i))
+end do
+write(*,*) "check3"
 
 call subtractcommentout(n,lines)
 !write(*,*) "check4"
@@ -623,7 +623,7 @@ end if ! 2025.09.22
 ! write(1,'(a)') trim(lines(i))
 end do
 close(1)
-!write(*,*) "check5"
+write(*,*) "check5"
 write(*,'(a)') " ### readcontrolfile END!! ###"
 
 return
@@ -633,14 +633,15 @@ subroutine subtractcommentout(n,lines)
 implicit none
 integer(4),    intent(in)    :: n
 character(200),intent(inout) :: lines(n)
-character(200)               :: lines_out(n)
+character(200),allocatable,dimension(:) :: lines_out ! 2025.09.24
 integer(4) :: i,j
+allocate(lines_out(n)) ! 2025.09.24
 j=0
 do i=1,n
 if ( lines(i)(1:2) .ne. "##" ) then
   j=j+1
   lines_out(j) = lines(i)
-!  write(*,'(a)')trim(lines_out(j))
+  !write(*,'(a)')trim(lines_out(j))
  end if
 end do
 

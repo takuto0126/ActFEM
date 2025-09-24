@@ -1,10 +1,10 @@
 # Coded on 2017.02.21
 #!/bin/bash
-source /opt/intel/oneapi/setvars.sh intel64
+source /opt/intel/oneapi/setvars.sh
 
-SRC=../src/src_mesh
+SRC=../../src/src_mesh
 cd $SRC
-#make clean
+make clean
 make -f Makefile_gfort
 cd -
 

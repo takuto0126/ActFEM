@@ -44,7 +44,7 @@ sigma_obs [km]     !0.3
 A_obs     [km]     !0.006
 dlen_source [km]   !0.3
 sigma_src [km]     !0.32
-A_src     [km]     !0.3
+A_src     [km]     !0.006
 # of observatory   !7
 lonlat(1),xyz (2)  !1
 1  Name            !A02

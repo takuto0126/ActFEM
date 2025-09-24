@@ -78,5 +78,5 @@ plot "${anadir}A02_S2.dat" u 1:7 w l lw 2 title "A02 S2",\
      "${caldir}A03_S2.dat" u 1:7 w p lw 2 notitle
 
 EOF
-#convert -density 300 -rotate 90 $outps $outpdf
-open $outps
+convert -density 300 -rotate 90 $outps $outpdf
+open $outpdf

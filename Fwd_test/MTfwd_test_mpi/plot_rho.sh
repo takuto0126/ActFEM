@@ -34,4 +34,6 @@ awk '{print($1,$5 + 180)}'       $infile | gmt plot  -Gblue -Sc0.3  -l"xy"
 awk '{print($1,$7      )}'       $infile | gmt plot  -Ggreen -Sc0.3 -l"yx"
 gmt legend -DjBR+w1.5/2+o0.2 -F+gwhite+p1p
 
-gmt end show
+gmt end
+
+open rho_${ext}.pdf &

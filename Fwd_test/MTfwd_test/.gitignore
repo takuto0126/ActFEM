@@ -3,7 +3,9 @@
 *.msh
 result_homo/*
 result_lateral/*
-tmp.ctl
+tmp*.ctl
+clean
+pullresult*.sh
 
 !result_homo/
 !result_lateral/

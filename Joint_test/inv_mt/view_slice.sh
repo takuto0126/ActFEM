@@ -61,7 +61,7 @@ cat << EOF > tmp0.ctl
 ## Note that lines starting with "##" work for comments ---
 ##
 ##             20->|
-mshfile            !../../mesh_joint/nakadake3d.msh
+mshfile            !../mesh_joint/nakadake3d.msh
 ## You should chose either of two types of resistivity structure file format,
 ## cond.msh type or model**.dat type
 ## 0 for cond.msh type, 1 for model**.dat type

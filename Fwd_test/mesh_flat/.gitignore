@@ -4,3 +4,4 @@
 *.geo
 *.dat
 tmp.ctl
+pullresult*.sh

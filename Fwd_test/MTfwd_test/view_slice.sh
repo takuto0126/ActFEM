@@ -118,7 +118,7 @@ EOF
 
 #[2]## generate tmp.dat
 if [ $igendat -eq 1 ];then
-SRC="../src/src_post"
+SRC="../../src/src_post"
 cd $SRC
 make clean
 #make   # for the use of intel fortran compiler
@@ -181,5 +181,6 @@ gmt text -R0/20/0/20 -JX20/20 -F+f13p,Helvetica+jCM << EOF
 9.5 10.3  (@~W@~m)
 EOF
 
-gmt end show
+gmt end
+open ${ID}.pdf
 

@@ -43,7 +43,7 @@ zmin   [km]        !-25.0
 sizein [km]        !0.1
 sizebo [km]        !3.0
 sigma_obs [km]     !0.25
-A_obs     [km]     !0.01
+A_obs     [km]     !0.008
 dlen_source [km]   !0.3
 sigma_src [km]     !0.32
 A_src     [km]     !0.006

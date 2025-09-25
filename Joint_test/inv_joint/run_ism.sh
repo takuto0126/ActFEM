@@ -3,7 +3,7 @@
 #source /opt/intel/oneapi/setvars.sh
 
 ###################  q-m  ########################
-#PBS -q q-test
+#PBS -q q-m
 #PBS -l select=2:ncpus=192:mem=740gb:mpiprocs=3
 #PBS -N inv_joint
 #PBS -o out.dat

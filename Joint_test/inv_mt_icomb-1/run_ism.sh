@@ -23,8 +23,8 @@ cd $src
 make -f Makefile_ISM
 cd -
 
-# 1: only ACTIVE, 2:only MT, 3: both ACTIVE and MT
 ./clean.sh
+# 1: only ACTIVE, 2:only MT, 3: both ACTIVE and MT
 time mpirun ${src}/ebfem_inv_joint.exe > result_inv/inv.log 2>&1 <<EOF
 2
 mt.ctl

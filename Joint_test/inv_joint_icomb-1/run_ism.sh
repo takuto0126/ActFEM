@@ -24,9 +24,9 @@ cd $src
 make -f Makefile_ISM
 cd -
 
-echo "Start n_ebfem_joint !"
 ./clean.sh
-time mpirun ${src}/ebfem_inv_joint.exe > result_inv/joint.log 2>&1 <<EOF
+# 1: only ACTIVE, 2:only MT, 3: both ACTIVE and MT
+time mpirun ${src}/ebfem_inv_joint.exe > result_inv/inv.log 2>&1 <<EOF
 3
 active.ctl
 mt.ctl

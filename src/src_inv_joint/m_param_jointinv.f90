@@ -48,6 +48,7 @@ type param_joint  ! 2021.12.25
  integer(4)    :: ialphaflag
  !# ialphaflag = 1 : L-curve  (Usui et al., 2017)          2017.12.11
  !# ialphaflag = 2 : Cooling strategy with given alpha0    2017.12.11
+ !#                  factor is used for alpha <- alpha*10^(factor) to reduce alpha 2025.09.25
  !# ialphaflag = 3 : General cooling strategy for data-space method (Minami et al., 2018)
  !# ialphaflag = 4 : Modified cooling method of Grayver et al (2013)
  !#                  At each iteration, rambda = [ratio of spectral]/ite is determined
@@ -56,7 +57,8 @@ type param_joint  ! 2021.12.25
  integer(4)    :: nalpha
  real(8),allocatable,dimension(:) :: alpha
  !# for Kordy et al. (2016) cooling strategy ialphaflag = 2
- real(8)       :: alpha_init     ! 2017.07.14
+  real(8)       :: alpha_init     ! 2017.07.14
+  real(8)       :: alpha_factor   ! factor for reducing alpha by alpha_new = alpha*10^(factor), where factor < 0 2025.09.25
  !# for ialphaflag = 3 (Minami cooling) and ialphaflag = 4 (Modified Grayver) ! 2018.01.09
  real(8)       :: gamma          ! init alpha = gamma * alpha_from_Lanczos 2017.12.22
  !#-----------------------------  Upper and lower bound information 2018.01.18
@@ -358,6 +360,9 @@ subroutine readparaJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_pa
      write(*,*) "< Input initial alpha [real] >"     ! 2018.06.25
      read(input,12) g_param_joint%alpha_init ! 2017.07.14
      write(*,'(a,f8.3)') " initial alpha [real] :",g_param_joint%alpha_init ! 2020.09.17
+     write(*,*) "< factor for reducing alpha by alpha_new = alpha*10^(factor), where factor < 0 > " ! 2025.09.25
+     read(input,12) g_param_joint%alpha_factor ! 2025.09.25
+     write(*,'(a,f8.3)') " factor for reducing alpha :",g_param_joint%alpha_factor ! 2025.09.25
      write(*,*) "" ! 2020.09.29
      write(*,40) " < Enter iflag_replace 0:nothing, 1:replace ref model when rms is larger than previous> "! 2020.09.29
      read(input,11)  g_param_joint%iflag_replace    ! 2018.06.26

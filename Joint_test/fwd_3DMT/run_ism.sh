@@ -1,14 +1,14 @@
 #!/bin/bash
 # generate forward result of MT for test joint inversion test
 
-#PBS -q q-test
-#PBS -l select=1:ncpus=192:mem=740gb:mpiprocs=6
-#PBS -N TEST_JOB
+#PBS -q q-m
+#PBS -l select=2:ncpus=192:mem=740gb:mpiprocs=3
+#PBS -N fwd_3DMT
 #PBS -o out.dat
 #PBS -j oe
 
 source $SELECT_PE INTEL
-export OMP_NUM_THREADS=32
+export OMP_NUM_THREADS=64
 export I_MPI_PIN_DOMAIN=omp
 export KMP_AFFINITY=compact
 module load intelmkl/2023.2.0

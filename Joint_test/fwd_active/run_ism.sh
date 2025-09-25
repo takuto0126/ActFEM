@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -q q-test
 #PBS -l select=ncpus=192:mem=740gb
-#PBS -N TEST_JOB
+#PBS -N fwd_act
 #PBS -o out.dat
 #PBS -j oe
 

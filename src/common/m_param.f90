@@ -449,7 +449,7 @@ integer(4) :: i,input=11
 
 !#[1]## read condfile
  write(*,*) "condfile : ",g_cond%condfile ! 2020.07.19
- open(input,file=g_cond%condfile,status='old',action='read')
+ open(input,file=g_cond%condfile,status='old',action='read') ! 2025.10.08
 !# header
  do i=1,11      ! 2017.09.11 changed from 8 to 11
   read(input,*)

@@ -449,7 +449,7 @@ integer(4) :: i,input=11
 
 !#[1]## read condfile
  write(*,*) "condfile : ",g_cond%condfile ! 2020.07.19
- open(input,file=g_cond%condfile,status='old',action='read') ! 2025.10.08
+ open(input,file=g_cond%condfile,status='old',action='read',err=99) ! 2025.10.08
 !# header
  do i=1,11      ! 2017.09.11 changed from 8 to 11
   read(input,*)
@@ -475,6 +475,9 @@ integer(4) :: i,input=11
 write(*,*) "g_cond%nphys2 =",g_cond%nphys2 ! 2021.01.08
 write(*,*) "### READCOND  END!! ###"       ! 2020.09.29
 return
+99 continue
+write(*,*) "GEGEGE! in READCOND, file not found:",g_cond%condfile ! 2025.10.08
+stop ! 2025.10.08
 end subroutine
 !----------------------------------------- deallocatecond
 ! Coded on 2017.05.14

@@ -267,7 +267,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
 
 !#[8]## share params, mesh, and line (see m_shareformpi.f90)
   CALL shareapinv(g_param,sparam,h_cond,g_mesh,g_line,g_param_joint,g_model_ini,ip) ! 2018.10.04
-  CALL sharemt(g_param_mt,g_surface,ip) ! 2021.12.30
+  if (MT) CALL sharemt(g_param_mt,g_surface,ip) ! 2025.10.14
 
 !#[8.5]## link globalmodel2surface
   !call linkglobalmodel2surface(g_model_ini,g_surface(2:6)) ! 2022.01.16 Is this necessary? 2024.08.30 ! commented out 2025.07.31

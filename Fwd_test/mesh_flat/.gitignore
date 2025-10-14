@@ -5,3 +5,4 @@
 *.dat
 tmp.ctl
 pullresult*.sh
+sync.sh

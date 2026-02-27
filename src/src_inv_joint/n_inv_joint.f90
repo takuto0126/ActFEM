@@ -2193,7 +2193,7 @@ subroutine GENCD(g_data_ap,g_data_mt,CD,CD_mt,CD_tipper) ! 2021.12.29
      CD_mt%item(i)  = i
    end do
 
- !#[3]## gen Cd_mt
+ !#[3]## gen Cd_tipper 2026.02.27
    allocate(CD_tipper%stack(0:ndat_tipper),CD_tipper%item(ndat_tipper),CD_tipper%val(ndat_tipper)) ! 2023.12.21
    CD_tipper%stack(0)=0
    do i=1,ndat_tipper ! ndat_tipper = (real,imag)*(Tx,Ty)*nobs_mt*nfreq_mt, error is given directly for real and imag

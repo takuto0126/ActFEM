@@ -19,7 +19,7 @@ module load intelmkl/2023.2.0
 
 src=../../src/src_inv_joint
 cd $src
-#make clean -f Makefile_ISM
+make clean -f Makefile_ISM
 make -f Makefile_ISM
 cd -
 

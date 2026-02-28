@@ -17,9 +17,9 @@ cd $PBS_O_WORKDIR
 #Intel MKLモジュールのロード
 module load intelmkl/2023.2.0
 
-src=../src/src_3DMT_mpi
+src=../../src/src_3DMT_mpi
 cd $src
-#make clean -f Makefile_ISM
+make clean -f Makefile_ISM
 make -f Makefile_ISM
 cd -
 

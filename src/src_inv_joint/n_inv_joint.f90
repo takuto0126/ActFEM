@@ -190,8 +190,7 @@ if ( ip .eq. 0) then !################################################# ip = 0
   CALL READPARAJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_param_mt,g_data,g_data_mt)
   g_param_joint%nobs_mt  = g_param_mt%nobs  ! 2022.01.04
   g_param_joint%nfreq_mt = g_param_mt%nfreq ! 2022.01.04
-  stop
-  !m_param_jointinv.f90 2022.10.22
+  !stop ok! 2026.03.02
 
 !#[1]## read mesh
     if (ACT) then
@@ -430,7 +429,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
        if (ip .eq. 0 .and. .false. ) then ! 2D*.dat
        write(num,'(i1)') j
        open(1,file="2D"//num//".dat")
-       write(1,'(i4,2g15.7)') (k,g_surface(j)%bs(k),k=1,g_surface(j)%nline)
+         write(1,'(i4,2g15.7)') (k,g_surface(j)%bs(k),k=1,g_surface(j)%nline)
        close(1)
        end if
      end do ! end surface loop

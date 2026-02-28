@@ -667,9 +667,7 @@ subroutine readdata_tipper(g_param_joint,g_param_mt,g_data_mt,input) ! see below
            ii=ii+1
            idata_tipper(l,k,j,i) = ii           ! 2022.12.12
            dvec_tipper(ii) = data(l,k,j,i) ! 2023.10.04
-           err_tipper(ii) =  err(l,k,j,i)  ! 2023.10.04 
-           ! write(*,'(i5,2x,a,2x,a,2f15.7,2(a,i3))') ii,z(k),realimag(l),dvec_mt(ii),err_mt(ii),&
-           ! & " obs#",j," freq#",i !
+           err_tipper(ii) =  err(l,k,j,i)  ! 2023.10.04
            write(1,'(i5,2x,a,2x,a,2f15.7,2(a,i3))') ii,txy(k),realimag(l),dvec_tipper(ii),err_tipper(ii),&
            & " obs#",j," freq#",i
          end if

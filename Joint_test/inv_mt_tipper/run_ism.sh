@@ -28,5 +28,5 @@ cd -
 time mpirun ${src}/ebfem_inv_joint.exe > result_inv/inv.log 2>&1 <<EOF
 2
 mt.ctl
-inv_mt.ctl
+inv_mt_tipper.ctl
 EOF

@@ -190,6 +190,7 @@ if ( ip .eq. 0) then !################################################# ip = 0
   CALL READPARAJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_param_mt,g_data,g_data_mt)
   g_param_joint%nobs_mt  = g_param_mt%nobs  ! 2022.01.04
   g_param_joint%nfreq_mt = g_param_mt%nfreq ! 2022.01.04
+  stop
   !m_param_jointinv.f90 2022.10.22
 
 !#[1]## read mesh

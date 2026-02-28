@@ -208,14 +208,14 @@ end type ! 2021.12.27
 contains
 
 !#################################################### setnec 2022.10.14
-subroutine setnec(ijoint,g_param_joint,ACT,MT,TIPPER) ! 2023.12.23 TIPPER added
+subroutine setnec(ijoint,g_param_joint,ACT,MT,TIP) ! 2023.12.23 TIPPER added
  implicit none
  integer(4),       intent(in)  :: ijoint
  type(param_joint),intent(in)  :: g_param_joint  ! 2023.12.23
- logical,          intent(out) :: ACT, MT,TIPPER ! 2023.12.23
+ logical,          intent(out) :: ACT, MT,TIP ! 2023.12.23
  ACT=.false.
  MT=.false.
- TIPPER=.false. ! 2023.12.23
+ TIP=.false. ! 2023.12.23
  if ( ijoint == 1 ) ACT = .true.  ! only ACTIVE
  if ( ijoint == 2 ) MT  = .true.  ! only MT
  if ( ijoint == 3 ) then
@@ -223,7 +223,7 @@ subroutine setnec(ijoint,g_param_joint,ACT,MT,TIPPER) ! 2023.12.23 TIPPER added
    MT  = .true. 
    end if
  if (MT .and. g_param_joint%iflag_tipper == 1) then ! 2023.12.23
-   TIPPER =.true. ! 2023.12.23
+   TIP =.true. ! 2023.12.23
    end if         ! 2023.12.23
  return
  end
@@ -540,7 +540,7 @@ subroutine readparaJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_pa
    write(*,*) "iflag_tipper = ",g_param_joint%iflag_tipper ! 2023.10.05
    if ( g_param_joint%iflag_tipper == 1 ) then      ! 2023.10.04
      call readdata_tipper(g_param_joint,g_param_mt,g_data_mt,input) ! see below 2023.10.04
-     end if   ! 2023.10.04
+   end if   ! 2023.10.04
 
  end if ! MT data read end ! 2022.10.14
 
@@ -609,8 +609,8 @@ subroutine readdata_tipper(g_param_joint,g_param_mt,g_data_mt,input) ! see below
  !#[1]## set and allocate
   txy(1:2)=(/"Tx","Ty"/)
   realimag(1:2)=(/"real","imag"/)
-  nfreq_mt=g_param_joint%nfreq_mt             ! 2022.10.21
-  nobs_mt=g_param_joint%nobs_mt
+  nfreq_mt = g_param_joint%nfreq_mt             ! 2022.10.21
+  nobs_mt  = g_param_joint%nobs_mt
 
   read(input,'(20x,g15.7)')g_param_joint%errorfloor_tipper ! 2023.10.04
   errorfloor_tipper = g_param_joint%errorfloor_tipper ! 2022.12.12
@@ -721,6 +721,7 @@ subroutine readdata_tipper(g_param_joint,g_param_mt,g_data_mt,input) ! see below
    g_param_joint%data_avail_tipper = data_avail_tipper  ! 2023.10.04
    g_param_joint%ndat_tipper       = ndat_tipper        ! 2023.10.04
 
+   write(*,*) "Finished reading tipper data and set to g_data_mt and g_param_joint" ! 2026.03.02
  return
  end
 

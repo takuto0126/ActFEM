@@ -2,14 +2,14 @@
 ! Coded by T.M. on 2017.05.15 originally from ../solver/solvePARDISO
 ! THis program solve normal forward problem as well as Au=P for Jacobian Matrix
 INCLUDE 'mkl_pardiso.f90'
-subroutine solvePARDISOjointinv(ACT,MT,nline,nsr,A,rhs,rhs_mt,xout,xout_mt,PTR,PTR_mt,ut,ut_mt,iflag_comp,ip,np) ! 2020.09.18
+subroutine solvePARDISOjointinv(ACT,MT,TIP,nline,nsr,A,rhs,rhs_mt,xout,xout_mt,PTR,PTR_mt,ut,ut_mt,iflag_comp,ip,np) ! 2020.09.18
 use mkl_pardiso
 use iccg_var_takuto
 use matrix         ! 2017.05.15
 use caltime        ! 2017.12.22
 implicit none
 !-- for forward ------
-logical            ,     intent(in)     :: ACT,MT      ! 2022.10.14
+logical            ,     intent(in)     :: ACT,MT,TIP  ! TIP added 2026.03.01
 type(global_matrix),     intent(inout)  :: A           ! A is deallocated bfr pardiso
 integer(4),              intent(in)     :: nsr         ! # of rhs vector, 2017.07.13
 integer(4),              intent(in)     :: nline
@@ -20,10 +20,10 @@ complex(8),              intent(out)    :: xout(nline,nsr) ! 2017.07.13
 complex(8),              intent(out)    :: xout_mt(nline,2)! 2021.12.29
 !---
 type(real_crs_matrix),   intent(in)     :: PTR(5)       ! [nobs,nline] ! 2021.10.04
-type(real_crs_matrix),   intent(in)     :: PTR_mt(4)    ! [nobs,nline] ! 2021.12.29
+type(real_crs_matrix),   intent(in)     :: PTR_mt(5)    ! [nobs,nline] ! 4 -> 5 2026.03.01
 integer(4),dimension(5), intent(in)     :: iflag_comp   ! 2018.10.04
 type(complex_crs_matrix),intent(out)    :: ut(5)        ! solution Au = P,2018.10.04
-type(complex_crs_matrix),intent(out)    :: ut_mt(4)     ! solution Au = P,2021.12.29
+type(complex_crs_matrix),intent(out)    :: ut_mt(5)     ! solution Au = P,4->5 2026.03.01
 !-- for inversion ---- added on 2017.05.15
 type(complex_crs_matrix)                :: u,crscompout ! 2017.05.15
 type(complex_ccs_matrix)                :: utccs        ! 2017.05.15
@@ -45,7 +45,7 @@ COMPLEX(8), ALLOCATABLE :: b(:,:),x( :,:) ! (ndof,nsr)  2018.10.04
 COMPLEX(8), ALLOCATABLE :: b_mt(:,:),x_mt(:,:) !(ndof,2) 2021.12.30
 COMPLEX(8), ALLOCATABLE :: b1(:,:),x1(:,:) ! (ndof,nobs) 2018.10.04
 COMPLEX(8), ALLOCATABLE :: b1_mt(:,:),x1_mt(:,:)  ! 2021.12.30
-INTEGER i, j,idum(1),j1,j2, icomp  ! 2018.10.04
+INTEGER i, j,idum(1),j1,j2, icomp,ncomp  ! 2018.10.04, ncomp is added on 2026.03.01
 COMPLEX(8) ddum(1)
 integer(4)              :: nobs,ncolm,nobs_mt ! 2021.12.30
 type(real_ccs_matrix)   :: P
@@ -256,7 +256,9 @@ real(8)                 :: threshold = 1.d-10
        call realcrsout(PTR_mt(4),1)
      close(1)
    end if
-   do icomp=1,4 ! bx,by,ex,ey
+   ncomp = 4 ! 2026.03.01
+   if ( TIP ) ncomp = 5 ! 2026.03.01
+   do icomp=1,ncomp ! bx,by,ex,ey,Bz, TIP is added on 2026.03.01
      !#[4-2-1]## right hand side vector
      call trans_crs2ccs(PTR_mt(icomp),P) ! see m_matrix.f90  2021.12.30
      if (.false.) call CHECKP(P)         ! see below 2018.10.05

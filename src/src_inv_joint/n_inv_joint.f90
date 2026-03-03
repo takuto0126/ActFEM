@@ -90,8 +90,8 @@ program inversion_joint
   type(param_cond)                            :: i_cond       ! see m_param.f90 2021.12.25
   integer(4),    allocatable,dimension(:,:)   :: n4           ! 2021.12.27
   type(real_crs_matrix)                       :: CD_mt        ! 2021.12.29
-  type(complex_crs_matrix)                    :: ut_mt(4)     ! [nobs_mt,nline]*4 2021.12.30
-  type(real_crs_matrix)                       :: PT_mt(4)     ! [nobs_mt,nline]*4 Bx,By,Ex,Ey
+  type(complex_crs_matrix)                    :: ut_mt(5)     ! [nobs_mt,nline]*4 2021.12.30
+  type(real_crs_matrix)                       :: PT_mt(5)     ! [nobs_mt,nline]*4 Bx,By,Ex,Ey,Bz
   type(real_crs_matrix)                       :: coeffobs_mt(2,3)! see m_matrix.f90 2021.12.30
   type(respdata),allocatable,dimension(:,:,:) :: resp5_mt     ! 2021.12.30 5 comp * 2 MT polarization 
   type(respdata),allocatable,dimension(:,:,:) :: tresp_mt     ! 2022.01.02 see ../common/m_outresp.f90
@@ -110,6 +110,7 @@ program inversion_joint
   type(tip_dm),  allocatable,dimension(:)     :: gt_tipdm! 2023.12.22
   integer(4)                                  :: nobs_mt ! 2022.01.05
   type(real_crs_matrix)                       :: JJ_mt   ! Jacobian matrix, 2022.01.05
+  type(real_crs_matrix)                       :: JJ_tip  ! Jacobian matrix for tipper, 2026.03.03
 !## addition of declaration for tipper data 2023.12.22
   integer(4)                                  :: ndat_tipper ! 2023.12.23
   type(real_crs_matrix)                       :: CD_tip      ! 2023.12.21 
@@ -472,8 +473,9 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
        write(*,'(2(a,i8))')     "       i_mt",i_mt,       " | ip =",ip
        write(*,'(2(a,i2),a,i8)')     "ip",ip,"np",np," | ip =",ip
        end if
-     CALL genjacobian1_mt(nobs_mt,nline,ut_mt,fs_mt,PT_mt,h_model,g_mesh,&
-                  &g_line,omega,g_mtdm(i_mt),g_tipdm(i_mt),g_param_joint,ip,np) !2022.10.20
+       
+     CALL genjacobian1_mt(TIP,nobs_mt,nline,ut_mt,fs_mt,PT_mt,h_model,g_mesh,&
+                  &g_line,omega,g_mtdm(i_mt),g_tipdm(i_mt),g_param_joint,ip,np) !ut_mt(5) is used for tipper jacobian 2026.03.02
      !write(*,'(a,i2)') " ### genjacobian1_mt en main ###  ip =",ip ! commented out 2025.07.31
   end if!                                            |###
   !write(*,'(a,i2)') " ### genjacobian1 and *_mt end!! ### ip =",ip! 2025.07.31
@@ -498,7 +500,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
   if(MT) CALL SENDRECVIMP(imp_mt,timp_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)! 2022.01.02
   if(MT) CALL SENDRESULTINV_MT(g_mtdm,gt_mtdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_joint,ip,np,g_param_joint) ! 2022.01.05
   if(TIP) CALL SENDRECVTIP(tip_mt,ttip_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)!2023.12.25
-  if(TIP) call SENDRESULTINV_TIP(g_tipdm,gt_tipdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_joint,ip,np,g_param_joint)
+  if(TIP) CALL SENDRESULTINV_TIP(g_tipdm,gt_tipdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_joint,ip,np,g_param_joint)
   CALL MPI_BARRIER(mpi_comm_world, errno) ! 2017.09.03
 
 !#[27]## OUTPUT ACTIVE and MT responses for ite==================  ip=0 start
@@ -569,8 +571,8 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
 
    !#[34]## generate JJ (jacobian)
     if(ACT)call genjacobian2(g_param_joint,nfreq_act,gt_apdm,JJ) !m_jacobian_joint.f90 2017.12.11
-    if(MT )call genjacobian2_MT(g_param_joint,nfreq_mt,gt_mtdm,JJ_mt) ! m_jacobian_joint.f90 2022.01.05
-
+    if(MT )call genjacobian2_MT(TIP,g_param_joint,nfreq_mt,gt_mtdm,gt_tipdm,JJ_mt,JJ_tip) ! m_jacobian_joint.f90 2022.01.05
+    
     if ( ACT .and. g_param_joint%ioutlevel .eq. 1 ) then  ! 2018.06.25
      CALL GENMODELVOLUME(h_model,g_mesh) !see ../src_inv/m_modelpart.f90 2022.11.01
      CALL OUTJACOB(g_param_joint,g_data,JJ,ite,h_model,g_param,sparam)!m_jacobian_joint.f90 2018.06.25
@@ -617,8 +619,8 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
 
    !#[37]## obtain new model
     pre_model = h_model ! 2017.06.14 keep previous model
-    call getnewmodel_joint(JJ,JJ_mt,g_model_ref,h_model,g_data,h_data,&
-    &   g_data_mt,h_data_mt,BMI,CD,CD_mt,alpha,g_param_joint) ! 2022.01.05
+    call getnewmodel_joint(TIP,JJ,JJ_mt,JJ_tip,g_model_ref,h_model,g_data,h_data,&
+    &   g_data_mt,h_data_mt,BMI,CD,CD_mt,CD_tip,alpha,g_param_joint) ! 2026.03.03
 
     !#[38]## update nrms0, nrms_mt0, nrms_tip0
     if (ACT) nrms0     = nrms        !  2017.12.25

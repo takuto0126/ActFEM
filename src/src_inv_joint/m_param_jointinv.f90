@@ -90,7 +90,7 @@ type param_joint  ! 2021.12.25
  type(obs_mt)                             :: obsmtinfo ! 2021.12.27
  integer(4)         ,dimension(5)         :: iflag_comp ! 2018.10.04
  logical,allocatable,dimension(:,:,:,:,:) :: data_avail !(2,5,nfreq,nobs,nsr_inv) 2018.10.04
- logical,allocatable,dimension(:,:,:,:)   :: data_avail_mt !(2,4,nfreq,nobs_mt) 2022.01.02
+ logical,allocatable,dimension(:,:,:,:)   :: data_avail_mt     ! (2,4,nfreq,nobs_mt) 2022.01.02
  logical,allocatable,dimension(:,:,:,:)   :: data_avail_tipper ! (2,2,nfreq,nobs_mt) 2023.10.05
  real(8)                                  :: errorfloor_act  ! [%] added on 2021.12.27
  real(8)                                  :: errorfloor_mt   ! 2021.12.27

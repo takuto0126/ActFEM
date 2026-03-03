@@ -2,7 +2,7 @@
 !# Copied from ../src_inv/forward_inv.f90
 !# Coded on March 4, 2016
 !# copied originally from ../solver/forward_bxyz.f90
-subroutine forward_joint(ACT,MT,A,h_mesh,l_line,g_surface,nline,nsr,bs,bs_mt,omega,sparam,g_param,&
+subroutine forward_joint(ACT,MT,TIP,A,h_mesh,l_line,g_surface,nline,nsr,bs,bs_mt,omega,sparam,g_param,&
                    &     g_param_joint,g_cond,PT,PT_mt,ut,ut_mt,ip,np) ! 2022.10.14
 use mesh_type
 use iccg_var_takuto
@@ -15,7 +15,7 @@ use caltime        ! 2017.12.22
 use surface_type   ! 2021.12.30
 implicit none
 !--------------- input and output variants ------------------
-logical,                 intent(in)     :: ACT,MT        ! 2022.10.20
+logical,                 intent(in)     :: ACT,MT,TIP    ! TIP added 2026.03.01
 integer(4),              intent(in)     :: ip,np         ! 2020.09.18
 integer(4),              intent(in)     :: nsr           ! 2017.07.13
 integer(4),              intent(in)     :: nline
@@ -28,12 +28,12 @@ type(param_joint),       intent(in)     :: g_param_joint ! 2021.12.25
 type(param_cond)  ,      intent(in)     :: g_cond
 type(surface),           intent(in)     :: g_surface(6)  ! 2021.12.29
 type(real_crs_matrix),   intent(in)     :: PT(5)         ! [nline,nobs]*5    Bx,By,Bz,Ex,Ey
-type(real_crs_matrix),   intent(in)     :: PT_mt(4)      ! [nline,nobs_mt]*5 Bx,By,Bz,Ex,Ey
+type(real_crs_matrix),   intent(in)     :: PT_mt(5)      ! [nline,nobs_mt]*5 Bx,By,Ex,Ey,Bz 2026.03.02
 type(global_matrix),     intent(inout)  :: A             ! see m_iccg_var_takuto.f90
 complex(8),              intent(out)    :: bs(   nline,nsr)! 2017.07.13   solution vector for ACTIVE
 complex(8),              intent(out)    :: bs_mt(nline,2  )! 2020.12.29  solution vector for MT
 type(complex_crs_matrix),intent(out)    :: ut(5)         ! [nline,nobs]*5    2018.10.05
-type(complex_crs_matrix),intent(out)    :: ut_mt(4)      ! [nline,nobs_mt]*5 2021.12.29
+type(complex_crs_matrix),intent(out)    :: ut_mt(5)      ! [nline,nobs_mt]*5 2021.12.29
 !--------------- internal variables
 integer(4),              dimension(5)   :: iflag_comp    ! 2018.10.05
 type(complex_crs_matrix)                :: null  ! added on 2017.05.16
@@ -89,7 +89,7 @@ if (ACT) CALL SET_BC_ACTIVE(A, nline, nsr, rf, Avalue_bc, line_bc)              
 !CALL SET_BC_3DJoint(A,nline,nsr,rf,rf_mt,Avalue_bc,Avalue_bc_mt,line_bc,ip)!see below 2021.12.29
 
 !#[7]## Solve
-call solvePARDISOjointinv(ACT,MT,nline,nsr,A,rf,rf_mt,bs,bs_mt,PT,PT_mt,ut,ut_mt,iflag_comp,ip,np) ! 2022.10.14 nec is added
+call solvePARDISOjointinv(ACT,MT,TIP,nline,nsr,A,rf,rf_mt,bs,bs_mt,PT,PT_mt,ut,ut_mt,iflag_comp,ip,np) ! 2022.10.14 nec is added
 
 call watchstop(t_watch) ! 2017.12.22
 !write(*,10) " ### FORWARD_JOINTINV END !! ###  ip =",ip," /",np," Time =",t_watch%time," [min]" ! 

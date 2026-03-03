@@ -17,7 +17,7 @@ implicit none
 
 contains
 !############################################################
-subroutine shareapinv(g_param,sparam,g_cond,g_mesh,g_line,g_param_joint,g_model,ip)
+subroutine sharejointinv(g_param,sparam,g_cond,g_mesh,g_line,g_param_joint,g_model,ip)
  !# modified on 2017.08.31 for multisource inversion
  !# Coded on 2017.06.07
  implicit none
@@ -37,6 +37,7 @@ subroutine shareapinv(g_param,sparam,g_cond,g_mesh,g_line,g_param_joint,g_model,
  !  CALL SHAREFACE(g_face,ip)                  ! see m_shareformpi.f90 2017.08.31
   CALL SHAREINVPARAJOINT(g_param_joint,ip)    ! 2017.08.31 see below
   CALL SHAREMODEL(g_model,ip)                 ! see m_shareformpi.f90
+  if (ip .eq. 0) write(*,'(a)') " ### SHAREJOINTINV  END!! ###" ! 2026.03.03
  return
  end
 

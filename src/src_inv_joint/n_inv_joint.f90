@@ -23,6 +23,7 @@ program inversion_joint
  use param_mt         ! 2021.12.25
  use param_jointinv   ! 2021.12.25
  use shareformpi_mt ! see ../common_mpi/m_shareformpi_mt.f90 2025.09.16
+ use forward_joint_inv ! see forward_joint_inv.f90 2026.03.03
 ! declaration
  implicit none
  type(param_forward)    :: g_param      ! see m_param.f90
@@ -182,13 +183,15 @@ if ( ip .eq. 0) then !################################################# ip = 0
 !#[-1]## select inversion type
   read(*,'(i5)') ijoint ! 1: only active, 2: only MT, 3: both active and MT data 2022.10.14
   call declareinversiontype(ijoint,ierr) ! 2022.10.14
+  g_param_joint%ijoint = ijoint ! 2026.03.03
   if ( ierr .ne. 0 ) goto 998
-  call setnec(ijoint,g_param_joint,ACT,MT,TIP) ! see m_param_joint.f90 2023.12.23
-
+  call setnec(g_param_joint,ACT,MT,TIP) ! set ACT, MT, see m_param_joint.f90 2023.12.23
 !#[0]## read parameters, g_param, g_param_mt, g_param_joint,s_param, gen g_data,g_data_mt
   if(ACT) CALL READPARAM(g_param,sparam,g_cond) ! include READCOND for initial model 2022.10.14
   if(MT ) CALL READPARAM_MT(g_param_mt,i_cond) ! read MT param 2022.10.14 (i_cond is not used)
-  CALL READPARAJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_param_mt,g_data,g_data_mt)
+  write(*,*) "ACT, MT, TIP", ACT, MT, TIP ! 2026.03.03
+  CALL READPARAJOINTINV(g_param_joint,g_modelpara,g_param,sparam,g_param_mt,g_data,g_data_mt) 
+  call setnec(g_param_joint,ACT,MT,TIP) ! TIP is also set, see m_param_joint.f90 2026.03.03
   g_param_joint%nobs_mt  = g_param_mt%nobs  ! 2022.01.04
   g_param_joint%nfreq_mt = g_param_mt%nfreq ! 2022.01.04
   !stop ok! 2026.03.02
@@ -267,7 +270,10 @@ CALL MPI_BCAST(ierr,1, MPI_INTEGER4,0,MPI_COMM_WORLD,errno) ! share ierr 2022.10
 if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
 
 !#[8]## share params, mesh, and line (see m_shareformpi.f90)
-  CALL shareapinv(g_param,sparam,h_cond,g_mesh,g_line,g_param_joint,g_model_ini,ip) ! 2018.10.04
+  CALL sharejointinv(g_param,sparam,h_cond,g_mesh,g_line,g_param_joint,g_model_ini,ip) ! 2018.10.04
+  write(*,*) "g_param_joint%ijoint",g_param_joint%ijoint,"ip",ip ! 2022.10.14
+  CALL setnec(g_param_joint,ACT,MT,TIP) ! 2026.03.03 set ACT, MT, TIP for all ips, see m_param_joint.f90
+  write(*,*)"ACT,MT,TIP",ACT,MT,TIP,"ip",ip    ! 2026.03.03
   if (MT) CALL sharemt(g_param_mt,g_surface,ip) ! 2025.10.14
 
 !#[8.5]## link globalmodel2surface
@@ -281,8 +287,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
   CALL PREPAREPT_JOINT(coeffobs,coeffobs_mt,g_param_joint,PT,PT_mt)! 2018.10.04 see below
 
 !#[11]## Preparation for global stiff matrix
-  ijoint       = g_param_joint%ijoint           ! 2022.10.14
-  call setnec(ijoint,g_param_joint,ACT,MT,TIP)  ! 2022.12.23 see m_param_joint.f90
+  CALL setnec(g_param_joint,ACT,MT,TIP)
   if (ip == 0) write(*,'(a)') "  ip  |  ACT   MT" ! 2022.12.05
   CALL MPI_BARRIER(mpi_comm_world, errno)       ! 2022.12.05
   write(*,'(i4,1x,2l6)') ip,ACT,MT                          ! 2022.12.05
@@ -437,7 +442,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
    end if ! 2022.10.14
 
 !#[22]## 3D ACTIVE and MT forward and obtain [fs], [fs_mt], [ut] and [ut_mt] 
-   CALL forward_joint(ACT,MT,A,g_mesh,g_line,g_surface,nline,nsr_inv,fs,fs_mt,&
+   CALL forward_joint(ACT,MT,TIP,A,g_mesh,g_line,g_surface,nline,nsr_inv,fs,fs_mt,&
       & omega,sparam,g_param,g_param_joint,h_cond,PT,PT_mt,ut,ut_mt,ip,np)!2020.12.30
    if (ip .eq. 0 .and. i .eq. 1 .and. .false.) then ! fs_mt01.dat
      open(1,file="fs_mt01.dat")
@@ -476,9 +481,9 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
        
      CALL genjacobian1_mt(TIP,nobs_mt,nline,ut_mt,fs_mt,PT_mt,h_model,g_mesh,&
                   &g_line,omega,g_mtdm(i_mt),g_tipdm(i_mt),g_param_joint,ip,np) !ut_mt(5) is used for tipper jacobian 2026.03.02
-     !write(*,'(a,i2)') " ### genjacobian1_mt en main ###  ip =",ip ! commented out 2025.07.31
+     write(*,'(a,i2)') " ### genjacobian1_mt end main ###  ip =",ip ! commented out 2025.07.31
   end if!                                            |###
-  !write(*,'(a,i2)') " ### genjacobian1 and *_mt end!! ### ip =",ip! 2025.07.31
+  write(*,'(a,i2)') " ### genjacobian1 and *_mt end!! ### ip =",ip! 2025.07.31
   end do ! nfreq_tot_ip loop end
 
 !# check jacobian ! false is added 2023.12.23
@@ -492,14 +497,17 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
   end if
 
 !============================================================= freq loop end
-  call setnec(ijoint,g_param_joint,ACT,MT,TIP) ! 2023.12.23
 
 !#[26]## GATHER ACTIVE and MT results to ip = 0
   if(ACT)CALL SENDRECVRESULT(resp5,tresp,ip,np,nfreq_act,nfreq_act_ip,g_freq_joint,nsr_inv) 
   if(ACT)CALL SENDBZAPRESULT_AP(g_apdm,gt_apdm,nobs_act,nfreq_act,nfreq_act_ip,g_freq_joint,nsr_inv,ip,np,g_param_joint)
+  write(*,*) "check1 ip =",ip
   if(MT) CALL SENDRECVIMP(imp_mt,timp_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)! 2022.01.02
+  write(*,*) "check2 ip =",ip
   if(MT) CALL SENDRESULTINV_MT(g_mtdm,gt_mtdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_joint,ip,np,g_param_joint) ! 2022.01.05
+  write(*,*) "check3 ip =",ip
   if(TIP) CALL SENDRECVTIP(tip_mt,ttip_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)!2023.12.25
+    write(*,*) "check4 ip =",ip
   if(TIP) CALL SENDRESULTINV_TIP(g_tipdm,gt_tipdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_joint,ip,np,g_param_joint)
   CALL MPI_BARRIER(mpi_comm_world, errno) ! 2017.09.03
 
@@ -619,7 +627,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
 
    !#[37]## obtain new model
     pre_model = h_model ! 2017.06.14 keep previous model
-    call getnewmodel_joint(TIP,JJ,JJ_mt,JJ_tip,g_model_ref,h_model,g_data,h_data,&
+    call getnewmodel_joint(JJ,JJ_mt,JJ_tip,g_model_ref,h_model,g_data,h_data,&
     &   g_data_mt,h_data_mt,BMI,CD,CD_mt,CD_tip,alpha,g_param_joint) ! 2026.03.03
 
     !#[38]## update nrms0, nrms_mt0, nrms_tip0

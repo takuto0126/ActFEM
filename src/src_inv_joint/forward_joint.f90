@@ -2,8 +2,11 @@
 !# Copied from ../src_inv/forward_inv.f90
 !# Coded on March 4, 2016
 !# copied originally from ../solver/forward_bxyz.f90
-subroutine forward_joint(ACT,MT,TIP,A,h_mesh,l_line,g_surface,nline,nsr,bs,bs_mt,omega,sparam,g_param,&
-                   &     g_param_joint,g_cond,PT,PT_mt,ut,ut_mt,ip,np) ! 2022.10.14
+module forward_joint_inv ! 2026.03.03
+contains                  ! 2026.03.03
+subroutine forward_joint(ACT,MT,TIP,A,h_mesh,l_line,g_surface,nline,nsr,&
+                   &   bs,bs_mt,omega,sparam,g_param,&
+                   &   g_param_joint,g_cond,PT,PT_mt,ut,ut_mt,ip,np) ! 2026.03.03
 use mesh_type
 use iccg_var_takuto
 use line_type
@@ -939,3 +942,4 @@ logical        ::  found
       enddo
       return
       end subroutine  sup_iccg
+end module forward_joint_inv ! 2026.03.03

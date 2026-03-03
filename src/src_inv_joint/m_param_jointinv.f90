@@ -208,17 +208,16 @@ end type ! 2021.12.27
 contains
 
 !#################################################### setnec 2022.10.14
-subroutine setnec(ijoint,g_param_joint,ACT,MT,TIP) ! 2023.12.23 TIPPER added
+subroutine setnec(g_param_joint,ACT,MT,TIP) ! 2023.12.23 TIPPER added
  implicit none
- integer(4),       intent(in)  :: ijoint
- type(param_joint),intent(in)  :: g_param_joint  ! 2023.12.23
+ type(param_joint),intent(in)  :: g_param_joint  ! 2026.03.03 ijoint should be already set
  logical,          intent(out) :: ACT, MT,TIP ! 2023.12.23
  ACT=.false.
  MT=.false.
  TIP=.false. ! 2023.12.23
- if ( ijoint == 1 ) ACT = .true.  ! only ACTIVE
- if ( ijoint == 2 ) MT  = .true.  ! only MT
- if ( ijoint == 3 ) then
+ if ( g_param_joint%ijoint == 1 ) ACT = .true.  ! only ACTIVE
+ if ( g_param_joint%ijoint == 2 ) MT  = .true.  ! only MT
+ if ( g_param_joint%ijoint == 3 ) then
    ACT = .true. ! ACTIVE and MT
    MT  = .true. 
    end if
@@ -228,7 +227,7 @@ subroutine setnec(ijoint,g_param_joint,ACT,MT,TIP) ! 2023.12.23 TIPPER added
  return
  end
 !#################################################### readparam
-subroutine readparaJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_param_mt,g_data_ap,g_data_mt) !2022.10.14
+subroutine readparaJOINTINV(g_param_joint,g_modelpara,g_param,sparam,g_param_mt,g_data_ap,g_data_mt) !2022.10.14
  !# 2017.08.31 modified for multisource inversion
  ! declaration
    use caltime      ! 2017.12.22
@@ -236,16 +235,16 @@ subroutine readparaJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_pa
    type(param_forward),    intent(in)  :: g_param
    type(param_forward_mt), intent(in)  :: g_param_mt     ! 2022.10.21
    type(param_source),     intent(in)  :: sparam         ! 2018.06.26
-   type(param_joint),      intent(out) :: g_param_joint  ! 2017.08.31
+   type(param_joint),      intent(inout) :: g_param_joint! 2026.03.03 only ijoint is already set before calling this subroutine, other parameters will be set in this subroutine
    type(modelpara),        intent(out) :: g_modelpara
    type(data_vec_ap),      intent(out) :: g_data_ap
    type(data_vec_mt),      intent(out) :: g_data_mt      ! 2021.12.27 include d_tipper on 2023.10.04
    character(50)                       :: a              ! 2017.06.06
-   integer(4),             intent(in)  :: ijoint  ! 1:ACTIVE, 2:MT, 3:ACTIVE + MT 2022.10.14
    integer(4)                          :: input=10, nobs_s,i,j,nsr_inv ! 2017.08.31
    integer(4)                          :: icomp          ! 2018.10.04
    integer(4)                          :: nobs_mt
    integer(4)                          :: ikeep          ! 2021.10.12
+   integer(4)                          :: ijoint  ! 1:ACTIVE, 2:MT, 3:ACTIVE + MT 2022.10.14
    character(100)              :: paramfile ! 2020.09.29
    integer(4),       parameter :: n = 1000  ! 2020.09.28
    character(200),dimension(n) :: lines     ! 2020.09.28
@@ -254,8 +253,7 @@ subroutine readparaJOINTINV(ijoint,g_param_joint,g_modelpara,g_param,sparam,g_pa
  call watchstart(t_watch) ! 2017.12.22
 
  !#[-1]## set ijoint 
-   g_param_joint%ijoint = ijoint ! 1;ACTIVE, 2:MT, 3:Joint
-
+  ijoint = g_param_joint%ijoint ! 2026.03.03  1;ACTIVE, 2:MT, 3:Joint already set before  2026.03.03
  !#[0]## read ACTIVE inversion parameter file 2020.09.29
    write(*,*) "" ! 2020.09.29
    write(*,*) "<Please input the inversion parameter file>" ! 2020.09.29

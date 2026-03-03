@@ -1186,14 +1186,13 @@ end
 !#  M_ite+1 = M_ref + Cm*JT*beta
 !# 
 !#
-subroutine getnewmodel_joint(TIP,JJ_ac,JJ_mt,JJ_tip,g_model_ref,h_model,g_data,h_data,&
+subroutine getnewmodel_joint(JJ_ac,JJ_mt,JJ_tip,g_model_ref,h_model,g_data,h_data,&
   &        g_data_mt,h_data_mt,CM,CD_ac,CD_mt,CD_tip,alpha,g_param_joint) !TIP,JJ_tip,CD_tip are added for tipper 2026.03.03
   use modelpart
   use matrix
   use param_jointinv ! 2017.06.09
   use caltime ! 2017.12.22
   implicit none
-  logical,              intent(in)     :: TIP         ! 2026.03.03
   type(param_joint),    intent(in)    :: g_param_joint
   real(8),              intent(in)    :: alpha
   type(real_crs_matrix),intent(in)    :: JJ_ac       ! [ndat,nmodel]          2022.01.05
@@ -1225,7 +1224,7 @@ subroutine getnewmodel_joint(TIP,JJ_ac,JJ_mt,JJ_tip,g_model_ref,h_model,g_data,h
   integer(4)                          :: icheck = 1
   type(model)                         :: ki,kiref
   type(model)                         :: m0,m_ref
-  logical                             :: MT, ACT,TIPPER ! 2023.12.23
+  logical                             :: MT, ACT,TIP ! 2023.12.23
   type(watch) :: t_watch ! 2017.12.22
   type(watch) :: t_watch1 ! 2018.01.23
   
@@ -1234,8 +1233,8 @@ subroutine getnewmodel_joint(TIP,JJ_ac,JJ_mt,JJ_tip,g_model_ref,h_model,g_data,h
   
   !#[0]## set
     call watchstart(t_watch1)
-    ijoint       = g_param_joint%ijoint     ! 2022.10.14 1:ACTIVE,2:MT,3:Joint
-    call setnec(ijoint,g_param_joint,ACT,MT,TIPPER) ! 2023.12.23 see m_param_joint.f90
+    ijoint = g_param_joint%ijoint ! 2026.03.03
+    call setnec(g_param_joint,ACT,MT,TIP) ! set ACT,MT,TIP 2026.03.03
     ioutlevel    = g_param_joint%ioutlevel  ! 2022.10.14
     ndat_ac      = g_data%ndat              !            2022.01.05
     ndat_mt      = g_data_mt%ndat_mt        !            2022.01.05

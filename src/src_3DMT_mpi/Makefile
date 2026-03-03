@@ -1,7 +1,7 @@
 # Coded on Oct. 12, 2021 Takuto Minami
 
 FC=mpiifort
-FC=mpiifx
+#FC=mpiifx
 #OPT=-i-dynamic
 VPATH = ../common ../common_mpi/ ../solver  ../src_2D/ ../src_3DMT/
 OPT0= -O3 -xAVX -mkl=parallel

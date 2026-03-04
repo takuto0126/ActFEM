@@ -211,17 +211,17 @@ contains
 subroutine setnec(g_param_joint,ACT,MT,TIP) ! 2023.12.23 TIPPER added
  implicit none
  type(param_joint),intent(in)  :: g_param_joint  ! 2026.03.03 ijoint should be already set
- logical,          intent(out) :: ACT, MT,TIP ! 2023.12.23
+ logical,          intent(out) :: ACT, MT
+ logical,optional, intent(out) :: TIP ! 2026.03.03 only when TIP is required
  ACT=.false.
  MT=.false.
- TIP=.false. ! 2023.12.23
  if ( g_param_joint%ijoint == 1 ) ACT = .true.  ! only ACTIVE
  if ( g_param_joint%ijoint == 2 ) MT  = .true.  ! only MT
  if ( g_param_joint%ijoint == 3 ) then
    ACT = .true. ! ACTIVE and MT
    MT  = .true. 
    end if
- if (MT .and. g_param_joint%iflag_tipper == 1) then ! 2023.12.23
+ if (MT .and. g_param_joint%iflag_tipper == 1 .and. present(TIP) ) then ! 2026.03.03 if TIP is required when MT is used
    TIP =.true. ! 2023.12.23
    end if         ! 2023.12.23
  return

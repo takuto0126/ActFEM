@@ -54,7 +54,7 @@ program inversion_joint
  type(global_matrix)    :: A            ! see m_iccg_var_takuto.f90
  type(real_crs_matrix)  :: coeffobs(2,3)! see m_matrix.f90 ; 1 for edge, 2 for face
  integer(4)                                  :: ijoint ! 1:ACTIVE, 2: MT, 3: Joint 2022.10.14
- logical                                     :: MT, ACT ! 1: if ACTIVE, 2:if MT necessary 2022.10.14
+ logical                                     :: MT=.false., ACT=.false., TIP=.false. ! 2026.03.03
  integer(4)                                  :: ite,i,j,k,errno,node
  integer(4)                                  :: nline, ntet, nobs_act, ndat ! 2017.08.31
  integer(4)                                  :: ndat_mt                 ! 2022.01.04
@@ -117,7 +117,6 @@ program inversion_joint
   type(real_crs_matrix)                       :: CD_tip      ! 2023.12.21 
   type(resptip), allocatable,dimension(:)     :: tip_mt      ! 2023.12.23 MT imp
   type(resptip), allocatable,dimension(:)     :: ttip_mt     ! 2023.12.23 ../common/m_outresp.f90
-  logical                                     :: TIP         ! 2023.12.23
   real(8)        :: nrms_tip,nrms_tip_ini,nrms_tip0  ! 2024.08.30
   real(8)        :: misfit_tip ! 2023.12.25
 !## Declaration for global integers ==================================================
@@ -185,13 +184,13 @@ if ( ip .eq. 0) then !################################################# ip = 0
   call declareinversiontype(ijoint,ierr) ! 2022.10.14
   g_param_joint%ijoint = ijoint ! 2026.03.03
   if ( ierr .ne. 0 ) goto 998
-  call setnec(g_param_joint,ACT,MT,TIP) ! set ACT, MT, see m_param_joint.f90 2023.12.23
+  call setnec(g_param_joint,ACT,MT) ! set ACT, MT (m_param_joint.f90) TIP is not set here 2026.03.03
 !#[0]## read parameters, g_param, g_param_mt, g_param_joint,s_param, gen g_data,g_data_mt
   if(ACT) CALL READPARAM(g_param,sparam,g_cond) ! include READCOND for initial model 2022.10.14
   if(MT ) CALL READPARAM_MT(g_param_mt,i_cond) ! read MT param 2022.10.14 (i_cond is not used)
-  write(*,*) "ACT, MT, TIP", ACT, MT, TIP ! 2026.03.03
   CALL READPARAJOINTINV(g_param_joint,g_modelpara,g_param,sparam,g_param_mt,g_data,g_data_mt) 
   call setnec(g_param_joint,ACT,MT,TIP) ! TIP is also set, see m_param_joint.f90 2026.03.03
+  write(*,*) "ACT, MT, TIP", ACT, MT, TIP ! 2026.03.03
   g_param_joint%nobs_mt  = g_param_mt%nobs  ! 2022.01.04
   g_param_joint%nfreq_mt = g_param_mt%nfreq ! 2022.01.04
   !stop ok! 2026.03.02
@@ -272,7 +271,7 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
 !#[8]## share params, mesh, and line (see m_shareformpi.f90)
   CALL sharejointinv(g_param,sparam,h_cond,g_mesh,g_line,g_param_joint,g_model_ini,ip) ! 2018.10.04
   write(*,*) "g_param_joint%ijoint",g_param_joint%ijoint,"ip",ip ! 2022.10.14
-  CALL setnec(g_param_joint,ACT,MT,TIP) ! 2026.03.03 set ACT, MT, TIP for all ips, see m_param_joint.f90
+  CALL setnec(g_param_joint,ACT,MT,TIP) ! set ACT, MT, TIP after g_param_joint is shared, see m_param_jointinv.f90 2026.03.03
   write(*,*)"ACT,MT,TIP",ACT,MT,TIP,"ip",ip    ! 2026.03.03
   if (MT) CALL sharemt(g_param_mt,g_surface,ip) ! 2025.10.14
 
@@ -287,7 +286,6 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
   CALL PREPAREPT_JOINT(coeffobs,coeffobs_mt,g_param_joint,PT,PT_mt)! 2018.10.04 see below
 
 !#[11]## Preparation for global stiff matrix
-  CALL setnec(g_param_joint,ACT,MT,TIP)
   if (ip == 0) write(*,'(a)') "  ip  |  ACT   MT" ! 2022.12.05
   CALL MPI_BARRIER(mpi_comm_world, errno)       ! 2022.12.05
   write(*,'(i4,1x,2l6)') ip,ACT,MT                          ! 2022.12.05
@@ -499,8 +497,10 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
 !============================================================= freq loop end
 
 !#[26]## GATHER ACTIVE and MT results to ip = 0
+  call setnec(g_param_joint,ACT,MT,TIP) ! set ACT, MT, TIP before sending results
   if(ACT)CALL SENDRECVRESULT(resp5,tresp,ip,np,nfreq_act,nfreq_act_ip,g_freq_joint,nsr_inv) 
   if(ACT)CALL SENDBZAPRESULT_AP(g_apdm,gt_apdm,nobs_act,nfreq_act,nfreq_act_ip,g_freq_joint,nsr_inv,ip,np,g_param_joint)
+  call MPI_BARRIER(mpi_comm_world, errno) ! 2026.03.04 for debug
   write(*,*) "check1 ip =",ip
   if(MT) CALL SENDRECVIMP(imp_mt,timp_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)! 2022.01.02
   write(*,*) "check2 ip =",ip
@@ -1659,6 +1659,7 @@ subroutine SENDRECVIMP(imp_mt,timp_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)
      if ( ip .eq. ip_from ) then
        timp_mt(i) = imp_mt(ifreq) ! 20200807
      end if
+     write(*,*) "ip",ip,"ip_from",ip_from,"i",i,"ifreq",ifreq ! 2022.10.20
      call shareimpdata(timp_mt(i),ip_from) ! see m_shareformpi_ap 2022.01.02
    end do
    if ( ip .eq. 0 ) write(*,*) "### SENDRECVIMP END!! ###" ! 2022.01.02

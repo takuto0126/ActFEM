@@ -914,9 +914,9 @@ subroutine genjacobian2_MT(TIP,g_param_joint,nfreq_mt,g_mtdm,g_tipdm,JJ_mt,JJ_ti
 
   !#[1]## count ntotr; total number of elements in JJ
    ntotr = 0; ntot_tip=0 ! 2026.03.03
-   do i = 1,nfreq_mt
-     do j = 1,nobs_mt    ! 2017.09.04
-       do icomp=1,4    ! zxx,zxy,zyx,zyy
+   do i = 1,nfreq_mt ! frequency loop
+     do j = 1,nobs_mt  ! 2017.09.04
+       do icomp=1,4     ! zxx,zxy,zyx,zyy
            if ( data_avail_mt(1,icomp,j,i) ) then    ! 2018.10.05
              ntotr = ntotr + 2*(dz(icomp,i)%stack(j) - dz(icomp,i)%stack(j-1)) ! 2 for real and imag
            end if
@@ -924,7 +924,7 @@ subroutine genjacobian2_MT(TIP,g_param_joint,nfreq_mt,g_mtdm,g_tipdm,JJ_mt,JJ_ti
         if (TIP) then ! 2026.03.03
          do icomp=1,2    ! tipper components, tx, ty
            if ( data_avail_tipper(1,icomp,j,i) ) then    ! 2026.03.03
-             ntot_tip = ntot_tip + 2*(data_avail_tipper(1,icomp,j,i)) ! 2026.03.03
+             ntot_tip = ntot_tip + 2*(dz_tipper(icomp,i)%stack(j) - dz_tipper(icomp,i)%stack(j-1)) ! 2026.03.04
            end if
          end do
         end if
@@ -1210,7 +1210,7 @@ subroutine getnewmodel_joint(JJ_ac,JJ_mt,JJ_tip,g_model_ref,h_model,g_data,h_dat
   type(real_crs_matrix),intent(in)    :: CD_tip      ! data covariance matrix 2026.03.03
   type(real_crs_matrix)               :: C,JCMJT,ACD,crsout      ! 2018.01.23
   type(real_crs_matrix)               :: CMJT, JT    ! 2018.01.23
-  type(real_crs_matrix)               :: JJ,CD       !                        2022.01.05
+  type(real_crs_matrix)               :: JJ,CD, JJ_tmp !  JJ_tmp is added for tipper 2026.03.03
   real(8),allocatable,dimension(:)    :: X, dobs, dcal,JM,beta   ! [ndat]
   real(8),allocatable,dimension(:)    :: dobs_mt, dcal_mt        ! [ndat_mt]  2022.01.05
   real(8),allocatable,dimension(:)    :: dobs_ac, dcal_ac        ! [ndat_ac]  2022.01.05
@@ -1277,8 +1277,11 @@ subroutine getnewmodel_joint(JJ_ac,JJ_mt,JJ_tip,g_model_ref,h_model,g_data,h_dat
     if (ijoint == 1 ) JJ = JJ_ac ! 2022.10.14
     if (ijoint == 2 ) JJ = JJ_mt ! 2022.10.14
     if (ijoint == 3 ) call  vertical_combine_real_crs(JJ_ac,JJ_mt,JJ) ! Joint       2022.10.14
-    if (TIP) call  vertical_combine_real_crs(JJ,JJ_tip,JJ)  ! Tipper      2026.03.03
-
+    if (TIP) then
+      JJ_tmp = JJ
+      call deallocate_real_crsmat(JJ) ! 2026.03.03
+      call  vertical_combine_real_crs(JJ_tmp,JJ_tip,JJ)  ! Tipper      2026.03.03
+    end if
     write(*,*) "combine JJ end"
     if (ioutlevel == 1 .and. .false.) then ! 2022.10.14
      open(1,file="JJ.dat")
@@ -1306,26 +1309,27 @@ subroutine getnewmodel_joint(JJ_ac,JJ_mt,JJ_tip,g_model_ref,h_model,g_data,h_dat
       write(*,*) "combine CD end"
 
   !#[2]## combine data vector
-    ndat = ndat_ac + ndat_mt
-    if (TIP) ndat = ndat + ndat_tipper ! 2026.03.03
+    ndat = ndat_ac + ndat_mt + ndat_tipper ! 2026.03.03
+    write(*,*) "ndat_ac",ndat_ac         ! 2026.03.05
+    write(*,*) "ndat_mt",ndat_mt         ! 2026.03.05
+    write(*,*) "ndat_tipper",ndat_tipper ! 2026.03.05
+    write(*,*) "total ndat",ndat         ! 2026.03.05
     allocate( dobs(ndat),dcal(ndat))         !           2022.01.05
     allocate( X(ndat),JM(ndat) )             !           2022.01.05
-    if ( ijoint == 1) then
-     dobs = dobs_ac
-     dcal = dcal_ac
-    else if (ijoint == 2) then
-     dobs = dobs_mt
-     dcal = dcal_mt
-    else if (ijoint == 3) then
-    dobs(        1:ndat_ac) = dobs_ac        !           2022.01.05
-    dobs(ndat_ac+1:ndat   ) = dobs_mt        !           2022.01.05
-    dcal(        1:ndat_ac) = dcal_ac        !           2022.01.05
-    dcal(ndat_ac+1:ndat   ) = dcal_mt        !           2022.01.05
+    if ( ACT ) then ! 2026.03.05
+     dobs(1:ndat_ac) = dobs_ac               ! 2026.03.05
+     dcal(1:ndat_ac) = dcal_ac               ! 2026.03.05
+     write(*,*) "combine ACT data vector end" ! 2026.03.05
     end if
-    if (TIP) then ! 2026.03.03
-     dobs(ndat_ac+ndat_mt+1:ndat) = dobs_tipper ! 2026.03.03
-     dcal(ndat_ac+ndat_mt+1:ndat) = dcal_tipper ! 2026.03.03
-     write(*,*) "combine data vector for tipper end" ! 2026.03.03
+    if ( MT ) then
+     dobs(ndat_ac+1:ndat_ac+ndat_mt) = dobs_mt  ! 2026.03.05
+     dcal(ndat_ac+1:ndat_ac+ndat_mt) = dcal_mt  ! 2026.03.05
+     write(*,*) "combine MT data vector end"    ! 2026.03.05
+    end if
+    if (MT .and. TIP) then
+     dobs(ndat_ac + ndat_mt+1 : ndat) = dobs_tipper ! 2026.03.03
+     dcal(ndat_ac + ndat_mt+1 : ndat) = dcal_tipper ! 2026.03.03
+     write(*,*) "combine data vector for tipper end" ! 2026.03.05
     end if
     write(*,*) "combine data vector end"
     

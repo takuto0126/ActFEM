@@ -462,7 +462,7 @@ subroutine genjacobian1_mt(TIP,nobs_mt,nline,ut_mt,bs_mt,PT_mt,g_model,h_mesh,&
    type(complex_crs_matrix)                :: dzyy  ! 2017.09.03 (->g_mtdm)
    type(complex_crs_matrix)                :: dtx   ! 2024.08.30
    type(complex_crs_matrix)                :: dty   ! 2024.08.30
-   complex(8),    dimension(nobs_mt,2)       :: be               ! 2022.01.05
+   complex(8),    dimension(nobs_mt,2)     :: be               ! 2022.01.05
    integer(4)                              :: nmodel,nphys2
    integer(4)                              :: imodel,i,j,k,l,m,n,ii,jj,kk!2018.06.21
    integer(4)                              :: iele,idirection(6),n6line(6)
@@ -519,12 +519,12 @@ subroutine genjacobian1_mt(TIP,nobs_mt,nline,ut_mt,bs_mt,PT_mt,g_model,h_mesh,&
    allocate(utfull(nline,nobs_mt))        ! 2018.10.05
    allocate( AAL(6,nsr_mt) )
    allocate( dbeobs(nobs_mt,2)            ) ! 2018.10.05
-   if (TIP) allocate( dtxdm(nobs_mt,nmodelactive) )  ! 2026.03.02
-   if (TIP) allocate( dtydm(nobs_mt,nmodelactive) )  ! 2026.03.02
    allocate( dzxxdm(nobs_mt,nmodelactive) ) ! 2018.06.22
    allocate( dzxydm(nobs_mt,nmodelactive) ) ! 2018.06.22
    allocate( dzyxdm(nobs_mt,nmodelactive) ) ! 2018.06.22
    allocate( dzyydm(nobs_mt,nmodelactive) ) ! 2018.06.22
+   if (TIP) allocate( dtxdm(nobs_mt,nmodelactive) )  ! 2026.03.02
+   if (TIP) allocate( dtydm(nobs_mt,nmodelactive) )  ! 2026.03.02
 
  !#[1]## cal bx,by,ex,ey
  ncomp = 4 ! bx,by,ex,ey       2023.12.26
@@ -1300,13 +1300,11 @@ subroutine getnewmodel_joint(JJ_ac,JJ_mt,JJ_tip,g_model_ref,h_model,g_data,h_dat
     do i=1,ndat
       CD%stack(i)= i
       CD%item(i) = i
-      if ( i .le. ndat_ac)      CD%val(i) = CD_ac%val(i)
-      if ( i .gt. ndat_ac .and. i .le. ndat_ac + ndat_mt) CD%val(i) = CD_mt%val(i-ndat_ac) ! 2026.03.03
-      if (TIP) then ! 2026.03.03
-       if ( i .gt. ndat_ac + ndat_mt) CD%val(i) = CD_tip%val(i-ndat_ac-ndat_mt)
-      end if
     end do
-      write(*,*) "combine CD end"
+    if (ACT) CD%val(1:ndat_ac)                  = CD_ac%val(1:ndat_ac)      ! 2026.03.03
+    if (MT)  CD%val(ndat_ac+1:ndat_ac+ndat_mt)  = CD_mt%val(1:ndat_mt)      ! 2026.03.03
+    if (TIP) CD%val(ndat_ac + ndat_mt+1 : ndat) = CD_tip%val(1:ndat_tipper) ! 2026.03.03
+    write(*,*) "combine CD end"
 
   !#[2]## combine data vector
     ndat = ndat_ac + ndat_mt + ndat_tipper ! 2026.03.03

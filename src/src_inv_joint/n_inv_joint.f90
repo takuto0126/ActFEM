@@ -76,7 +76,6 @@ program inversion_joint
  type(real_crs_matrix)                       :: JJ           ! Jacobian matrix, 2017.05.17
  real(8)                                     :: rough1,rough2! 2017.12.13
  integer(4)                                  :: ialpha       ! 2017.07.19
- real(8)                                     :: nrms_init    ! 2017.07.19
  character(50)                               :: head         ! 2017.07.25
  character(1)                                :: num2         ! 2017.09.11
  type(watch)                                 :: t_watch,t_watch1 ! 2025.09.18
@@ -104,7 +103,6 @@ program inversion_joint
   real(8)      :: misfit_mt       ! 2022.01.04
   real(8)      :: misfit_tipper   ! 2023.12.22
   real(8)      :: nrms_mt_ini     ! 2018.06.25
-  real(8)      :: nrms_tipper_ini ! 2023.12.22
   type(mt_dm),   allocatable,dimension(:)     :: g_mtdm  ! 2022.01.05 see m_jacobian_joint.f90
   type(mt_dm),   allocatable,dimension(:)     :: gt_mtdm ! 2022.01.05
   type(tip_dm),  allocatable,dimension(:)     :: g_tipdm ! 2023.12.22 see m_jacobian_joint.f90
@@ -1942,9 +1940,9 @@ subroutine CALRMS_TIP(g_data_mt,h_data_mt,Cd_tip,misfit_tip,nrms_tip)!2023.12.25
   ndat_tip2 = Cd_tip%ntot
   if (ndat_tip .ne. ndat_tip1 .or. ndat_tip .ne. ndat_tip2 ) goto 99
   allocate(dvec_tip1(ndat_tip),dvec_tip2(ndat_tip),dvec_tip(ndat_tip))
-  dvec_tip1 = g_data_mt%dvec_tipper
-  dvec_tip2 = h_data_mt%dvec_tipper
-  dvec_tip  = dvec_tip2 - dvec_tip1
+  dvec_tip1 = g_data_mt%dvec_tipper  ! observation
+  dvec_tip2 = h_data_mt%dvec_tipper  ! calculation
+  dvec_tip  = dvec_tip2 - dvec_tip1  ! residual
   
   !# check
   if (.false.) then

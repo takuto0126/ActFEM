@@ -47,7 +47,7 @@ iflag_replace 0,1  |0
 ## initial version support only impedance data 2021.12.13
 imp: 0, 1:amp,pha  !0
 unit:1Ohm,2mV/km/nT!2
-MT errfloor SSQ*   !0.01
+MT errfloor SSQ*   !0.1
 # of observatories |5
 MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat
 MT2 impedance      !   2 ../fwd_3DMT/result/MT2_MT_imp.dat

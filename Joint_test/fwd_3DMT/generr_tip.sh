@@ -19,7 +19,7 @@ in file4 ***.dat   |MT4_TIP.dat
 errfile4           |MT4_TIP_err.dat
 in file4 ***.dat   |MT5_TIP.dat
 errfile4           |MT5_TIP_err.dat
-ratio              !0.01
+ratio              !0.005
 EOF
 
 ./generr_tip.exe < err_tip.ctl

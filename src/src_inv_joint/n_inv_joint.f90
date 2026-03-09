@@ -1904,9 +1904,13 @@ subroutine CALRMS_MT(g_data_mt,h_data_mt,Cd_mt,misfit_mt,nrms_mt)
   do i=1,ndat_mt
    misfit_mt = misfit_mt + dvec_mt(i)**2.d0 / Cd_mt%val(i) ! dvec(i)**2/err(i)**2
   end do
-  nrms_mt = sqrt(misfit_mt/dble(ndat_mt)) ! 2017.12.22
-  misfit_mt = 0.5d0 * misfit_mt ! 2017.12.22
-  
+  if (ndat_mt .eq. 0) then !2026.03.09
+   nrms_mt = 0.d0
+  else                     !2026.03.09
+   nrms_mt = sqrt(misfit_mt/dble(ndat_mt)) ! 2017.12.22
+   misfit_mt = 0.5d0 * misfit_mt ! 2017.12.22
+  end if                   ! 2026.03.09
+
   write(*,'(a,g15.7)') "            RMS_MT =",misfit_mt ! 2020.09.18
   write(*,'(a,g15.7)') " Normarized RMS_MT =",nrms_mt   ! 2020.09.18
   call watchstop(t_watch) ! 2017.12.22

@@ -6,3 +6,4 @@ tmp.ctl
 *.ps
 pullresult*.sh
 !result_inv/.gitkeep
+!result_inv_only_tip/.gitkeep

@@ -483,8 +483,8 @@ subroutine readparaJOINTINV(g_param_joint,g_modelpara,g_param,sparam,g_param_mt,
 
    !##[mt_imp_ap_flag]
    write(*,*) "" ! 2021.12.27
-   write(*,*) "< input mt_imp_ap_flag for mt data [0:imp, 1:amp, phase] >" ! 2021.12.27
-   read(input,12) g_param_joint%mt_imp_ap_flag ! error floor
+   write(*,*) "< input mt_imp_ap_flag for mt data [-1:no imp data,0:imp, 1:amp, phase] >" ! 2026.03.03
+   read(input,12) g_param_joint%mt_imp_ap_flag ! 
    write(*,'(a,i10)') " mt_imp_ap_flag      =",g_param_joint%mt_imp_ap_flag ! 2021.12.22
    write(*,*) "" !2025.07.31 
 

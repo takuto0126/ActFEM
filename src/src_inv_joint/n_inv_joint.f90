@@ -268,9 +268,9 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
 
 !#[8]## share params, mesh, and line (see m_shareformpi.f90)
   CALL sharejointinv(g_param,sparam,h_cond,g_mesh,g_line,g_param_joint,g_model_ini,ip) ! 2018.10.04
-  write(*,*) "g_param_joint%ijoint",g_param_joint%ijoint,"ip",ip ! 2022.10.14
+  !write(*,*) "g_param_joint%ijoint",g_param_joint%ijoint,"ip",ip ! commented out 2026.03.11
   CALL setnec(g_param_joint,ACT,MT,TIP) ! set ACT, MT, TIP after g_param_joint is shared, see m_param_jointinv.f90 2026.03.03
-  write(*,*)"ACT,MT,TIP",ACT,MT,TIP,"ip",ip    ! 2026.03.03
+  write(*,'(a,3l2,1x,a,i2.2)')"ACT,MT,TIP",ACT,MT,TIP,"ip=",ip    ! 2026.03.11
   if (MT) CALL sharemt(g_param_mt,g_surface,ip) ! 2025.10.14
 
 !#[8.5]## link globalmodel2surface
@@ -477,9 +477,9 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
        
      CALL genjacobian1_mt(TIP,nobs_mt,nline,ut_mt,fs_mt,PT_mt,h_model,g_mesh,&
                   &g_line,omega,g_mtdm(i_mt),g_tipdm(i_mt),g_param_joint,ip,np) !ut_mt(5) is used for tipper jacobian 2026.03.02
-     write(*,'(a,i2)') " ### genjacobian1_mt end main ###  ip =",ip ! commented out 2025.07.31
+     !write(*,'(a,i2)') " ### genjacobian1_mt end main ###  ip =",ip ! commented out 2025.07.31
   end if!                                            |###
-  write(*,'(a,i2)') " ### genjacobian1 and *_mt end!! ### ip =",ip! 2025.07.31
+  !write(*,'(a,i2)') " ### genjacobian1 and *_mt end!! ### ip =",ip! 2025.07.31
   end do ! nfreq_tot_ip loop end
 
 !# check jacobian ! false is added 2023.12.23
@@ -496,16 +496,12 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
 
 !#[26]## GATHER ACTIVE and MT results to ip = 0
   call setnec(g_param_joint,ACT,MT,TIP) ! set ACT, MT, TIP before sending results
-  if(ACT)CALL SENDRECVRESULT(resp5,tresp,ip,np,nfreq_act,nfreq_act_ip,g_freq_joint,nsr_inv) 
-  if(ACT)CALL SENDBZAPRESULT_AP(g_apdm,gt_apdm,nobs_act,nfreq_act,nfreq_act_ip,g_freq_joint,nsr_inv,ip,np,g_param_joint)
-  call MPI_BARRIER(mpi_comm_world, errno) ! 2026.03.04 for debug
-  write(*,*) "check1 ip =",ip
-  if(MT) CALL SENDRECVIMP(imp_mt,timp_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)! 2022.01.02
-  write(*,*) "check2 ip =",ip
-  if(MT) CALL SENDRESULTINV_MT(g_mtdm,gt_mtdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_joint,ip,np,g_param_joint) ! 2022.01.05
-  write(*,*) "check3 ip =",ip
+  if(ACT) CALL SENDRECVRESULT(resp5,tresp,ip,np,nfreq_act,nfreq_act_ip,g_freq_joint,nsr_inv) 
+  if(ACT) CALL SENDBZAPRESULT_AP(g_apdm,gt_apdm,nobs_act,nfreq_act,nfreq_act_ip,g_freq_joint,nsr_inv,ip,np,g_param_joint)
+  !call MPI_BARRIER(mpi_comm_world, errno) ! 2026.03.04 for debug
+  if(MT)  CALL SENDRECVIMP(imp_mt,timp_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)! 2022.01.02
+  if(MT)  CALL SENDRESULTINV_MT(g_mtdm,gt_mtdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_joint,ip,np,g_param_joint) ! 2022.01.05
   if(TIP) CALL SENDRECVTIP(tip_mt,ttip_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)!2023.12.25
-    write(*,*) "check4 ip =",ip
   if(TIP) CALL SENDRESULTINV_TIP(g_tipdm,gt_tipdm,nobs_mt,nfreq_mt,nfreq_mt_ip,g_freq_joint,ip,np,g_param_joint)
   CALL MPI_BARRIER(mpi_comm_world, errno) ! 2017.09.03
 
@@ -838,7 +834,6 @@ subroutine calrespmt(resp5,resp_mt,omega,ip) ! 2022.12.05
   !  Z = [E][B]^-1
   
   !# set bxyzexy_ex and bxyzexy_ey
-  write(*,*) "nobs",nobs,"ip",ip
   do i=1,5
    !    write(*,*) "allocated(resp5(i,1)%ftobs)",allocated(resp5(i,1)%ftobs)
    !    write(*,*) "allocated(resp5(i,2)%ftobs)",allocated(resp5(i,2)%ftobs)
@@ -850,7 +845,6 @@ subroutine calrespmt(resp5,resp_mt,omega,ip) ! 2022.12.05
    end do
   end do
   
-  write(*,*)
   !# calculate impedance
   do j=1,nobs
    a = be5_ex(1,j) ! Bx_ex
@@ -1414,12 +1408,16 @@ subroutine OUTOBSFILESINV_TIP(g_param,g_param_joint,resp_tip,nfreq,ite,ialpha)
       head  = head(1:nhead)//"a"//num2(1:1)//"/"! 2017.09.11
       nhead = len_trim(head)                    ! 2017.09.11
    end if
-  
+
+   write(num,'(i2.2)')  ite                    ! 2026.03.11
+   write(*,*) "nfreq",  nfreq
+   write(*,*) "nobs",   nobs
+
  !#[2]## output impedance and rho and phi to obs files
    do l=1,nobs
      site  = g_param%obsname(l)
      nsite = len_trim(site)
-     filename1 = head(1:nhead)//site(1:nsite)//"_TIP"//num//".dat"     ! 2022.01.02
+     filename1 = head(1:nhead)//site(1:nsite)//"_tip"//num//".dat"     ! 2022.01.02
      open(31,file=filename1)
 
      do i=1,nfreq
@@ -1657,7 +1655,7 @@ subroutine SENDRECVIMP(imp_mt,timp_mt,ip,np,nfreq_mt,nfreq_mt_ip,g_freq_joint)
      if ( ip .eq. ip_from ) then
        timp_mt(i) = imp_mt(ifreq) ! 20200807
      end if
-     write(*,*) "ip",ip,"ip_from",ip_from,"i",i,"ifreq",ifreq ! 2022.10.20
+     !write(*,*) "ip",ip,"ip_from",ip_from,"i",i,"ifreq",ifreq ! 2022.10.20
      call shareimpdata(timp_mt(i),ip_from) ! see m_shareformpi_ap 2022.01.02
    end do
    if ( ip .eq. 0 ) write(*,*) "### SENDRECVIMP END!! ###" ! 2022.01.02

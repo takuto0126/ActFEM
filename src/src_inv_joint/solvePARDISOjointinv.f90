@@ -242,7 +242,7 @@ real(8)                 :: threshold = 1.d-10
 
 !#[4-2]## MT: 1 to 4 component solving for MT jacobian
  if (MT) then ! 2022.10.14 
-   if ( ip .eq. 0) then
+   if ( ip .eq. 0 .and. .false. ) then ! for debug 2026.03.11
      open(1,file="PTR_mt_bx.dat")
        call realcrsout(PTR_mt(1),1)
      close(1)

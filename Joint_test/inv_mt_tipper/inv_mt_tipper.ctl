@@ -47,22 +47,22 @@ iflag_replace 0,1  |0
 ## initial version support only impedance data 2021.12.13
 ## imp_ap_flag=-1 : no imp/ap data, 0: imp data, 1: amp, phase data
 imp: 0, 1:amp,pha  !0
-##unit:1Ohm,2mV/km/nT!2
-##MT errfloor SSQ*   !0.1
+unit:1Ohm,2mV/km/nT!2
+MT errfloor SSQ*   !0.1
 # of observatories |5
-## MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat
-## MT2 impedance      !   2 ../fwd_3DMT/result/MT2_MT_imp.dat
-## MT3 impedance      !   3 ../fwd_3DMT/result/MT3_MT_imp.dat
-## MT4 impedance      !   4 ../fwd_3DMT/result/MT4_MT_imp.dat
-## MT5 impedance      !   5 ../fwd_3DMT/result/MT5_MT_imp.dat
-## MT1 impedance err  !   1 ../fwd_3DMT/mt_err/MT1_MT_imp_err.dat
-## MT2 impedance err  !   2 ../fwd_3DMT/mt_err/MT2_MT_imp_err.dat
-## MT3 impedance err  !   3 ../fwd_3DMT/mt_err/MT3_MT_imp_err.dat
-## MT4 impedance err  !   4 ../fwd_3DMT/mt_err/MT4_MT_imp_err.dat
-## MT5 impedance err  !   5 ../fwd_3DMT/mt_err/MT5_MT_imp_err.dat
+MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat
+MT2 impedance      !   2 ../fwd_3DMT/result/MT2_MT_imp.dat
+MT3 impedance      !   3 ../fwd_3DMT/result/MT3_MT_imp.dat
+MT4 impedance      !   4 ../fwd_3DMT/result/MT4_MT_imp.dat
+MT5 impedance      !   5 ../fwd_3DMT/result/MT5_MT_imp.dat
+MT1 impedance err  !   1 ../fwd_3DMT/mt_err/MT1_MT_imp_err.dat
+MT2 impedance err  !   2 ../fwd_3DMT/mt_err/MT2_MT_imp_err.dat
+MT3 impedance err  !   3 ../fwd_3DMT/mt_err/MT3_MT_imp_err.dat
+MT4 impedance err  !   4 ../fwd_3DMT/mt_err/MT4_MT_imp_err.dat
+MT5 impedance err  !   5 ../fwd_3DMT/mt_err/MT5_MT_imp_err.dat
 ########################################################################
 iflag_tipper       !1
-errorfloor         !0.01
+errorfloor         !0.005
 MT1 tipper         !   1 ../fwd_3DMT/mt_err/MT1_TIP_err.dat
 MT2 tipper         !   2 ../fwd_3DMT/mt_err/MT2_TIP_err.dat
 MT3 tipper         !   3 ../fwd_3DMT/mt_err/MT3_TIP_err.dat

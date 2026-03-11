@@ -529,15 +529,15 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
     !#[1]## output misfit and nrms
     frms = g_param_joint%finalrms  ! 2018.06.25
     if ( frms .lt. 0.1  ) frms=1.0 ! 2018.06.25
-    if ( nrms < frms .and. nrms_mt < frms ) then  ! 2024.08.30
-     if (ACT) call OUTRMS(21,ite,nrms,misfit,        alpha,rough1,rough2,1) !Converged  2017.09.08
-     if (MT)  call OUTRMS(22,ite,nrms_mt,misfit_mt,  alpha,rough1,rough2,1) !converged  2017.09.08
-     if (TIP) call OUTRMS(23,ite,nrms_tip,misfit_tip,alpha,rough1,rough2,1)!2023.12.25
+    if ( nrms < frms .and. nrms_mt < frms .and. nrms_tip < frms ) then  ! 2026.03.11 nrms_tip is added 
+     if (ACT) call OUTRMS(    21,ite,nrms,misfit,        alpha,rough1,rough2,1) !Converged  2017.09.08
+     if (MT)  call OUTRMS_MT( 22,ite,nrms_mt,misfit_mt,  alpha,rough1,rough2,1) !converged  2017.09.08
+     if (TIP) call OUTRMS_TIP(23,ite,nrms_tip,misfit_tip,alpha,rough1,rough2,1) !Converged  2026.03.11
      iflag = 1 ;  goto 80                           ! iflag = 1 means "end" 2017.12.20
     else
-     if (ACT) call OUTRMS(21,ite,nrms,misfit,        alpha,rough1,rough2,0) !Not converged 17.09.08
-     if (MT ) call OUTRMS(22,ite,nrms_mt,misfit_mt,  alpha,rough1,rough2,0) !Not converged 22.01.04
-     if (TIP )call OUTRMS(23,ite,nrms_tip,misfit_tip,alpha,rough1,rough2,0) !Not converged
+     if (ACT) call OUTRMS(    21,ite,nrms,misfit,        alpha,rough1,rough2,0) !Not converged 17.09.08
+     if (MT ) call OUTRMS_MT( 22,ite,nrms_mt,misfit_mt,  alpha,rough1,rough2,0) !Not converged 22.01.04
+     if (TIP )call OUTRMS_TIP(23,ite,nrms_tip,misfit_tip,alpha,rough1,rough2,0) !Not converged
     end if
     
      call warningstop()  !see below if nrsm eceeded the initial nrms when it > 1, inversion will stop 2025.09.19
@@ -624,10 +624,10 @@ if ( ierr .ne. 0 ) goto 999 ! 2022.10.14
     call getnewmodel_joint(JJ,JJ_mt,JJ_tip,g_model_ref,h_model,g_data,h_data,&
     &   g_data_mt,h_data_mt,BMI,CD,CD_mt,CD_tip,alpha,g_param_joint) ! 2026.03.03
 
-    !#[38]## update nrms0, nrms_mt0, nrms_tip0
-    if (ACT) nrms0     = nrms        !  2017.12.25
-    if (MT)  nrms_mt0  = nrms_mt     !  2024.08.30
-    if (TIP) nrms_tip0 = nrms_tip    !  2024.08.30
+    !#[38]## update nrms0, nrms_mt0, nrms_tip0, 1.d-4 is added to each to avoid division by zero when nrms is very small 2026.03.11
+    if (ACT) nrms0     = nrms    +1.d-4     !  2026.03.11
+    if (MT)  nrms_mt0  = nrms_mt +1.d-4     !  2026.03.11
+    if (TIP) nrms_tip0 = nrms_tip+1.d-4     !  2026.03.11
     80 continue                                    !  2017.12.20
 
   end if ! ip = 0
@@ -1214,7 +1214,28 @@ subroutine OUTRMS_MT(idev,ite,nrms_mt,misfit_mt,alpha,rough1,rough2,icflag)
   end if
   return
   end
+
+!########################################### OUTRMS_TIP ### 2026.03.11
+subroutine OUTRMS_TIP(idev,ite,nrms_tip,misfit_tip,alpha,rough1,rough2,icflag)
+ !# rms -> misfit on 2017.12.22
+ !# coded on 2017.09.08
+  implicit none
+  integer(4),intent(in) :: idev,ite
+  integer(4),intent(in) :: icflag ! 0 : not converged, 1: converged
+  real(8),   intent(in) :: misfit_tip,nrms_tip,alpha
+  real(8),   intent(in) :: rough1 ! roughness using usual model
+  real(8),   intent(in) :: rough2 ! roughness using transformed model (only iboundtype = 2)
   
+  if (ite .eq. 1) write(idev,'(a)') "iteration#     nRMSmt          RMSmt        alpha         Roughness   tRoughness"!2020.09.29
+  if      ( icflag .eq. 0 ) then
+       write(idev, '(i10,5g15.7)') ite,nrms_tip, misfit_tip, alpha,rough1,rough2 ! 2017.09.04
+  else if ( icflag .eq. 1 ) then
+       write(*,*) "Converged!!with nrms_tip =",nrms_tip ! normalized rms 2017.09.08
+       write(idev,'(i10,5g15.7,a)') ite, nrms_tip, misfit_tip, alpha,rough1,rough2,"Converged!"! 2017.09.04
+  end if
+  return
+  end
+
 
 !########################################### OUTOBSFILESINV 2018.10.05
 subroutine OUTOBSFILESINV(g_param,g_param_joint,nsr_inv,sparam,tresp,nfreq,ite,ialpha)

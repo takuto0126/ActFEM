@@ -77,7 +77,7 @@ CALL COPY_UL_ICCG12(A,ip) ! 2021.10.04
 !#[5-1]## Dirichlet boundary at calculation boundaries
 if (ACT) CALL GENBCCSEM(zmin,zmax,xout,yout,l_line,h_mesh,Avalue_bc,line_bc,IB) ! set line_bc, Avalue_bc
 if (MT ) CALL GENBCMT(g_surface,omega,nline,Avalue_bc_mt,line_bc_mt) ! ok 2021.12.29
-if ( ip .eq. 0 .and. MT  ) then
+if ( ip .eq. 0 .and. MT  .and. .false. ) then ! for debug 2026.03.11
   open(1,file="bc.dat")
   do i=1,nline
    if (line_bc_mt(i,1) ) write(1,'(i6,4g15.7)'),i,Avalue_bc_mt(i,1:2)

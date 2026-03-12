@@ -2017,6 +2017,7 @@ subroutine GENDVEC_MT(g_param_joint,timp_mt,nfreq_mt,h_data_mt) !2018.10.08
     
   !#[1]## cal g_data
   ii=0
+  !if (h_data_mt%ndat_mt .ne. 0) then ! 2026.03.12
   do ifreq=1,nfreq_mt
     do iobs=1,nobs_mt
      do icomp =1,4  ! zxx,zxy,zyx,zyy
@@ -2034,7 +2035,8 @@ subroutine GENDVEC_MT(g_param_joint,timp_mt,nfreq_mt,h_data_mt) !2018.10.08
      end do ! icomp     2018.10.05
     end do  ! nobs
   end do    ! nfreq     2017.09.03
-  
+  !end if  
+
   !#[2]## out
   if (.false.) then
    do i=1,h_data_mt%ndat_mt

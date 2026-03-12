@@ -95,7 +95,7 @@ type param_joint  ! 2021.12.25
  real(8)                                  :: errorfloor_act  ! [%] added on 2021.12.27
  real(8)                                  :: errorfloor_mt   ! 2021.12.27
  real(8)                                  :: errorfloor_tipper ! 2023.10.05
- integer(4)                               :: mt_imp_ap_flag  ! 0:imp, 1:amp, phase 2021.12.27
+ integer(4)                               :: mt_imp_ap_flag  ! -1: no imp, 0:imp, 1:amp, phase 2026.03.12
  integer(4)                               :: mt_imp_unit     ! 1:Ohm, 2:mV/km/nT 2025.07.31
 
  !# output level 0:default, 1;output Jacobian  2018.06.25
@@ -245,6 +245,8 @@ subroutine readparaJOINTINV(g_param_joint,g_modelpara,g_param,sparam,g_param_mt,
    integer(4)                          :: nobs_mt
    integer(4)                          :: ikeep          ! 2021.10.12
    integer(4)                          :: ijoint  ! 1:ACTIVE, 2:MT, 3:ACTIVE + MT 2022.10.14
+   integer(4)                          :: mt_imp_ap_flag ! -1: no imp, 0:imp, 1:amp, phase 2026.03.12 2026.03.12
+   logical                             :: USEIMP=.false. ! 2026.03.12
    character(100)              :: paramfile ! 2020.09.29
    integer(4),       parameter :: n = 1000  ! 2020.09.28
    character(200),dimension(n) :: lines     ! 2020.09.28
@@ -486,10 +488,27 @@ subroutine readparaJOINTINV(g_param_joint,g_modelpara,g_param,sparam,g_param_mt,
    write(*,*) "< input mt_imp_ap_flag for mt data [-1:no imp data,0:imp, 1:amp, phase] >" ! 2026.03.03
    read(input,12) g_param_joint%mt_imp_ap_flag ! 
    write(*,'(a,i10)') " mt_imp_ap_flag      =",g_param_joint%mt_imp_ap_flag ! 2021.12.22
+     mt_imp_ap_flag = g_param_joint%mt_imp_ap_flag ! 2026.03.12
    write(*,*) "" !2025.07.31 
-
-   write(*,*) "Specify the unit of MT impedance data: 1:Ohm, 2:mV/km/nT" ! 2025.07.31
-   read(input,12) g_param_joint%mt_imp_unit ! 2025.07.31
+   
+    if ( g_param_joint%mt_imp_ap_flag == -1 ) then ! 2026.03.12
+      write(*,*) "No MT impedance data will be used for joint inversion with mt_imp_ap_flag = -1" ! 2026.03.12
+      USEIMP = .false. ! 2026.03.12
+    else if ( g_param_joint%mt_imp_ap_flag == 0 ) then
+      write(*,*) "MT impedance data will be used for joint inversion with mt_imp_ap_flag = 0" ! 2025.07.31
+      USEIMP = .true. ! 2026.03.12
+    else if ( g_param_joint%mt_imp_ap_flag == 1 ) then
+      write(*,*) "MT impedance data will be converted to apparent resistivity and phase for joint inversion with mt_imp_ap_flag = 1" ! 2025.07.31
+      USEIMP = .true. ! 2026.03.12
+    else
+      write(*,*) "Invalid mt_imp_ap_flag. Use -1, 0, or 1." ! 2025.07.31
+      write(*,*) "Provided mt_imp_ap_flag = ", g_param_joint%mt_imp_ap_flag ! 2025.07.31
+      write(*,*) "Exiting the program." ! 2025.07.31
+      stop
+    end if ! 2025.07.31
+   if (USEIMP) write(*,*) "Specify the unit of MT impedance data: 1:Ohm, 2:mV/km/nT" ! 2025.07.31
+   if (USEIMP) read(input,12) g_param_joint%mt_imp_unit ! 2025.07.31
+   if (USEIMP) then
    if (g_param_joint%mt_imp_unit == 1) then
       write(*,*) "MT impedance data is in Ohm with mt_imp_unit = 1" ! 2025.07.31
     else if (g_param_joint%mt_imp_unit == 2) then
@@ -500,13 +519,14 @@ subroutine readparaJOINTINV(g_param_joint,g_modelpara,g_param,sparam,g_param_mt,
       write(*,*) "Exiting the program." ! 2025.07.31
       stop
     end if !2025.07.31
+    end if !2026.03.12
    !##[errorfloor_mt]
-   write(*,*) "" ! 2021.12.27
-   write(*,*) "< input error floor for active data [0-1] >" ! 2021.12.27
-   read(input,12) g_param_joint%errorfloor_mt ! error floor
-   write(*,'(a,f8.3)') " errorfloor_mt      =",g_param_joint%errorfloor_mt ! 2021.12.22
+   if (USEIMP) write(*,*) "" ! 2021.12.27
+   if (USEIMP) write(*,*) "< input error floor for active data [0-1] >" ! 2021.12.27
+   if (USEIMP) read(input,12) g_param_joint%errorfloor_mt ! error floor
+   if (USEIMP) write(*,'(a,f8.3)') " errorfloor_mt      =",g_param_joint%errorfloor_mt ! 2021.12.22
 
-   !##[nobs_mt]
+   !##[nobs_mt]# independent of any MT data usage 2026.03.12
    write(*,*) "" ! 2021.12.27
    write(*,*) "< input # of mt observatories for inv >" ! 2021.12.27
    read(input,12) g_param_joint%nobs_mt ! error floor
@@ -519,19 +539,21 @@ subroutine readparaJOINTINV(g_param_joint,g_modelpara,g_param,sparam,g_param_mt,
    allocate(g_param_joint%obsmtinfo%errindex(  nobs_mt)) ! 2021.12.27
 
    !##[ mt file names]
-   do i=1,nobs_mt 
-     read(input,'(20x,i5,a)') g_param_joint%obsmtinfo%impindex(i),&
-     &              g_param_joint%obsmtinfo%impfile(i) 
-     write(*,*) g_param_joint%obsmtinfo%impfile(i)
-   end do
-   do i=1,nobs_mt 
-     read(input,'(20x,i5,a)') g_param_joint%obsmtinfo%errindex(i),&
-     &              g_param_joint%obsmtinfo%imperrfile(i) 
-     write(*,*) g_param_joint%obsmtinfo%imperrfile(i) 
-   end do
- 
+   if (USEIMP) then ! 2026.03.12
+     do i=1,nobs_mt 
+       read(input,'(20x,i5,a)') g_param_joint%obsmtinfo%impindex(i),&
+       &              g_param_joint%obsmtinfo%impfile(i) 
+       write(*,*) g_param_joint%obsmtinfo%impfile(i)
+     end do
+     do i=1,nobs_mt 
+       read(input,'(20x,i5,a)') g_param_joint%obsmtinfo%errindex(i),&
+       &              g_param_joint%obsmtinfo%imperrfile(i) 
+       write(*,*) g_param_joint%obsmtinfo%imperrfile(i) 
+     end do
+   end if ! 2026.03.12 
+
    !#[4]## read mt impedance data
-   call readdata_mt(g_param_joint,g_param_mt,g_data_mt)! see below 2022.12.12
+   call readdata_mt(USEIMP,g_param_joint,g_param_mt,g_data_mt)! see below 2022.12.12
 
    !#[5]## read mt tipper data 2023.10.04
    read(input,'(20x,i5)') g_param_joint%iflag_tipper ! 2023.10.04
@@ -722,9 +744,10 @@ subroutine readdata_tipper(g_param_joint,g_param_mt,g_data_mt,input) ! see below
  end
 
 !#################################################### readdata_mt
-subroutine readdata_mt(g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
+subroutine readdata_mt(USEIMP,g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
  use constants    ! dmu,pi,r2d 2022.12.12
  implicit none
+ logical,               intent(in)     :: USEIMP ! 2026.03.12
  type(param_joint),     intent(inout)  :: g_param_joint ! set data_avail_mt,ndat_mt
  type(data_vec_mt),     intent(out)    :: g_data_mt 
  type(param_forward_mt),intent(in)     :: g_param_mt    ! 2022.12.12
@@ -755,6 +778,7 @@ subroutine readdata_mt(g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
    allocate(      data(2,4,nobs_mt,nfreq_mt))
    allocate(       err(2,4,nobs_mt,nfreq_mt))
    data_avail=.false.
+   if (.not. USEIMP ) goto 200 ! 2026.03.12
 
   !#[2]## read and gen data vector
   !#[2-1]## read mt impedance data 2022.12.12
@@ -776,10 +800,10 @@ subroutine readdata_mt(g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
        data(1:2,2,i,j)=a(3:4) ! zxy
        data(1:2,3,i,j)=a(5:6) ! zyx
        data(1:2,4,i,j)=a(7:8) ! zyy
-       err(1:2,1,i,j)=e(1:2) ! zxx
-       err(1:2,2,i,j)=e(3:4) ! zyz
-       err(1:2,3,i,j)=e(5:6) ! zyx
-       err(1:2,4,i,j)=e(7:8) ! zyy
+       err( 1:2,1,i,j)=e(1:2) ! zxx
+       err( 1:2,2,i,j)=e(3:4) ! zyz
+       err( 1:2,3,i,j)=e(5:6) ! zyx
+       err( 1:2,4,i,j)=e(7:8) ! zyy
        !# reflect errorfloor_mt  ! 2022.12.12
        zxx = a(1) + iunit*a(2) ! 2022.12.12
        zxy = a(3) + iunit*a(4) ! 2022.12.12
@@ -793,12 +817,14 @@ subroutine readdata_mt(g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
      close(1)
      close(2)
    end do
+   200 continue ! no impedance data case 2026.03.12
 
  !#[2-2]## assemble data vector  2022.12.12
    allocate(dvec_mt(2*4*nobs_mt*nfreq_mt))
    allocate( err_mt(2*4*nobs_mt*nfreq_mt))
    ii       = 0
    idata_mt = 0      ! 2022.12.12
+   if (USEIMP) then ! 2026.03.12
    if (     g_param_joint%mt_imp_unit == 1) then ! impedance unit is Ohm
     ! case for input in [V/A]=[Ohm],coef is used for conversion from [Ohm]=[V/A] to [mV/km/nT]
       coef = 1./dmu*1.e-3 
@@ -808,6 +834,7 @@ subroutine readdata_mt(g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
       write(*,*) "Invalid mt_imp_unit. Use 1 for Ohm or 2 for mV/km/nT." ! 2025.07.31
       stop
    end if !2025.07.31
+   end if ! 2026.03.12
 
    open(1,file=trim(g_param_joint%outputfolder)//"dvec_mt.dat") ! 2022.12.05
    do i=1,nfreq_mt

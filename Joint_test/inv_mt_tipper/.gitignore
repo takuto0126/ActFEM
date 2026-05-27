@@ -5,6 +5,7 @@ result_inv_only_tip/*
 tmp.ctl
 *.pdf
 *.ps
+run_ism.sh
 pullresult*.sh
 !result_inv/.gitkeep
 !result_inv_only_tip/.gitkeep

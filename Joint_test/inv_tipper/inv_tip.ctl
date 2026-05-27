@@ -48,16 +48,6 @@ iflag_replace 0,1  |0
 ## imp = -1: no impedance data, 0: impedance data, 1: amp, phase data (not supported)
 imp: 0, 1:amp,pha  !-1
 # of observatories |5
-##MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat
-##MT2 impedance      !   2 ../fwd_3DMT/result/MT2_MT_imp.dat
-##MT3 impedance      !   3 ../fwd_3DMT/result/MT3_MT_imp.dat
-##MT4 impedance      !   4 ../fwd_3DMT/result/MT4_MT_imp.dat
-##MT5 impedance      !   5 ../fwd_3DMT/result/MT5_MT_imp.dat
-##MT1 impedance err  !   1 ../fwd_3DMT/mt_err/DUM_MT1_MT_imp_err.dat
-##MT2 impedance err  !   2 ../fwd_3DMT/mt_err/DUM_MT2_MT_imp_err.dat
-##MT3 impedance err  !   3 ../fwd_3DMT/mt_err/DUM_MT3_MT_imp_err.dat
-##MT4 impedance err  !   4 ../fwd_3DMT/mt_err/DUM_MT4_MT_imp_err.dat
-##MT5 impedance err  !   5 ../fwd_3DMT/mt_err/DUM_MT5_MT_imp_err.dat
 ########################################################################
 iflag_tipper       !1
 errorfloor         !0.005

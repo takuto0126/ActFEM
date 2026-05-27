@@ -362,9 +362,9 @@ end do
 ! stop
 
 !#[4]## output
- g_model%nmodel           = nmodel
+ g_model%nmodel           = nmodel ! number of models
  allocate(g_model%ele2model(nphys2))
- g_model%ele2model        = ele2model
+ g_model%ele2model        = ele2model ! conversion relation from element space to model space
  g_model%nphys2           = nphys2
  g_model%nphys1           = nphys1
  allocate(g_model%index(nphys2))
@@ -372,7 +372,7 @@ end do
  allocate(g_model%model2ele%stack(0:nmodel) )
  allocate(g_model%model2ele%item(nphys2))
  g_model%model2ele%nrow   = nmodel       ! 2017.06.05
- g_model%model2ele%ncolm  = ntet         ! 2017.06.05 max(item) = ntet
+ g_model%model2ele%ncolm  = ntet         ! 2017.06.05 max(item) = ntet 
  g_model%model2ele%ntot   = nphys2
  g_model%model2ele%stack  = stack
  g_model%model2ele%item   = item         ! id for element in whole element space

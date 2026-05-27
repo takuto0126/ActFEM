@@ -1005,16 +1005,19 @@ subroutine genjacobian2_MT(TIP,g_param_joint,nfreq_mt,g_mtdm,g_tipdm,JJ_mt,JJ_ti
     end if
    end if
   
-  open(1,file="JJ_mt_in.dat")
-  call realcrsout(JJ_mt,1)
-  close(1)
-  write(*,*) "JJ_mt is written in JJ_mt_in.dat"
-  if (TIP) then ! 2026.03.03
-   open(1,file="JJ_tip_in.dat")
-   call realcrsout(JJ_tip,1)
-   close(1)
-    write(*,*) "JJ_tip is written in JJ_tip_in.dat" ! 2026.03.03
-  end if
+  if (g_param_joint%ioutlevel .eq. 1 ) then  ! 2026.05.28
+      open(1,file="JJ_mt_in.dat")
+        call realcrsout(JJ_mt,1)
+      close(1)
+      write(*,*) "JJ_mt is written in JJ_mt_in.dat"
+
+      if (TIP) then ! 2026.03.03
+        open(1,file="JJ_tip_in.dat")
+        call realcrsout(JJ_tip,1)
+        close(1)
+        write(*,*) "JJ_tip is written in JJ_tip_in.dat" ! 2026.03.03
+      end if
+  end if ! 2026.05.28
 
   !#[3]## set output
    call watchstop(t_watch)  ! see m_caltime.f90 2017.12.12
@@ -1381,12 +1384,14 @@ subroutine getnewmodel_joint(JJ_ac,JJ_mt,JJ_tip,g_model_ref,h_model,g_data,h_dat
     call watchstop(t_watch1)
   if (icheck .eq. 1) write(*,10) " ### GETNEWMODEL [2-3] END!! Time =",t_watch1%time," [min]"!2020.09.18
 
-  open(1,file="cd.dat")
-  call realcrsout(CD,1)
-  close(1)
-  open(1,file="jcmjt.dat")
-  call realcrsout(JCMJT,1)
-  close(1)
+  if ( .false.) then ! 2026.05.28
+    open(1,file="cd.dat")
+    call realcrsout(CD,1)
+    close(1)
+    open(1,file="jcmjt.dat")
+    call realcrsout(JCMJT,1)
+    close(1)
+  end if ! 2026.05.28
 
   !#[2-4]# cal C = JCMJT + alpha*CM
     call watchstart(t_watch1)
@@ -1396,9 +1401,11 @@ subroutine getnewmodel_joint(JJ_ac,JJ_mt,JJ_tip,g_model_ref,h_model,g_data,h_dat
     call watchstop(t_watch1)
   if (icheck .eq. 1) write(*,10) " ### GETNEWMODEL [2-4] END!! Time =",t_watch1%time," [min]"!2020.09.18
 
-  open(1,file="c.dat")
-  call realcrsout(c,1)
-  close(1)
+  if ( .false. ) then ! 2026.05.28
+    open(1,file="c.dat")
+    call realcrsout(c,1)
+    close(1)
+  end if ! 2026.05.28
   
   !#[3]## gen X
   !#   X  = d_obs - d(M) + J(M - M_ref)

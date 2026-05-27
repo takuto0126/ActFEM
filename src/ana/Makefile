@@ -4,8 +4,8 @@
 #OPT=-i-dynamic
 #VPATH = OMSP_L/
 #FC=ifort
-FC=ifx
-OPT= -O -fpe0 -check bounds -traceback -g -qmkl=parallel
+FC=gfortran
+#OPT= -O -fpe0 -check bounds -traceback -g #-qmkl=parallel
 
 #normal solver
 ftarget=active_ana.exe

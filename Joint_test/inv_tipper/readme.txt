@@ -6,10 +6,8 @@ imp: 0, 1:amp,pha  !-1
 
 but the # of observatory should be specified as:
 
-# of observatories |5
+# of observatories |9
 
 and
 
 iflag_tipper       !1
-
-

@@ -47,15 +47,19 @@ iflag_replace 0,1  |0
 ## Case for only tipper data
 ## imp = -1: no impedance data, 0: impedance data, 1: amp, phase data (not supported)
 imp: 0, 1:amp,pha  !-1
-# of observatories |5
+# of observatories |8
 ########################################################################
 iflag_tipper       !1
-errorfloor         !0.15
+errorfloor         !0.1
 MT1 tipper         !   1 ../fwd_3DMT/mt_err/MT1_TIP_err.dat
 MT2 tipper         !   2 ../fwd_3DMT/mt_err/MT2_TIP_err.dat
 MT3 tipper         !   3 ../fwd_3DMT/mt_err/MT3_TIP_err.dat
 MT4 tipper         !   4 ../fwd_3DMT/mt_err/MT4_TIP_err.dat
-MT5 tipper         !   5 ../fwd_3DMT/mt_err/MT5_TIP_err.dat
+##MT5 tipper         !   5 ../fwd_3DMT/mt_err/MT5_TIP_err.dat
+MT6 tipper         !   6 ../fwd_3DMT/mt_err/MT6_TIP_err.dat
+MT7 tipper         !   7 ../fwd_3DMT/mt_err/MT7_TIP_err.dat
+MT8 tipper         !   8 ../fwd_3DMT/mt_err/MT8_TIP_err.dat
+MT9 tipper         !   9 ../fwd_3DMT/mt_err/MT9_TIP_err.dat
 ## icombine = 0: normal
 ## icombine = 1: integrate the outside blocks to one and assign one model parameter
 ## icombine = 2: integrate the outside blocks to one and fix the modelparameter with given cond

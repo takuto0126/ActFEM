@@ -667,8 +667,14 @@ subroutine readdata_tipper(g_param_joint,g_param_mt,g_data_mt,input) ! see below
        ty = a(3) + iunit*a(4) ! 2023.10.04
        txamp = abs(tx) ! 2023.10.04
        tyamp = abs(ty) ! 2023.10.04
-       if ( err(1,1,i,j) .lt. txamp*errorfloor_tipper ) err(1:2,1,i,j)= txamp*errorfloor_tipper ! 2023.10.04
-       if ( err(1,2,i,j) .lt. tyamp*errorfloor_tipper ) err(1:2,2,i,j)= tyamp*errorfloor_tipper ! 2023.10.04
+       !write(*,*) "err(1:2,1)",err(1:2,1,1,1)
+       !write(*,*) "errorfloor_tipper",errorfloor_tipper
+       !write(*,*) "txamp",txamp,"txamp*errorfloor_tipper",txamp*errorfloor_tipper
+       if ( err(1,1,i,j) .lt. txamp*errorfloor_tipper ) err(1,1,i,j)= txamp*errorfloor_tipper ! 2023.10.04
+       if ( err(2,1,i,j) .lt. txamp*errorfloor_tipper ) err(2,1,i,j)= txamp*errorfloor_tipper ! 2026.05.28
+       if ( err(1,2,i,j) .lt. tyamp*errorfloor_tipper ) err(1,2,i,j)= tyamp*errorfloor_tipper ! 2023.10.04
+       if ( err(2,2,i,j) .lt. tyamp*errorfloor_tipper ) err(2,2,i,j)= tyamp*errorfloor_tipper ! 2026.05.28
+       write(*,*) "err(1:2,1)",err(1:2,1,1,1)
      end do
      close(1)
    end do

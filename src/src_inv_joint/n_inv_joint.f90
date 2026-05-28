@@ -1226,7 +1226,7 @@ subroutine OUTRMS_TIP(idev,ite,nrms_tip,misfit_tip,alpha,rough1,rough2,icflag)
   real(8),   intent(in) :: rough1 ! roughness using usual model
   real(8),   intent(in) :: rough2 ! roughness using transformed model (only iboundtype = 2)
   
-  if (ite .eq. 1) write(idev,'(a)') "iteration#     nRMSmt          RMSmt        alpha         Roughness   tRoughness"!2020.09.29
+  if (ite .eq. 1) write(idev,'(a)') "iteration#     nRMStip         RMStip       alpha         Roughness   tRoughness"!2020.09.29
   if      ( icflag .eq. 0 ) then
        write(idev, '(i10,5g15.7)') ite,nrms_tip, misfit_tip, alpha,rough1,rough2 ! 2017.09.04
   else if ( icflag .eq. 1 ) then

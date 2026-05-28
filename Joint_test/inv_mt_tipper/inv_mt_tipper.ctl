@@ -62,7 +62,7 @@ MT4 impedance err  !   4 ../fwd_3DMT/mt_err/MT4_MT_imp_err.dat
 MT5 impedance err  !   5 ../fwd_3DMT/mt_err/MT5_MT_imp_err.dat
 ########################################################################
 iflag_tipper       !1
-errorfloor         !0.005
+errorfloor         !0.01
 MT1 tipper         !   1 ../fwd_3DMT/mt_err/MT1_TIP_err.dat
 MT2 tipper         !   2 ../fwd_3DMT/mt_err/MT2_TIP_err.dat
 MT3 tipper         !   3 ../fwd_3DMT/mt_err/MT3_TIP_err.dat

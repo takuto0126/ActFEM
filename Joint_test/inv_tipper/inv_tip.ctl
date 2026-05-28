@@ -10,7 +10,7 @@ output folder      |./result_inv/
 Roughness type     |1
 1:L,2:Cl,3:Mi,4:Gr !2
 alpha init         !100.
-factor(10^factor)  !-1.0
+factor(10^factor)  !-0.50
 iflag_replace 0,1  |0
 ## iboundflag can set upper and lower limit of the conductivity value in inversion
 ## iboundflag = 0 : off : no boundary for conductivity value
@@ -50,7 +50,7 @@ imp: 0, 1:amp,pha  !-1
 # of observatories |5
 ########################################################################
 iflag_tipper       !1
-errorfloor         !0.005
+errorfloor         !0.15
 MT1 tipper         !   1 ../fwd_3DMT/mt_err/MT1_TIP_err.dat
 MT2 tipper         !   2 ../fwd_3DMT/mt_err/MT2_TIP_err.dat
 MT3 tipper         !   3 ../fwd_3DMT/mt_err/MT3_TIP_err.dat

@@ -1,0 +1,8 @@
+result_inv/*
+*.dat
+*.log
+tmp.ctl
+*.pdf
+*.ps
+pull*.sh
+!result_inv/.gitkeep

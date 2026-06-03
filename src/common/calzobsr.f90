@@ -5,7 +5,7 @@ use mesh_type
 use triangle
 implicit none
 type(mesh),            intent(in)     :: h_mesh
-type(param_forward),   intent(inout)  :: g_param
+type(param_mesh),      intent(inout)  :: g_param
 type(grid_list_type)                  :: glist
 integer(4)                            :: nobs,nobsr,nx,ny ! 2021.09.29 nobs added
 real(8),   allocatable,dimension(:,:) :: xyz_r,xyz

@@ -18,7 +18,7 @@ contains
 subroutine SETFREQIP(g_param,ip,np,g_freq)
 implicit none
 integer(4),            intent(in)    :: ip,np
-type(param_forward),   intent(in)    :: g_param
+type(param_mesh),      intent(in)    :: g_param
 type(freq_info),       intent(inout) :: g_freq
 real(8),   allocatable,dimension(:)  :: freq,freq_ip
 integer(4),allocatable,dimension(:)  :: ifreq_ip

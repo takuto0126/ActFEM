@@ -21,7 +21,7 @@ contains
 subroutine shareapinv(g_param,sparam,g_cond,g_mesh,g_line,g_param_apinv,g_model,ip)
 implicit none
 integer(4),         intent(in)      :: ip
-type(param_forward),intent(inout)   :: g_param
+type(param_mesh),intent(inout)   :: g_param
 type(param_source), intent(inout)   :: sparam
 type(param_cond),   intent(inout)   :: g_cond
 type(mesh),         intent(inout)   :: g_mesh
@@ -351,7 +351,7 @@ subroutine shareforward(g_param,sparam,g_cond,ip)
 implicit none
 integer(4),intent(in) :: ip
 type(param_source), intent(inout) :: sparam
-type(param_forward),intent(inout) :: g_param
+type(param_mesh),intent(inout) :: g_param
 type(param_cond),   intent(inout) :: g_cond
 
 call sharecond(g_cond,ip)
@@ -366,7 +366,7 @@ end
 !##################################################### shareparam
 subroutine sharefparam(g_param,ip)
 implicit none
-type(param_forward),intent(inout) :: g_param
+type(param_mesh),intent(inout) :: g_param
 integer(4),intent(in) :: ip
 integer(4) :: errno,nfreq,nobsr,nobs
 integer(4) :: nfile ! 2017.12.13

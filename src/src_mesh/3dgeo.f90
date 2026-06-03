@@ -17,7 +17,7 @@ use param
 use gmsh_geo
 implicit none
 !include "meshpara.f90"
-type(param_forward)   :: g_param
+type(param_mesh)      :: g_param
 type(param_source)    :: sparam
 type(geo_info_3d)     :: geo3d ! see m_gmsh_geo.f90
 character(50)         :: outgeo="3dmesh.geo"
@@ -126,7 +126,7 @@ subroutine GENGEOINFO(xyz,node,xyz_obs,node_obs,lines,nline,nobs,splines_obs,g_p
 use gmsh_geo
 use param
 implicit none
-type(param_forward),intent(in)  :: g_param
+type(param_mesh),   intent(in)  :: g_param
 integer(4),         intent(in)  :: nobs    ! 2017.09.08
 integer(4),         intent(in)  :: node,node_obs,nline,nlineloop,nsurfaceloop
 real(8),            intent(in)  :: xyz(3,node)
@@ -194,7 +194,7 @@ subroutine GENLINES_OBS(nobs,g_param,splines_obs,node)
 use param
 implicit none
 integer(4),         intent(in)    :: node, nobs ! 2017.09.08
-type(param_forward),intent(in)    :: g_param
+type(param_mesh),   intent(in)    :: g_param
 integer(4),         intent(inout) :: splines_obs(5,nobs) ! 207.09.08
 integer(4)                        :: i,ii
 
@@ -211,7 +211,7 @@ subroutine GENPOINTS_OBS(g_param,xyz_obs,node_obs,radius)
 use param
 implicit none
 integer(4),         intent(in)    :: node_obs
-type(param_forward),intent(in)    :: g_param
+type(param_mesh),   intent(in)    :: g_param
 real(8),            intent(inout) :: xyz_obs(3,node_obs)
 real(8),            intent(in)    :: radius
 real(8) :: x0,y0,z0
@@ -340,7 +340,7 @@ subroutine OUTGEOFILE_obs(outgeo, xyz,node,lines,nline,lineloop,nlineloop,surfac
                         & nsurfaceloop,volume,nvolume,g_param)
 use param
 implicit none
-type(param_forward),intent(in) :: g_param
+type(param_mesh),   intent(in) :: g_param
 integer(4),         intent(in) :: node, nline, nlineloop, nsurfaceloop, nvolume
 integer(4),         intent(in) :: lines(2,nline), lineloop(4,nlineloop)
 integer(4),         intent(in) :: surfaceloop(6,nsurfaceloop),volume(nvolume)
@@ -425,7 +425,7 @@ end
 subroutine OUTGEOFILE(outgeo, xyz,node,lines,nline,lineloop,nlineloop,surfaceloop,nsurfaceloop,volume,nvolume,g_param)
 use param
 implicit none
-type(param_forward),intent(in) :: g_param
+type(param_mesh),   intent(in) :: g_param
 integer(4),         intent(in) :: node, nline, nlineloop, nsurfaceloop, nvolume
 integer(4),         intent(in) :: lines(2,nline), lineloop(4,nlineloop)
 integer(4),         intent(in) :: surfaceloop(6,nsurfaceloop), volume(nvolume)
@@ -473,7 +473,7 @@ end
 subroutine OUTPOSFILE2_OBS(outpos,g_param)
 use param
 implicit none
-type(param_forward),intent(in) :: g_param
+type(param_mesh),   intent(in) :: g_param
 character(50),      intent(in) :: outpos
 real(8)                        :: lc1,lc2,lc3, dlen,dlen2,shift
 real(8)                        :: height1, height2, height3, height4,xout,yout
@@ -587,7 +587,7 @@ end
 function value_OBS(x,y,z,lc1,lc3,dlen,dlen2,shift,g_param)
 use param
 implicit none
-type(param_forward),intent(in) :: g_param
+type(param_mesh),   intent(in) :: g_param
 real(8),            intent(in) :: x,y,z,shift ! [km]
 real(8),            intent(in) :: lc1,lc3,dlen,dlen2
 real(8)                        :: value_OBS, value_OBS_def

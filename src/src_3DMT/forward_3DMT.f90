@@ -18,7 +18,7 @@ integer(4),            intent(in)        :: nline
 real(8),               intent(in)        :: freq
 type(mesh),            intent(in)        :: h_mesh       ! see m_mesh_type.f90
 type(line_info),       intent(in)        :: l_line       ! see m_line_type.f90
-type(param_forward_mt),intent(in)        :: g_param_mt   ! 2021.12.15
+type(param_mesh_mt),intent(in)        :: g_param_mt   ! 2021.12.15
 type(param_cond)  ,    intent(in)        :: g_cond
 type(surface),         intent(in)        :: g_surface(6) ! 2021.09.14
 complex(8),            intent(out)       :: al_MT(nline,2) ! [mV/km * km] 1:ex, 2:ey polari 

@@ -4,7 +4,7 @@ program ana_active
 use param_active_ana ! see m_param_active_ana.f90
 use m_param_ana        ! see m_param_ana.f90
 implicit none
-type(param_forward_ana) :: g_param_ana ! see m_param_active_ana.f90
+type(param_mesh_ana) :: g_param_ana ! see m_param_active_ana.f90
 type(param_source)      :: sparam
 type(respdata),allocatable,dimension(:,:,:) :: resp5
 integer(4)              :: nfreq,j,nsr,nobs
@@ -69,7 +69,7 @@ end
 subroutine OUTOBSFILESFWD(g_param,sparam,nsr,tresp,nfreq)
 use param_active_ana
 implicit none
-type(param_forward_ana),intent(in) :: g_param
+type(param_mesh_ana),intent(in) :: g_param
 type(param_source),     intent(in) :: sparam
 integer(4),             intent(in) :: nsr
 integer(4),             intent(in) :: nfreq
@@ -115,7 +115,7 @@ subroutine forward(g_param_ana,sparam,freq,resp) !2017.07.11
 use param_active_ana
 use m_param_ana
 implicit none
-type(param_forward_ana),intent(in)    :: g_param_ana
+type(param_mesh_ana),intent(in)    :: g_param_ana
 type(param_source),     intent(in)    :: sparam
 type(respdata),         intent(inout) :: resp(5,sparam%nsource)
 real(8),                intent(in)    :: freq
@@ -171,7 +171,7 @@ subroutine setparams(g_param_ana,sparam)
 use param_active_ana
 use m_param_ana
 implicit none
-type(param_forward_ana),intent(in) :: g_param_ana
+type(param_mesh_ana),intent(in) :: g_param_ana
 type(param_source),     intent(in) :: sparam
 integer(4) :: j
 

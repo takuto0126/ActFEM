@@ -232,8 +232,8 @@ subroutine readparaJOINTINV(g_param_joint,g_modelpara,g_param,sparam,g_param_mt,
  ! declaration
    use caltime      ! 2017.12.22
    implicit none
-   type(param_forward),    intent(in)  :: g_param
-   type(param_forward_mt), intent(in)  :: g_param_mt     ! 2022.10.21
+   type(param_mesh),    intent(in)  :: g_param
+   type(param_mesh_mt), intent(in)  :: g_param_mt     ! 2022.10.21
    type(param_source),     intent(in)  :: sparam         ! 2018.06.26
    type(param_joint),      intent(inout) :: g_param_joint! 2026.03.03 only ijoint is already set before calling this subroutine, other parameters will be set in this subroutine
    type(modelpara),        intent(out) :: g_modelpara
@@ -610,7 +610,7 @@ subroutine readdata_tipper(g_param_joint,g_param_mt,g_data_mt,input) ! see below
  implicit none
  type(param_joint),     intent(inout)  :: g_param_joint ! set data_avail_tipper,ndat_tipper
  type(data_vec_mt),     intent(inout)  :: g_data_mt 
- type(param_forward_mt),intent(in)     :: g_param_mt    ! 2022.12.12
+ type(param_mesh_mt),intent(in)     :: g_param_mt    ! 2022.12.12
  integer(4),            intent(in)     :: input         ! 2023.10.04
  character(2)           :: txy(2)
  character(4)           :: realimag(2)
@@ -756,7 +756,7 @@ subroutine readdata_mt(USEIMP,g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
  logical,               intent(in)     :: USEIMP ! 2026.03.12
  type(param_joint),     intent(inout)  :: g_param_joint ! set data_avail_mt,ndat_mt
  type(data_vec_mt),     intent(out)    :: g_data_mt 
- type(param_forward_mt),intent(in)     :: g_param_mt    ! 2022.12.12
+ type(param_mesh_mt),intent(in)     :: g_param_mt    ! 2022.12.12
  integer(4) :: nfreq_mt,nobs_mt,i,j,k,l
  integer(4) :: i1,i2   ! 2022.12.12
  integer(4) :: iavail(4),ii,ndat_mt
@@ -924,7 +924,7 @@ subroutine readdata_mt(USEIMP,g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
 !# Modified on 2018.10.04 for multisource amp phase inversion
 subroutine readdata_ap(g_param,sparam,g_param_joint,g_data_ap)
  implicit none
- type(param_forward),      intent(in)           :: g_param         ! 2018.06.26
+ type(param_mesh),      intent(in)           :: g_param         ! 2018.06.26
  type(param_source),       intent(in)           :: sparam          ! 2018.06.26
  type(param_joint),  intent(inout)        :: g_param_joint   ! 2017.08.31
  type(data_vec_ap),        intent(out)          :: g_data_ap       ! 2017.08.31

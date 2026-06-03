@@ -2,7 +2,7 @@ module param
 use constants
 implicit none
 
-type param_forward
+type param_mesh
  ! mesh info
  integer(4)    :: itopoflag    ! 0: no topo, 1: topo are from topofiles 2017.09.29
  integer(4)    :: nfile        ! 2017.09.27
@@ -126,7 +126,7 @@ end subroutine
 !# change the
 subroutine readparam(c_param,sparam,g_cond)
 implicit none
-type(param_forward),          intent(out) :: c_param
+type(param_mesh),            intent(out) :: c_param
 type(param_source),           intent(out) :: sparam
 type(param_cond),   optional, intent(out) :: g_cond
 integer(4)                  :: i,j,nobs,input=2,nsource,iflag_map,lonlatflag!2025.06.10
@@ -517,7 +517,7 @@ end
 subroutine calobsr(s_param,g_param)
 !use param
 implicit none
-type(param_forward),intent(inout)       :: g_param
+type(param_mesh),   intent(inout)       :: g_param
 type(param_source), intent(in)          :: s_param
 type source !========================= type source definition 2017.07.11
  integer(4)                             :: nobsr_per_src ! 2021.09.29

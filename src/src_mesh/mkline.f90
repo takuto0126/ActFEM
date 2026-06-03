@@ -6,7 +6,7 @@ use line_type  ! see m_line_type.f90
 use param      ! see m_param.f90
 use horizontalresolution ! see m_horizontalresolution.f90
 implicit none
-type(param_forward) :: g_param
+type(param_mesh)    :: g_param
 type(param_source)  :: s_param
 character(50)       :: name,filename
 type(mesh)          :: g_mesh     ! see m_mesh_type.f90

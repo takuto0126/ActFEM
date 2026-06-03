@@ -17,7 +17,7 @@ use shareformpi_mdm  ! added on 2017.10.31
 use freq_mpi         ! added on 2017.06.07
 !
 implicit none
-type(param_forward)   :: g_param       ! see m_param.f90
+type(param_mesh)   :: g_param       ! see m_param.f90
 type(param_source)    :: sparam        ! see m_param.f90
 type(param_cond)      :: g_cond        ! see m_param.f90 : goal conductivity
 type(param_cond)      :: h_cond        ! see m_param.f90 : initial structure
@@ -521,7 +521,7 @@ implicit none
 integer(4),              intent(in) :: ite,nfreq
 integer(4),              intent(in) :: nsr_inv
 type(respdata),          intent(in) :: tresp(5,nsr_inv,nfreq)!2017.07.14
-type(param_forward),     intent(in) :: g_param
+type(param_mesh),     intent(in) :: g_param
 type(param_source),      intent(in) :: sparam         ! 2017.07.14
 type(param_inversion),   intent(in) :: g_param_inv    ! 2017.07.14
 integer(4),allocatable,dimension(:) :: srcindex       ! 2017.07.14
@@ -698,7 +698,7 @@ subroutine ALLOCATERESP(g_param,nsr,resp5,tresp,ip,nfreq,nfreq_ip)!2017.07.13
 use outresp
 use param
 implicit none
-type(param_forward),intent(in)    :: g_param
+type(param_mesh),intent(in)    :: g_param
 integer(4),         intent(in)    :: nsr ! 2017.07.13
 integer(4),         intent(in)    :: nfreq,ip,nfreq_ip
 type(respdata),     intent(inout) :: resp5(5,nsr,nfreq_ip) ! 2017.07.13
@@ -1581,7 +1581,7 @@ use param ! 2016.11.20
 use mesh_type
 implicit none
 type(mesh),intent(in) :: em_mesh
-type(param_forward),intent(inout) :: g_param
+type(param_mesh),intent(inout) :: g_param
 real(8) :: xmin,xmax,ymin,ymax,zmin,zmax
 real(8) :: xyz(3,em_mesh%node),xyzminmax(6)
 integer(4) :: i
@@ -1822,7 +1822,7 @@ use fem_edge_util
 implicit none
 type(mesh),           intent(in)  :: h_mesh
 type(line_info),      intent(in)  :: l_line
-type(param_forward),  intent(in)  :: g_param
+type(param_mesh),  intent(in)  :: g_param
 type(real_crs_matrix),intent(out) :: coeffobs(2,3)     ! (1,(1,2,3)) for edge (x,y,z)
 real(8) :: x3(3),a4(4),r6(6),len(6),w(3,6),elm_xyz(3,4),v
 real(8) :: coeff(3,6),coeff_rot(3,6)
@@ -1917,7 +1917,7 @@ use outresp
 use param
 implicit none
 integer(4),         intent(in) :: nfreq ! 2017.05.18
-type(param_forward),intent(in) :: g_param
+type(param_mesh),intent(in) :: g_param
 type(obsfiles),intent(inout)   :: files
 type(respdata),intent(inout)   :: resp5(5,nfreq)
 integer(4) :: nobs,i,j
@@ -2001,7 +2001,7 @@ use mesh_type
 use triangle
 implicit none
 type(mesh),         intent(inout)     :: h_mesh  ! deallocated at the end 2017.05.15
-type(param_forward),intent(inout)     :: g_param
+type(param_mesh),intent(inout)     :: g_param
 type(param_source), intent(inout)     :: s_param
 type(grid_list_type)                  :: glist
 integer(4)                            :: nobs,nx,ny

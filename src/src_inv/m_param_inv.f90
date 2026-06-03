@@ -60,7 +60,7 @@ contains
 ! modified on 2017.07.13 for multiple sources
 subroutine readparainv(g_param_inv,g_modelpara,g_param,sparam,g_data) ! 2018.03.20
  implicit none
- type(param_forward),  intent(in)  :: g_param
+ type(param_mesh),  intent(in)  :: g_param
  type(param_source),   intent(in)  :: sparam     ! 2018.03.20
  type(param_inversion),intent(out) :: g_param_inv
  type(modelpara),      intent(out) :: g_modelpara
@@ -193,7 +193,7 @@ end
 subroutine readdata(g_param_inv,g_data,g_param,sparam) ! 2018.03.20
 implicit none
 type(param_inversion),    intent(inout)    :: g_param_inv ! 2017.07.14 data_avail
-type(param_forward),      intent(in)       :: g_param     ! 2018.03.20
+type(param_mesh),      intent(in)       :: g_param     ! 2018.03.20
 type(param_source),       intent(in)       :: sparam      ! 2018.03.20
 type(data_vec),           intent(out)      :: g_data
 character(50),allocatable,dimension(:)     :: obsfile

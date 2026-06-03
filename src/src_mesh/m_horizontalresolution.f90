@@ -7,7 +7,7 @@ contains
 subroutine value_r(x,y,g_meshpara,v_r)
 use param
 implicit none
-type(param_forward),intent(in)     :: g_meshpara
+type(param_mesh),   intent(in)     :: g_meshpara
 real(8),            intent(in)     :: x,y
 real(8),            intent(out)    :: v_r     ! 2017.09.08
 real(8),allocatable,dimension(:,:) :: xyz     ! 2017.09.08
@@ -63,7 +63,7 @@ end subroutine
 subroutine value_3d_r(x,y,z,g_meshpara,v_3d_r)
 use param
 implicit none
-type(param_forward),intent(in)     :: g_meshpara
+type(param_mesh),   intent(in)     :: g_meshpara
 real(8),            intent(in)     :: x,y,z
 real(8),            intent(out)    :: v_3d_r ! 2017.09.08
 real(8)                            :: si,sb, x1,x2,y1,y2,z1,z2,sigma,A
@@ -133,7 +133,7 @@ end subroutine
 function value(x,y,g_meshpara)
 use param
 implicit none
-type(param_forward),intent(in) :: g_meshpara
+type(param_mesh),   intent(in) :: g_meshpara
 real(8),            intent(in) :: x,y
 real(8)                        :: si,sb, x1,x2,y1,y2,sigma,A
 real(8)      :: value, robs
@@ -180,7 +180,7 @@ end function
 function value_3d(x,y,z,g_meshpara)
 use param
 implicit none
-type(param_forward),intent(in)     :: g_meshpara
+type(param_mesh),   intent(in)     :: g_meshpara
 real(8),            intent(in)     :: x,y,z
 real(8)                            :: si,sb, x1,x2,y1,y2,z1,z2,sigma,A
 real(8)                            :: value_3d, robs

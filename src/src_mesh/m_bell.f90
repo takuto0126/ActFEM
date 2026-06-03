@@ -24,7 +24,7 @@ contains
 ! Coded2017.09.27
 subroutine readparambell(g_param,b_param)
 implicit none
-type(param_forward),intent(in)  :: g_param
+type(param_mesh),   intent(in)  :: g_param
 type(param_bell),   intent(out) :: b_param
 integer(4)   :: input = 5
 character(3) :: UTM

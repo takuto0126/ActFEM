@@ -17,7 +17,7 @@ use horizontalresolution
 use water_level ! 2023.08.31
 use topo_tool   ! 2023.08.31
 implicit none
-type(param_forward)          :: g_param
+type(param_mesh)             :: g_param
 type(param_source)           :: s_param
 type(coast_data),allocatable :: g_coast(:),h_coast(:)  ! 2023.08.31
 type(poly_data)              :: i_poly    ! see m_topo_tool.f90
@@ -122,7 +122,7 @@ subroutine rotatepoly(h_poly,g_param)
 use param
 use topo_tool
 implicit none
-type(param_forward),intent(in)    :: g_param
+type(param_mesh),intent(in   )    :: g_param
 type(poly_data),    intent(inout) :: h_poly
 integer(4) :: i,j
 
@@ -151,7 +151,7 @@ use param
 use topo_tool
 use water_level
 implicit none
-type(param_forward),    intent(in) :: g_param
+type(param_mesh),    inten   t(in) :: g_param
 type(param_water_level),intent(in) :: g_param_water
 type(poly_data),        intent(in) :: i_poly
 integer(4)    :: i,j,ii,jj,k,is,lpoly0,inum_water_level,lpmax,ncmax
@@ -238,7 +238,7 @@ subroutine integratepoly(h_poly,g_param,inum_water_level,i_poly,ncmax)
 use topo_tool
 use param
 implicit none
-type(param_forward), intent(in)    :: g_param
+type(param_mesh), intent(i   n)    :: g_param
 type(poly_data),     intent(inout) :: h_poly(inum_water_level) ! sometimes inum_water_level=0 
 integer(4),          intent(in)    :: inum_water_level,ncmax
 type(poly_data),     intent(out)   :: i_poly
@@ -293,7 +293,7 @@ subroutine smoothen10_5(g_poly,h_poly,g_coast,h_coast,g_param)
 use topo_tool ! 2023.09.01
 use param
 implicit none
-type(param_forward),   intent(in)       :: g_param
+type(param_mesh),   intent   (in)       :: g_param
 type(coast_data),      intent(inout)    :: g_coast
 type(poly_data),       intent(in)       :: g_poly
 type(poly_data),       intent(out)      :: h_poly
@@ -574,7 +574,7 @@ subroutine identifycraterlake(iflag_coast_required,g_grd,g_coast,g_poly,g_param_
  use topo_tool ! 2023.08.31
  use param     ! 2023.08.31
  implicit none
- type(param_forward),intent(in)     :: g_param                     ! 2023.08.31
+ type(param_mesh),intent(in   )     :: g_param                     ! 2023.08.31
  type(poly_data),    intent(inout)  :: g_poly
  type(coast_data),   intent(inout)  :: g_coast
  type(grid_data),    intent(in)     :: g_grd
@@ -926,7 +926,7 @@ use param
 use topo_tool   ! 2023.08.31
 use water_level ! 2023.08.31
 implicit none
-type(param_forward),    intent(in)    :: g_param
+type(param_mesh),    inten   t(in)    :: g_param
 type(grid_data) ,       intent(out)   :: g_grd ! only for the first topofile (only for the focus area)
 type(param_water_level),intent(in)    :: g_param_water ! 2023.08.31
 real(8),      allocatable,dimension(:,:) :: lon1,lat1, z1,lonlatshift ! 2017.09.26

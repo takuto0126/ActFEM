@@ -498,7 +498,7 @@ type(param_apinversion),  intent(in)        :: g_param_apinv
 type(param_source),       intent(in)        :: sparam
 integer(4),               intent(in)        :: ite
 type(model),              intent(in)        :: g_model
-type(param_forward),      intent(in)        :: g_param
+type(param_mesh),      intent(in)        :: g_param
 character(50)                               :: head,outfile,site,sour
 character(2)                                :: num,nf
 integer(4)                                  :: i,j,k,l,m,n,ii,nh ! 2018.06.25

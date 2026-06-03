@@ -18,7 +18,7 @@ integer(4),              intent(in)     :: doftot
 real(8),                 intent(in)     :: omega
 type(mesh),              intent(in)     :: h_mesh  ! see m_mesh_type.f90
 type(line_info),         intent(in)     :: l_line  ! see m_line_type.f90
-type(param_forward),     intent(in)     :: g_param
+type(param_mesh),     intent(in)     :: g_param
 type(param_source),      intent(in)     :: sparam
 type(param_inversion),   intent(in)     :: g_param_inv ! 2017.07.14
 type(param_cond)  ,      intent(in)     :: g_cond
@@ -86,7 +86,7 @@ use  m_param_ana, only:cond,istructure ! see m_param_ana.f90
 implicit none
 type(mesh),           intent(in)    :: h_mesh
 type(line_info),      intent(in)    :: l_line
-type(param_forward),  intent(in)    :: g_param
+type(param_mesh),  intent(in)    :: g_param
 type(param_inversion),intent(in)    :: g_param_inv ! 2017.07.13
 type(param_source),   intent(in)    :: sparam
 type(param_cond),     intent(in)    :: g_cond

@@ -26,7 +26,7 @@ program inversion_joint
  use forward_joint_inv ! see forward_joint_inv.f90 2026.03.03
 ! declaration
  implicit none
- type(param_forward)    :: g_param      ! see m_param.f90
+ type(param_mesh)    :: g_param      ! see m_param.f90
  type(param_source)     :: sparam       ! see m_param.f90
  type(param_cond)       :: g_cond       ! see m_param.f90 : goal conductivity
  type(param_cond)       :: h_cond       ! see m_param.f90 : initial structure
@@ -85,7 +85,7 @@ program inversion_joint
 !## addition of declaration from inv_ap to inv_joint  2021.12.25 ====================
   complex(8),    allocatable,dimension(:,:)   :: fs_mt        ! (nline,2) 2021.12.30
   integer(4)                                  :: nfreq_mt     ! 2022.10.20
-  type(param_forward_mt)                      :: g_param_mt   ! 2021.12.25
+  type(param_mesh_mt)                      :: g_param_mt   ! 2021.12.25
   type(surface)                               :: g_surface(6) ! 2021.12.25
   type(param_cond)                            :: i_cond       ! see m_param.f90 2021.12.25
   integer(4),    allocatable,dimension(:,:)   :: n4           ! 2021.12.27
@@ -710,7 +710,7 @@ use param_mt ! 2016.11.20
 use mesh_type
 implicit none
 type(mesh),            intent(inout) :: em_mesh ! 2021.10.13
-type(param_forward_mt),intent(inout) :: g_param_mt ! 2021.12.15
+type(param_mesh_mt),intent(inout) :: g_param_mt ! 2021.12.15
 real(8) :: xmin,xmax,ymin,ymax,zmin,zmax
 real(8) :: xyzminmax(6)
 real(8), allocatable, dimension(:,:) :: xyz ! 2025.07.15
@@ -748,9 +748,9 @@ end
 ! coded on 2025.09.18
 subroutine OUTSITEINFO(g_param,sparam,g_param_mt,g_param_joint,ACT,MT)
 implicit none
-type(param_forward),       intent(in) :: g_param
+type(param_mesh),       intent(in) :: g_param
 type(param_source),        intent(in) :: sparam
-type(param_forward_mt),    intent(in) :: g_param_mt
+type(param_mesh_mt),    intent(in) :: g_param_mt
 type(param_joint),         intent(in) :: g_param_joint
 logical,                   intent(in) :: ACT,MT
 integer(4) :: i
@@ -1248,7 +1248,7 @@ subroutine OUTOBSFILESINV(g_param,g_param_joint,nsr_inv,sparam,tresp,nfreq,ite,i
  integer(4),                intent(in)    :: ite,nfreq,ialpha ! 2017.09.11
  integer(4),                intent(in)    :: nsr_inv
  type(respdata),            intent(in)    :: tresp(5,nsr_inv,nfreq)!2017.07.14
- type(param_forward),       intent(in)    :: g_param
+ type(param_mesh),       intent(in)    :: g_param
  type(param_source),        intent(in)    :: sparam          ! 2017.07.14
  type(param_joint),   intent(in)    :: g_param_joint   ! 2017.07.14
  integer(4), allocatable, dimension(:)    :: srcindex        ! 2017.07.14
@@ -1334,7 +1334,7 @@ subroutine OUTOBSFILESINV_MT(g_param,g_param_joint,resp_mt,nfreq,ite,ialpha)!
    implicit none
    integer(4),                intent(in)    :: ite,nfreq,ialpha! 2017.09.11
    type(respmt),              intent(in)    :: resp_mt(nfreq)  ! 2022.01.02
-   type(param_forward_mt),    intent(in)    :: g_param         ! 2022.01.02
+   type(param_mesh_mt),    intent(in)    :: g_param         ! 2022.01.02
    type(param_joint),         intent(in)    :: g_param_joint   ! 2017.07.14
    real(8)                                  :: freq            ! 2017.07.14
    character(2)                             :: num             ! 2017.07.14
@@ -1404,7 +1404,7 @@ subroutine OUTOBSFILESINV_TIP(g_param,g_param_joint,resp_tip,nfreq,ite,ialpha)
    implicit none
    integer(4),                intent(in)    :: ite,nfreq,ialpha! 2017.09.11
    type(resptip),              intent(in)    :: resp_tip(nfreq) ! 2023.12.25
-   type(param_forward_mt),    intent(in)    :: g_param         ! 2022.01.02
+   type(param_mesh_mt),    intent(in)    :: g_param         ! 2022.01.02
    type(param_joint),         intent(in)    :: g_param_joint   ! 2017.07.14
    real(8)                                  :: freq            ! 2017.07.14
    character(2)                             :: num             ! 2017.07.14
@@ -1719,7 +1719,7 @@ subroutine ALLOCATERESP(g_param,nsr,resp5,tresp,ip,nfreq,nfreq_ip)!2017.07.13
  use outresp
  use param
  implicit none
- type(param_forward),intent(in)    :: g_param
+ type(param_mesh),intent(in)    :: g_param
  integer(4),         intent(in)    :: nsr ! 2017.07.13
  integer(4),         intent(in)    :: nfreq,ip,nfreq_ip
  type(respdata),     intent(inout) :: resp5(5,nsr,nfreq_ip) ! 2017.07.13
@@ -2270,7 +2270,7 @@ subroutine GENXYZMINMAX(em_mesh,g_param)
  use mesh_type
  implicit none
  type(mesh),            intent(inout) :: em_mesh
- type(param_forward),   intent(inout) :: g_param
+ type(param_mesh),   intent(inout) :: g_param
  real(8) :: xmin,xmax,ymin,ymax,zmin,zmax
  real(8) :: xyz(3,em_mesh%node),xyzminmax(6)
  integer(4) :: i
@@ -2454,7 +2454,7 @@ subroutine PREPOBSCOEFF(g_param,h_mesh,l_line,coeffobs)
  implicit none
  type(mesh),           intent(in)  :: h_mesh
  type(line_info),      intent(in)  :: l_line
- type(param_forward),  intent(in)  :: g_param
+ type(param_mesh),  intent(in)  :: g_param
  type(real_crs_matrix),intent(out) :: coeffobs(2,3)     ! (1,(1,2,3)) for edge (x,y,z)
  real(8) :: x3(3),a4(4),r6(6),len(6),w(3,6),elm_xyz(3,4),v
  real(8) :: coeff(3,6),coeff_rot(3,6)
@@ -2530,7 +2530,7 @@ subroutine PREPOBSCOEFF_MT(g_param,h_mesh,l_line,coeffobs,ip) ! 2022.01.05
   implicit none
   type(mesh),              intent(in)  :: h_mesh
   type(line_info),         intent(in)  :: l_line
-  type(param_forward_mt),  intent(in)  :: g_param ! 2021.12.15
+  type(param_mesh_mt),  intent(in)  :: g_param ! 2021.12.15
   integer(4),              intent(in)  :: ip      ! 2022.01.05
   type(real_crs_matrix),   intent(out) :: coeffobs(2,3)!(1,(1,2,3)) for edge (x,y,z)
   real(8) :: x3(3),a4(4),r6(6),len(6),w(3,6),elm_xyz(3,4),v
@@ -2604,7 +2604,7 @@ subroutine PREPRESPFILES(g_param,files,resp5,nfreq)
  use param
  implicit none
  integer(4),         intent(in) :: nfreq ! 2017.05.18
- type(param_forward),intent(in) :: g_param
+ type(param_mesh),intent(in) :: g_param
  type(obsfiles),intent(inout)   :: files
  type(respdata),intent(inout)   :: resp5(5,nfreq)
  integer(4) :: nobs,i,j
@@ -2719,7 +2719,7 @@ subroutine PREPZSRCOBS(h_mesh,g_param,s_param)
  use triangle
  implicit none
  type(mesh),         intent(inout)     :: h_mesh  ! deallocated at the end 2017.05.15
- type(param_forward),intent(inout)     :: g_param
+ type(param_mesh),intent(inout)     :: g_param
  type(param_source), intent(inout)     :: s_param
  type(grid_list_type)                  :: glist
  integer(4)                            :: nobs,nx,ny
@@ -2814,7 +2814,7 @@ subroutine PREPZOBSMT(h_mesh,g_param_mt)
  use triangle
  implicit none
  type(mesh),         intent(inout)     :: h_mesh  ! deallocated at the end 2017.05.15
- type(param_forward_mt),intent(inout)     :: g_param_mt
+ type(param_mesh_mt),intent(inout)     :: g_param_mt
  type(grid_list_type)                  :: glist
  integer(4)                            :: nobs,nx,ny
  real(8),   allocatable,dimension(:,:) :: xyzobs,xyz
@@ -2880,7 +2880,7 @@ use param_mt ! 2016.11.20
 use mesh_type
 implicit none
 type(mesh),            intent(inout) :: em_mesh ! 2021.10.13
-type(param_forward_mt),intent(inout) :: g_param_mt ! 2021.12.15
+type(param_mesh_mt),intent(inout) :: g_param_mt ! 2021.12.15
 real(8) :: xmin,xmax,ymin,ymax,zmin,zmax
 real(8) :: xyz(3,em_mesh%node),xyzminmax(6)
 integer(4) :: i

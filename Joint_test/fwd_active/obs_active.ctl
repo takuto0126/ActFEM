@@ -1,5 +1,12 @@
-## obs_active.ctl
-## settings for forward modelling for ACTIVE
+[ACT]
+## obs_active.ctl is
+## control for forward modelling for CSEM
+# of frequency     !5
+Frequency [Hz]     !1.d0
+Frequency [Hz]     !3.d0
+Frequency [Hz]     !11.d0
+Frequency [Hz]     !33.d0
+Frequency [Hz]     !99.d0
 # of observatory   !4
 lonlat(1),xyz (2)  !1
 1  Name            !A02
@@ -20,7 +27,4 @@ source start point !131.078109   32.889686   -0.001
 source end   point !131.082206   32.891490   -0.001
 Elcetric current[A]! 1.0
 sigma_air    [S/m] !1.e-8
-condflag 0:home,1: !1
-##nvolume            !1
-##cond               !0.01
-condfile           !../structure/cond_G3.msh
+

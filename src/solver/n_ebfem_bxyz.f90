@@ -12,7 +12,7 @@ use outresp
 use obs_type     ! see m_obs_type.f90 added on 2016.10.27
 use caltime      ! 2025.09.18
 implicit none
-type(param_forward)                         :: g_param
+type(param_mesh)                            :: g_param
 type(param_source)                          :: sparam
 type(param_cond)                            :: g_cond     ! see m_param.f90
 type(mesh)                                  :: g_mesh     ! see m_mesh_type.f90
@@ -158,7 +158,7 @@ use param
 use outresp
 implicit none
 real(8),intent(in) :: freq
-type(param_forward),intent(in) :: g_param
+type(param_mesh),   intent(in) :: g_param
 type(respdata),dimension(5) :: resp5 ! added on 2016.10.27 for plan view of ex
 
      CALL OUTFREQFILES(freq,resp5(1),g_param,"Hx") ! see m_outresp.f90
@@ -239,7 +239,7 @@ use param ! 2016.11.20
 use mesh_type
 implicit none
 type(mesh),intent(in) :: em_mesh
-type(param_forward),intent(inout) :: g_param
+type(param_mesh),   intent(inout) :: g_param
 real(8) :: xmin,xmax,ymin,ymax,zmin,zmax
 real(8) :: xyz(3,em_mesh%node),xyzminmax(6)
 integer(4) :: i
@@ -298,7 +298,7 @@ use param
 implicit none
 integer(4),          intent(in) :: icomp
 real(8),             intent(in) :: freq
-type(param_forward), intent(in) :: g_param
+type(param_mesh),    intent(in) :: g_param
 type(param_source),  intent(in) :: sparam
 real(8)    :: amp,phase,a(3),p(3),x3(3),x1(3),x2(3),I,ab(3),pb(3)
 complex(8) :: one=(1.d0,0.d0),iunit=(0.d0,1.d0),e3(3),fp(3),b3(3),e1(3),e2(3),phi
@@ -358,7 +358,7 @@ integer(4),           intent(in) :: doftot, icomp
 complex(8),           intent(in) :: fp(doftot)
 real(8),              intent(in) :: omega
 type(real_crs_matrix),intent(in) :: coeffobs(2,3) ! see m_matrix.f90
-type(param_forward),  intent(in) :: g_param
+type(param_mesh),     intent(in) :: g_param
 complex(8) :: fp_x(g_param%nobs), fp_new(doftot),iunit=(0.d0,1.d0)
 complex(8) :: fp_y(g_param%nobs)
 complex(8) :: fp_z(g_param%nobs)
@@ -488,7 +488,7 @@ use fem_edge_util
 implicit none
 type(mesh),           intent(in)  :: h_mesh
 type(line_info),      intent(in)  :: l_line
-type(param_forward),  intent(in)  :: g_param
+type(param_mesh),     intent(in)  :: g_param
 type(real_crs_matrix),intent(out) :: coeffobs(2,3)     ! (1,(1,2,3)) for edge (x,y,z)
 real(8) :: x3(3),a4(4),r6(6),len(6),w(3,6),elm_xyz(3,4),v
 real(8) :: coeff(3,6),coeff_rot(3,6)
@@ -567,7 +567,7 @@ use obs_type
 use fem_edge_util
 !use spherical
 implicit none
-type(param_forward),             intent(in)    :: g_param
+type(param_mesh),                intent(in)    :: g_param
 type(mesh),                      intent(in)    :: em_mesh ! 3-D whole mesh
 type(mesh),                      intent(in)    :: h_mesh  ! 2-D triangle topo mesh
 type(line_info),                 intent(in)    :: l_line
@@ -640,7 +640,7 @@ use param     ! 2016.11.23
 use triangle  ! 2016.11.23
 implicit none
 type(mesh),                     intent(in)     :: h_mesh  ! 2d mesh with topography
-type(param_forward),            intent(in)     :: g_param
+type(param_mesh),               intent(in)     :: g_param
 type(obs_info),                 intent(inout)  :: obs
 real(8),            allocatable,dimension(:,:) :: xyzk ! triangle,tetra nodes
 real(8),            allocatable,dimension(:,:) :: xyzobs
@@ -756,7 +756,7 @@ use mesh_type
 use triangle
 implicit none
 type(mesh),          intent(in)       :: h_mesh
-type(param_forward), intent(inout)    :: g_param
+type(param_mesh),    intent(inout)    :: g_param
 type(param_source),  intent(inout)    :: s_param
 type(grid_list_type)                  :: glist
 integer(4)                            :: nobs,nx,ny
@@ -842,7 +842,7 @@ use mesh_type
 use param
 implicit none
 type(mesh),        intent(in)    :: h_mesh
-type(param_forward),intent(inout) :: g_param
+type(param_mesh),   intent(inout) :: g_param
 type(param_source),intent(inout)  :: sparam
 integer(4) :: isurface
 integer(4) :: i,j,n1,n2,n3

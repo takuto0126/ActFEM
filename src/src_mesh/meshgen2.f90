@@ -8,7 +8,7 @@ use mesh_type
 use water_level ! 2023.09.05
 use bell  ! Added from meshgen2_bell
 implicit none
-type(param_forward)           :: g_param ! see m_param.f90
+type(param_mesh)              :: g_param ! see m_param.f90
 type(param_source)            :: s_param ! see m_param.f90
 type(param_water_level)       :: g_param_water
 type(param_cond)              :: g_cond  ! see m_param.f90
@@ -158,7 +158,7 @@ use param ! 2016.11.20
 use mesh_type
 implicit none
 type(mesh),intent(in) :: em_mesh
-type(param_forward),intent(inout) :: g_param
+type(param_mesh)   ,intent(inout) :: g_param
 real(8) :: xmin,xmax,ymin,ymax,zmin,zmax
 real(8) :: xyz(3,em_mesh%node),xyzminmax(6)
 integer(4) :: i
@@ -255,7 +255,7 @@ use mesh_type
 use param
 use water_level ! 2023.09.05
 implicit none
-type(param_forward),    intent(in)    :: g_param
+type(param_mesh)   ,    intent(in)    :: g_param
 type(mesh),             intent(inout) :: h_mesh
 type(param_water_level),intent(in)    :: g_param_water
 ! 0: default, 1: water level set
@@ -670,7 +670,7 @@ subroutine prepare7_5(h_mesh,x3d,y3d,z3d,n3dn,linbry,g_param)
 use mesh_type
 use param
 implicit none
-type(param_forward),intent(in) :: g_param
+type(param_mesh)   ,intent(in) :: g_param
 type(mesh),intent(in) :: h_mesh
 integer(4),intent(in) :: n3dn, linbry(4,100)
 real(8),dimension(n3dn),intent(out) :: x3d,y3d,z3d
@@ -722,7 +722,7 @@ use mesh_type
 use water_level
 use bell
 implicit none
-type(param_forward),    intent(in) :: g_param
+type(param_mesh)   ,    intent(in) :: g_param
 type(mesh),            intent(in) :: h_mesh
 type(param_water_level),intent(in) :: g_param_water
 !type(param_bell),optional,intent(in) :: b_param

@@ -12,7 +12,7 @@ use obs_type     ! see m_obs_type.f90
 use constants, only: pi,dmu
 use face_type
 implicit none
-type(param_forward_mt)  :: g_param_mt ! 2021.12.15
+type(param_mesh_mt)  :: g_param_mt ! 2021.12.15
 type(param_cond)        :: g_cond  ! see src/common/m_param.f90
 type(mesh)              :: g_mesh  ! see src/common/m_mesh_type.f90
 type(mesh)              :: h_mesh  ! topography file
@@ -146,7 +146,7 @@ subroutine OUTOBSRESPMT(g_param_mt,resp_mt,nfreq)
 use param_mt
 use outresp
 implicit none
-type(param_forward_mt),intent(in) :: g_param_mt
+type(param_mesh_mt),intent(in) :: g_param_mt
 integer(4),            intent(in) :: nfreq
 type(respmt),          intent(in) :: resp_mt(nfreq)
 character(50)  :: head, sour, site
@@ -201,7 +201,7 @@ subroutine OUTOBSRESP_TIP(g_param_mt,resp_tip,nfreq)
    implicit none
    integer(4),                intent(in)    :: nfreq! 2017.09.11
    type(resptip),             intent(in)   :: resp_tip(nfreq) ! 2023.12.25
-   type(param_forward_mt),    intent(in)    :: g_param_mt         ! 2022.01.02
+   type(param_mesh_mt),    intent(in)    :: g_param_mt         ! 2022.01.02
    real(8)                                  :: freq            ! 2017.07.14
    integer(4)                               :: i,j,k,l,nobs    ! 2017.07.14
    character(100)                           :: filename1       ! 2022.01.22
@@ -533,7 +533,7 @@ use fem_edge_util
 implicit none
 type(mesh),              intent(in)  :: h_mesh
 type(line_info),         intent(in)  :: l_line
-type(param_forward_mt),  intent(in)  :: g_param ! 2021.12.15
+type(param_mesh_mt),  intent(in)  :: g_param ! 2021.12.15
 type(real_crs_matrix),intent(out) :: coeffobs(2,3)     ! (1,(1,2,3)) for edge (x,y,z)
 real(8) :: x3(3),a4(4),r6(6),len(6),w(3,6),elm_xyz(3,4),v
 real(8) :: coeff(3,6),coeff_rot(3,6)
@@ -608,7 +608,7 @@ use param_mt ! 2016.11.20
 use mesh_type
 implicit none
 type(mesh),            intent(inout) :: em_mesh ! 2021.10.13
-type(param_forward_mt),intent(inout) :: g_param_mt ! 2021.12.15
+type(param_mesh_mt),intent(inout) :: g_param_mt ! 2021.12.15
 real(8) :: xmin,xmax,ymin,ymax,zmin,zmax
 real(8) :: xyzminmax(6)
 real(8), allocatable, dimension(:,:) :: xyz ! 2025.07.15
@@ -650,7 +650,7 @@ subroutine PREPZOBSMT(h_mesh,g_param_mt)
  use triangle
  implicit none
  type(mesh),         intent(inout)     :: h_mesh  ! deallocated at the end 2017.05.15
- type(param_forward_mt),intent(inout)     :: g_param_mt
+ type(param_mesh_mt),intent(inout)     :: g_param_mt
  type(grid_list_type)                  :: glist
  integer(4)                            :: nobs,nx,ny
  real(8),   allocatable,dimension(:,:) :: xyzobs,xyz

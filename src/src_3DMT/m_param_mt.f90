@@ -2,7 +2,7 @@ module param_mt
 use param
 implicit none
 
-type param_forward_mt ! 2021.12.14
+type param_mesh_mt ! 2021.12.14
  ! mesh info
  integer(4)    :: itopoflag    ! 0: no topo, 1: topo are from topofiles 2017.09.29
  integer(4)    :: nfile        ! 2017.09.27
@@ -78,7 +78,7 @@ contains
 !# change the
 subroutine readparam_mt(c_param,g_cond) ! 2021.12.15
 implicit none
-type(param_forward_mt),       intent(out) :: c_param
+type(param_mesh_mt),       intent(out) :: c_param
 type(param_cond),   optional, intent(out) :: g_cond
 integer(4)                  :: i,j,nobs,input=2,nsource
 integer(4)                  :: lonlatflag,iflag_map !2025.06.10

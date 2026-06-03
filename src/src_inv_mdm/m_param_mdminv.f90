@@ -68,7 +68,7 @@ contains
 ! modified on 2017.07.13 for multiple sources
 subroutine readparainv(g_param_inv,g_modelpara,g_param,g_data)
  implicit none
- type(param_forward),  intent(in)  :: g_param
+ type(param_mesh),  intent(in)  :: g_param
  type(param_inversion),intent(out) :: g_param_inv
  type(modelpara),      intent(out) :: g_modelpara
  type(data_vec),       intent(out) :: g_data

@@ -1041,7 +1041,7 @@ type(data_vec_ap),        intent(in)        :: g_data_ap     ! 2022.11.01
 type(param_source),       intent(in)        :: sparam
 integer(4),               intent(in)        :: ite
 type(model),              intent(in)        :: g_model
-type(param_forward),      intent(in)        :: g_param
+type(param_mesh),      intent(in)        :: g_param
 character(50)                               :: head,outfile,site,sour
 character(2)                                :: num,nf
 integer(4)                                  :: i,j,k,l,m,n,ii ! 2018.06.25

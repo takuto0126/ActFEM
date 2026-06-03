@@ -11,7 +11,7 @@ use obs_type     ! see m_obs_type.f90 added on 2016.10.27
 use constants, only:pi,dmu
 use face_type
 implicit none
-type(param_forward)                         :: g_param
+type(param_mesh)                         :: g_param
 type(param_source)                          :: sparam
 type(param_cond)                            :: g_cond     ! see m_param.f90
 type(mesh)                                  :: g_mesh     ! see m_mesh_type.f90
@@ -112,7 +112,7 @@ use param ! 2016.11.20
 use mesh_type
 implicit none
 type(mesh),         intent(inout) :: em_mesh
-type(param_forward),intent(inout) :: g_param
+type(param_mesh),intent(inout) :: g_param
 real(8) :: xmin,xmax,ymin,ymax,zmin,zmax
 real(8) :: xyzminmax(6)
 real(8), allocatable,dimension(:,:) :: xyz

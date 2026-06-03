@@ -26,7 +26,7 @@ implicit none
 !--------------- input and output variants ------------------
 integer(4),         intent(in)       :: ip
 real(8),            intent(in)       :: freq
-type(param_forward),intent(in)       :: g_param
+type(param_mesh),intent(in)       :: g_param
 type(param_cond)  , intent(in)       :: g_cond
 type(surface),      intent(inout)    :: g_surface ! see m_surface_type.f90 2021.05.31
 integer(4),         intent(in)       :: iface ! 2022.01.04

@@ -125,7 +125,7 @@ contains
 subroutine readparainvap(g_param_apinv,g_modelpara,g_param,sparam,g_data_ap)
  use caltime      ! 2017.12.22
  implicit none
- type(param_forward),    intent(in)  :: g_param
+ type(param_mesh),    intent(in)  :: g_param
  type(param_source),     intent(in)  :: sparam         ! 2018.06.26
  type(param_apinversion),intent(out) :: g_param_apinv  ! 2017.08.31
  type(modelpara),        intent(out) :: g_modelpara
@@ -380,7 +380,7 @@ end subroutine
 !# Modified on 2018.10.04 for multisource amp phase inversion
 subroutine readdata_ap(g_param,sparam,g_param_apinv,g_data_ap)
 implicit none
-type(param_forward),      intent(in)           :: g_param         ! 2018.06.26
+type(param_mesh),      intent(in)           :: g_param         ! 2018.06.26
 type(param_source),       intent(in)           :: sparam          ! 2018.06.26
 type(param_apinversion),  intent(inout)        :: g_param_apinv   ! 2017.08.31
 type(data_vec_ap),        intent(out)          :: g_data_ap       ! 2017.08.31

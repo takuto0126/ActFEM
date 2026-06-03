@@ -3,7 +3,7 @@ program outmodel
 use mesh_type
 use param
 implicit none
-type(param_forward) :: g_param
+type(param_mesh)    :: g_param
 type(param_source)  :: s_param
 type(param_cond)    :: g_cond
 type(mesh)          :: h_mesh

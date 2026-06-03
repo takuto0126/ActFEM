@@ -2,7 +2,7 @@
 subroutine outbgfield2d(g_param)
 use param
 implicit none
-type(param_forward),intent(in)     :: g_param
+type(param_mesh),intent(in)     :: g_param
 character(50) :: header2d,fieldfile,pregeo
 real(8)       :: sizein,sizebo
 real(8),dimension(4) :: xbound,ybound, zbound

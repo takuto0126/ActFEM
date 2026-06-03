@@ -23,7 +23,7 @@ contains
 subroutine SETFREQIP_MT(g_param,ip,np,g_freq_mt)
 implicit none
 integer(4),            intent(in)    :: ip,np
-type(param_forward_mt),   intent(in)    :: g_param
+type(param_mesh_mt),   intent(in)    :: g_param
 type(freq_info_mt),       intent(inout) :: g_freq_mt
 real(8),   allocatable,dimension(:)  :: freq,freq_ip
 integer(4),allocatable,dimension(:)  :: ifreq_ip
@@ -71,7 +71,7 @@ subroutine sharemt(g_param_mt,g_surface,ip)
   use param_mt     ! ../src_3DMT/m_param_mt.f90
   implicit none
   integer(4),             intent(in)   :: ip
-  type(param_forward_mt),intent(inout) :: g_param_mt
+  type(param_mesh_mt),intent(inout) :: g_param_mt
   type(surface),         intent(inout) :: g_surface(6)
   integer(4)                           :: i
 
@@ -337,7 +337,7 @@ subroutine sharetipdata(ttip,ip_from)
 subroutine shareparamforwardmt(g_param,ip)
  !# coded on 2021.12.30
     implicit none
-    type(param_forward_mt),intent(inout) :: g_param
+    type(param_mesh_mt),intent(inout) :: g_param
     integer(4),            intent(in)    :: ip
     integer(4) :: errno,nfreq,nobsr,nobs
     integer(4) :: nfile ! 2017.12.13

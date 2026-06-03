@@ -6,7 +6,7 @@ use mesh_type
 use cond_model_type ! m_cond_model_type.f90
 implicit none
 type(mesh)            :: h_mesh
-type(param_forward)   :: g_param
+type(param_mesh)   :: g_param
 type(param_cond)      :: g_cond
 type(param_cond)      :: h_cond ! see ../common/m_param.f90
 type(info_cond_model) :: g_info_cond_model
@@ -212,7 +212,7 @@ use param ! 2016.11.20
 use mesh_type
 implicit none
 type(mesh),            intent(inout) :: em_mesh
-type(param_forward),   intent(inout) :: g_param
+type(param_mesh),   intent(inout) :: g_param
 real(8) :: xmin,xmax,ymin,ymax,zmin,zmax
 real(8) :: xyz(3,em_mesh%node),xyzminmax(6)
 integer(4) :: i

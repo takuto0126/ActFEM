@@ -15,7 +15,7 @@ integer(4),         intent(in)       :: doftot
 real(8),            intent(in)       :: freq
 type(mesh),         intent(in)       :: h_mesh ! see m_mesh_type.f90
 type(line_info),    intent(in)       :: l_line ! see m_line_type.f90
-type(param_forward),intent(in)       :: g_param
+type(param_mesh),   intent(in)       :: g_param
 type(param_source), intent(in)       :: sparam
 type(param_cond)  , intent(in)       :: g_cond
 complex(8),         intent(out)      :: bs(doftot,nsr) ! [nT*km], 2017.07.11
@@ -109,7 +109,7 @@ use  constants,   only:pi,dmu          ! see m_constants.f90, 2017.07.11
 implicit none
 type(mesh),         intent(in)      :: h_mesh
 type(line_info),    intent(in)      :: l_line
-type(param_forward),intent(in)      :: g_param
+type(param_mesh),   intent(in)      :: g_param
 type(param_source), intent(in)      :: sparam
 type(param_cond),   intent(in)      :: g_cond
 type(global_matrix),intent(inout)   :: A

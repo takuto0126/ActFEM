@@ -1,7 +1,7 @@
 module param_active_ana
 implicit none
 
-type param_forward_ana
+type param_mesh_ana
  character(50) :: outputfolder
  ! frequency info
  integer(4)    :: nfreq ! # of frequency for this
@@ -30,7 +30,7 @@ type param_forward_ana
  real(8),   allocatable,dimension(:) :: sigma ! [S/m]
  real(8),   allocatable,dimension(:) :: sigma_depth ! [km] 2021.12.19
  real(8),   allocatable,dimension(:) :: rho   ! [Ohm.m]
-end type param_forward_ana
+end type param_mesh_ana
 
 type param_source
  integer(4) :: lonlatflag !# 1:lonlat [deg], 2: xy [km]
@@ -77,7 +77,7 @@ end subroutine
 !# 2021.12.19
 subroutine readparam_ana(c_param,sparam)
 implicit none
-type(param_forward_ana),          intent(out) :: c_param
+type(param_mesh_ana),          intent(out) :: c_param
 type(param_source),               intent(out) :: sparam
 integer(4)                  :: i,j,nobs,input=2,nsource
 integer(4)                  :: l ! 2020.09.28

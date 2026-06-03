@@ -10,6 +10,7 @@ cd -
 
 OMP_NUM_THREADS=12
 time ${src}/ebfem_bxyz.exe <<EOF #> result/fwd.log
+mesh.ctl
 active.ctl
 EOF
 

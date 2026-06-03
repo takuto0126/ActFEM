@@ -33,8 +33,8 @@ contains
 subroutine SETFREQIPJOINT(g_param,g_param_mt,ipp,np,g_freq_joint)
 implicit none
 integer(4),            intent(in)     :: np,ipp
-type(param_forward),   intent(in)     :: g_param
-type(param_forward_mt),intent(in)     :: g_param_mt
+type(param_mesh),   intent(in)     :: g_param
+type(param_mesh_mt),intent(in)     :: g_param_mt
 type(freq_info_joint), intent(inout)  :: g_freq_joint
 !#
 integer(4),allocatable,dimension(:)   :: if_act2tot,if_mt2tot,ip_from_tot

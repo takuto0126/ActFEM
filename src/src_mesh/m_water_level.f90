@@ -31,7 +31,7 @@ contains
 subroutine readwaterlevelctl(g_param,g_param_water,iunit)
 use param
 implicit none
-type(param_forward),    intent(in)  :: g_param
+type(param_mesh),    intent(in)  :: g_param
 type(param_water_level),intent(out) :: g_param_water
 integer(4),intent(in) :: iunit
 integer(4) :: inum_water_level,i

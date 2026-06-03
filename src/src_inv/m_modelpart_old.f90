@@ -66,7 +66,7 @@ implicit none
 type(mesh),intent(in) :: g_mesh
 type(modelpara),   intent(in)  :: g_modelpara
 type(model),       intent(out) :: g_model
-type(param_forward),intent(in) :: g_param
+type(param_mesh),intent(in) :: g_param
 type(param_cond),   intent(in) :: g_cond
 real(8),   allocatable,dimension(:)   ::xdiv,ydiv,zdiv
 real(8),   allocatable,dimension(:,:) :: xyz

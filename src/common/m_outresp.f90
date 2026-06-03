@@ -131,7 +131,7 @@ subroutine OUTFREQFILES(freq,resp,g_param,comp)
  implicit none
  real(8),            intent(in) :: freq
  type(respdata),     intent(in) :: resp
- type(param_forward),intent(in) :: g_param
+ type(param_mesh),intent(in) :: g_param
  character(2),       intent(in) :: comp
  character(50)                  :: filename
  character(9)                   :: num
@@ -156,7 +156,7 @@ subroutine OUTFREQFILES(freq,resp,g_param,comp)
 !######################################### MAKEOBSFILES
 subroutine MAKEOBSFILES(g_param,files)
 implicit none
-type(param_forward),intent(in)  :: g_param
+type(param_mesh),intent(in)  :: g_param
 type(obsfiles),     intent(out) :: files
 integer(4)                      :: i
 character(3)                    :: num
@@ -207,7 +207,7 @@ implicit none
 real(8),            intent(in) :: freq
 integer(4),         intent(in) :: nsr
 type(respdata),     intent(in) :: resp(5,nsr)
-type(param_forward),intent(in) :: g_param
+type(param_mesh),intent(in) :: g_param
 type(obs_info),     intent(in) :: obs
 character(50)                  :: filename
 character(9)                   :: num
@@ -243,7 +243,7 @@ end subroutine
 !# coded on 2017.07.11
 subroutine OUTOBSFILESFWD(g_param,sparam,nsr,tresp,nfreq)
 implicit none
-type(param_forward),intent(in) :: g_param
+type(param_mesh),intent(in) :: g_param
 type(param_source), intent(in) :: sparam
 integer(4),         intent(in) :: nsr
 integer(4),         intent(in) :: nfreq

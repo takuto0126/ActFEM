@@ -4,7 +4,7 @@ program calanacomp
 use param
 use m_param_ana
 implicit none
-type(param_forward) :: g_param
+type(param_mesh) :: g_param
 type(param_source)  :: s_param
 type(param_cond)    :: g_cond
 integer(4)          :: nsrc, nobs,nfreq

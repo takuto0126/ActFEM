@@ -5,7 +5,7 @@ use horizontalresolution
 use param
 implicit none
 
-type(param_forward),intent(in)     :: g_meshpara
+type(param_mesh),   intent(in)     :: g_meshpara
 character(50),      intent(in)     :: posfile
 integer(4)                         :: ifile
 real(8)                            :: si,sb

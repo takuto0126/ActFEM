@@ -31,10 +31,10 @@ real(8)                              :: omega,zmin,zmax,xout,yout
 write(*,*) "nsr=",nsr,"ip",ip
 allocate(Avalue_bc(doftot),line_bc(doftot))
 allocate(b_vec(doftot,nsr)) ! 2017.07.11
-zmin = g_param%zbound(1)
-zmax = g_param%zbound(4)
-xout = g_param%xbound(4)
-yout = g_param%ybound(4)
+zmin = g_param%xyzminmax(5)
+zmax = g_param%xyzminmax(6)
+xout = g_param%xyzminmax(2)
+yout = g_param%xyzminmax(4)
 
 !#[3]## SET Coefficient matrix and Generate Matrix
 

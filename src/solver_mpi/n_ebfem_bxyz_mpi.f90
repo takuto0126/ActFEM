@@ -51,7 +51,7 @@ integer(4)                                  :: ixyflag  ! 2017.10.11
  if ( ip .eq. 0) then !################################################# ip = 0
 
   !#[0]## read parameters
-   CALL READPARAM(g_param,sparam,g_cond)
+   CALL READPARAM_FWD(g_param,sparam,g_cond)
 
   !#[1]## Mesh READ
    CALL READMESH_TOTAL(g_mesh,g_param%g_meshfile) ! 3-D whole file
@@ -728,10 +728,10 @@ integer(4)                                     :: nnx,nny,nnz=1 ! vertical plane
  obs_xy%name    = g_param%xyfilehead ! 2017.10.12
  xyzminmax      = g_param%xyzminmax  ! 2016.11.20
  !# focus only on the center area
- xmin           = g_param%xbound(2)  ! 2017.10.12
- xmax           = g_param%xbound(3)  ! 2017.10.12
- ymin           = g_param%ybound(2)  ! 2017.10.12
- ymax           = g_param%ybound(3)  ! 2017.10.12
+ xmin           = g_param%xyzminmax(1)
+ xmax           = g_param%xyzminmax(2)
+ ymin           = g_param%xyzminmax(3)
+ ymax           = g_param%xyzminmax(4)
  ntet           = em_mesh%ntet
 
 !#[1]# prepare coordinate of observatories for seafloor

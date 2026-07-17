@@ -36,7 +36,7 @@ call watchstart(t_watch) ! 2025.09.18
 !##
 
 !#[0]## read parameters
-  CALL READPARAM(g_param,sparam,g_cond)
+  CALL READPARAM_FWD(g_param,sparam,g_cond)
 
 !#[1]## Mesh READ
    CALL READMESH_TOTAL(g_mesh,g_param%g_meshfile)

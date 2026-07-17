@@ -122,6 +122,229 @@ h_cond%sigma_air  = g_cond%sigma_air  ! [S/m] this will be also used in inversio
 return
 end subroutine
 
+!################################################## subroutine readparam_fwd
+!# Reduced-parameter reading for the active forward solver.
+!# Reads two files from stdin:
+!#   1st: base.ctl  (mesh files + conductivity; NO geometry bounds / mesh-gen params)
+!#   2nd: obs_active.ctl (frequencies + observatories + sources; NO dlen_source etc.)
+!# Boundary values (xout, yout, zmin, zmax) are derived from the mesh via
+!# GENXYZMINMAX, so they are no longer read from the ctl file.
+subroutine readparam_fwd(c_param,sparam,g_cond)
+implicit none
+type(param_mesh),            intent(out) :: c_param
+type(param_source),          intent(out) :: sparam
+type(param_cond),   optional,intent(out) :: g_cond
+integer(4)                  :: i,j,nobs,input=2,nsource,iflag_map,lonlatflag
+character(50)               :: site
+real(8)                     :: lonorigin,latorigin
+character(100)              :: paramfile
+integer(4)                  :: ikeep=2
+
+!#===== PART 1: base.ctl — mesh files + conductivity =====
+write(*,*) ""
+write(*,*) "<Please input the base parameter file (base.ctl)>"
+read(*,'(a)') paramfile
+call readcontrolfile(paramfile,ikeep)
+
+open(input,file="tmp.ctl")
+
+write(*,*) ""
+write(*,*) "<input 0 for no topo, 1 for topofiles (itopoflag)>"
+read(input,*)    c_param%itopoflag
+write(*,'(a,i3)') " itopoflag =", c_param%itopoflag
+
+if ( c_param%itopoflag .eq. 0 ) then
+ goto 101
+else if (c_param%itopoflag .eq. 1 ) then
+  read(input,*) c_param%iflag_map
+  write(*,'(a,i13)') " iflag_map =",c_param%iflag_map
+  if ( c_param%iflag_map .eq. 2 ) then
+   read(input,*) c_param%UTM
+   write(*,*) "UTM zone : ",c_param%UTM
+  end if
+  read(input,*) c_param%lonorigin,c_param%latorigin
+  write(*,*) "lonorigin =",c_param%lonorigin
+  write(*,*) "latorigin =",c_param%latorigin
+  read(input,*) c_param%nfile
+  allocate(c_param%topofile(c_param%nfile))
+  allocate(c_param%lonlatshift(2,c_param%nfile))
+  do i=1,c_param%nfile
+   read(input,10) c_param%topofile(i)
+   read(input,*)  c_param%lonlatshift(1:2,i)
+  end do
+else
+  write(*,*) "GEGEGE! itopoflag should be 0 or 1: itopoflag",c_param%itopoflag
+  stop
+end if
+101 continue
+
+write(*,40) " <Please enter global meshfile>"
+read(input,10) c_param%g_meshfile
+write(*,41) " global mesh file : ",trim(c_param%g_meshfile)
+read(input,10) c_param%z_meshfile
+write(*,41) " 2dz    mesh file : ",trim(c_param%z_meshfile)
+read(input,10) c_param%g_lineinfofile
+write(*,41) " line info   file : ",trim(c_param%g_lineinfofile)
+
+read(input,*) c_param%angle
+write(*,'(a,f15.7,a)') " rotation angle is",c_param%angle,"([NdegE])"
+
+read(input,*) c_param%iflag_water_level
+write(*,*) "iflag_water_level =",c_param%iflag_water_level
+if ( c_param%iflag_water_level .eq. 1 ) then
+ read(input,*) c_param%waterlevelfile
+ write(*,*) "water_level control file is",c_param%waterlevelfile
+end if
+
+read(input,10) c_param%outputfolder
+write(*,41) " output folder    : ",trim(c_param%outputfolder)
+read(input,10) c_param%header2d
+write(*,41) "header2d          : ",trim(c_param%header2d)
+read(input,10) c_param%header3d
+write(*,41) "header3d          : ",trim(c_param%header3d)
+
+if ( present(g_cond) ) then
+  read(input,*) g_cond%sigma_air
+  write(*,'(a,g15.7,a)') " sigma_air =",g_cond%sigma_air," [S/m]"
+  read(input,*) g_cond%condflag
+  if (g_cond%condflag .eq. 0) then
+   read(input,*) g_cond%nvolume
+   write(*,*) "nvolume=",g_cond%nvolume
+   allocate(g_cond%sigma_land(g_cond%nvolume))
+   do i=1,g_cond%nvolume
+    read(input,*) g_cond%sigma_land(i)
+    write(*,*) i,"sigma_land=",g_cond%sigma_land(i),"[S/m]"
+   end do
+  else if (g_cond%condflag .eq. 1) then
+   read(input,'(a50)') g_cond%condfile
+   write(*,*) "cond file is",g_cond%condfile
+   CALL READCOND(g_cond)
+  else
+   write(*,*) "GEGEGE condflag should be 0 or 1 : condflag=",g_cond%condflag
+   stop
+  end if
+end if
+
+close(input)
+
+!#===== PART 2: obs_active.ctl — frequencies + observatories + sources =====
+write(*,*) ""
+write(*,*) "<Please input the obs/source parameter file (obs_active.ctl)>"
+read(*,'(a)') paramfile
+call readcontrolfile(paramfile,ikeep)
+
+open(input,file="tmp.ctl")
+
+! frequencies
+read(input,*) c_param%nfreq
+write(*,'(a,i3)') " # of frequency : ",c_param%nfreq
+allocate(c_param%freq(c_param%nfreq))
+do i=1,c_param%nfreq
+ read(input,*) c_param%freq(i)
+ write(*,'(f9.4,a)') c_param%freq(i)," [Hz]"
+end do
+
+! observatories
+read(input,*) c_param%nobs
+write(*,'(a,i3)') " # of observatories : ",c_param%nobs
+allocate(c_param%lonlataltobs(3,c_param%nobs))
+allocate(c_param%xyzobs      (3,c_param%nobs))
+allocate(c_param%obsname(c_param%nobs))
+
+read(input,*) c_param%lonlatflag
+write(*,*) "c_param%lonlatflag =",c_param%lonlatflag
+
+lonorigin  = c_param%lonorigin
+latorigin  = c_param%latorigin
+iflag_map  = c_param%iflag_map
+lonlatflag = c_param%lonlatflag
+nobs       = c_param%nobs
+if (c_param%lonlatflag .eq. 1) write(*,'(a)') "< conversion of Lon Lat to x (east), y (north) [km]>"
+write(*,*) ""
+
+do i=1,nobs
+  read(input,10) c_param%obsname(i)
+  site=c_param%obsname(i)
+  if (iflag_map .eq. 1 .and. lonlatflag .eq. 1) then
+   read(input,*) (c_param%lonlataltobs(j,i),j=1,3)
+   write(*,'(1x,a,a,3f15.7)') trim(site)," :",c_param%lonlataltobs(1:3,i)
+   call ECPXY(c_param%lonlataltobs(1:2,i),lonorigin,latorigin,c_param%xyzobs(1:2,i),c_param%angle)
+   c_param%xyzobs(3,i) = c_param%lonlataltobs(3,i)
+  else if (iflag_map .eq. 2 .and. lonlatflag .eq. 1) then
+   read(input,*) (c_param%lonlataltobs(j,i),j=1,3)
+   write(*,'(1x,a,a,3f15.7)') trim(site)," :",c_param%lonlataltobs(1:3,i)
+   call UTMXY(c_param%lonlataltobs(1:2,i),&
+       & lonorigin,latorigin,c_param%xyzobs(1:2,i),c_param%UTM,c_param%angle)
+   c_param%xyzobs(3,i) = c_param%lonlataltobs(3,i)
+  else if (lonlatflag .eq. 2) then
+   read(input,*) (c_param%xyzobs(j,i),j=1,3)
+  else
+   write(*,*) "GEGEGE! lonlatflag=",lonlatflag,"iflag_map=",iflag_map
+   stop
+  end if
+end do
+
+! ixyflag
+read(input,*) c_param%ixyflag
+write(*,'(a,i3)') " ixyflag =",c_param%ixyflag
+if (c_param%ixyflag .eq. 1) then
+ read(input,*) c_param%xyfilehead
+ read(input,*) c_param%nx,c_param%ny
+ write(*,*) "nx,ny =",c_param%nx,c_param%ny
+end if
+if (c_param%ixyflag .eq. 2) then
+ read(input,*) c_param%xyfilehead
+end if
+
+! sources
+sparam%lonlatflag = c_param%lonlatflag
+sparam%iflag_map  = c_param%iflag_map
+read(input,*) sparam%nsource
+nsource = sparam%nsource
+write(*,'(a,i3)') " # of source wires (nsource) =",nsource
+allocate(sparam%xs1(3,nsource),    sparam%xs2(3,nsource))
+allocate(sparam%lonlats1(2,nsource),sparam%lonlats2(2,nsource))
+allocate(sparam%sourcename(nsource))
+
+do i=1,nsource
+  read(input,*) sparam%sourcename(i)
+  write(*,41) " source name: ",sparam%sourcename(i)
+  if (iflag_map .le. 2 .and. lonlatflag .eq. 1) then
+   read(input,*) sparam%lonlats1(1:2,i),sparam%xs1(3,i)
+   read(input,*) sparam%lonlats2(1:2,i),sparam%xs2(3,i)
+   write(*,44) " Start point (lon,lat,z)=",sparam%lonlats1(1:2,i),sparam%xs1(3,i)
+   write(*,44) " End   point (lon,lat,z)=",sparam%lonlats2(1:2,i),sparam%xs2(3,i)
+  end if
+  if (iflag_map .eq. 1 .and. lonlatflag .eq. 1) then
+   call ECPXY(sparam%lonlats1(1:2,i),lonorigin,latorigin,sparam%xs1(1:2,i),c_param%angle)
+   call ECPXY(sparam%lonlats2(1:2,i),lonorigin,latorigin,sparam%xs2(1:2,i),c_param%angle)
+  else if (iflag_map .eq. 2 .and. lonlatflag .eq. 1) then
+   call UTMXY(sparam%lonlats1(1:2,i),lonorigin,latorigin,sparam%xs1(1:2,i),c_param%UTM,c_param%angle)
+   call UTMXY(sparam%lonlats2(1:2,i),lonorigin,latorigin,sparam%xs2(1:2,i),c_param%UTM,c_param%angle)
+  else if (lonlatflag .eq. 2) then
+   read(input,*) sparam%xs1(1:3,i)
+   read(input,*) sparam%xs2(1:3,i)
+  end if
+  write(*,'(a,3f15.7)') " xs1 (x,y,z)=",sparam%xs1(1:3,i)
+  write(*,'(a,3f15.7)') " xs2 (x,y,z)=",sparam%xs2(1:3,i)
+end do
+
+read(input,*) sparam%I
+write(*,'(a,g15.7,a)') " Electric source current :",sparam%I," [A]"
+
+c_param%lonlatflag = 2
+
+close(input)
+write(*,*) "### READ FORWARD PARAM (FWD) END!! ###"
+
+return
+10 format(a)
+40 format(a)
+41 format(a,a)
+43 format(a,f9.4)
+44 format(a,3f9.4)
+end subroutine readparam_fwd
+
 !################################################## subroutine readparam
 !# change the
 subroutine readparam(c_param,sparam,g_cond)

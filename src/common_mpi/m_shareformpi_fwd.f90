@@ -249,7 +249,7 @@ subroutine sharefparam(g_param,ip)
 implicit none
 type(param_mesh),   intent(inout) :: g_param
 integer(4),intent(in) :: ip
-integer(4) :: errno,nfreq,nobsr,nobs
+integer(4) :: errno,nfreq,nobs
 integer(4) :: nfile  ! 2017.09.29
 
 !#[3]## broadcast
@@ -285,37 +285,16 @@ integer(4) :: nfile  ! 2017.09.29
  call MPI_BCAST(g_param%nlat,        1, MPI_REAL8,   0,MPI_COMM_WORLD,errno)
  call MPI_BCAST(g_param%lonorigin,   1, MPI_REAL8,   0,MPI_COMM_WORLD,errno)
  call MPI_BCAST(g_param%latorigin,   1, MPI_REAL8,   0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%lenout,      1, MPI_REAL8,   0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%upzin,       1, MPI_REAL8,   0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%downzin,     1, MPI_REAL8,   0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%zmax,        1, MPI_REAL8,   0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%zmin,        1, MPI_REAL8,   0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%sizein,      1, MPI_REAL8,   0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%sizebo,      1, MPI_REAL8,   0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%sigma_obs,   1, MPI_REAL8,   0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%A_obs,       1, MPI_REAL8,   0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%sigma_src,   1, MPI_REAL8,   0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%A_src,       1, MPI_REAL8,   0,MPI_COMM_WORLD,errno)
+ ! lenout,upzin,downzin,zmax,zmin,sizein,sizebo,sigma_obs,A_obs,sigma_src,A_src
+ ! are no longer read by readparam_fwd — bounds derived from xyzminmax instead
 
  call MPI_BCAST(g_param%ixyflag,     1, MPI_INTEGER4,0,MPI_COMM_WORLD,errno) ! 2017.10.12
  call MPI_BCAST(g_param%nx,          1, MPI_INTEGER4,0,MPI_COMM_WORLD,errno) ! 2017.10.12
  call MPI_BCAST(g_param%ny,          1, MPI_INTEGER4,0,MPI_COMM_WORLD,errno) ! 2017.10.12
  call MPI_BCAST(g_param%xyfilehead, 50, MPI_CHAR,    0,MPI_COMM_WORLD,errno) ! 2017.10.12
 
- call MPI_BCAST(g_param%nobsr,    1, MPI_INTEGER4,0,MPI_COMM_WORLD,errno)
- nobsr = g_param%nobsr
- if ( ip .ne. 0) then
-  allocate(g_param%xyz_r(3,nobsr))
-  allocate(g_param%A_r(nobsr)    )
-  allocate(g_param%sigma_r(nobsr))
- end if
-
- call MPI_BCAST(g_param%xyz_r,nobsr*3, MPI_REAL8,0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%A_r,    nobsr, MPI_REAL8,0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%sigma_r,nobsr, MPI_REAL8,0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%xbound,     4, MPI_REAL8,0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%ybound,     4, MPI_REAL8,0,MPI_COMM_WORLD,errno)
- call MPI_BCAST(g_param%zbound,     4, MPI_REAL8,0,MPI_COMM_WORLD,errno)
+ ! nobsr/xyz_r/A_r/sigma_r: calobsr() not called in forward solver
+ ! xbound/ybound/zbound: derived from xyzminmax (broadcast below)
  call MPI_BCAST(g_param%UTM,        3, MPI_CHAR, 0,MPI_COMM_WORLD,errno)
 
  nobs = g_param%nobs

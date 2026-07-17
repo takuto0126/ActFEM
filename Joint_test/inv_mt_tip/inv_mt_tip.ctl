@@ -49,17 +49,25 @@ iflag_replace 0,1  |0
 imp: 0, 1:amp,pha  !0
 unit:1Ohm,2mV/km/nT!2
 MT errfloor SSQ*   !0.1
-# of observatories |5
+# of observatories |9
 MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat
 MT2 impedance      !   2 ../fwd_3DMT/result/MT2_MT_imp.dat
 MT3 impedance      !   3 ../fwd_3DMT/result/MT3_MT_imp.dat
 MT4 impedance      !   4 ../fwd_3DMT/result/MT4_MT_imp.dat
 MT5 impedance      !   5 ../fwd_3DMT/result/MT5_MT_imp.dat
+MT6 impedance      !   6 ../fwd_3DMT/result/MT5_MT_imp.dat
+MT8 impedance      !   7 ../fwd_3DMT/result/MT5_MT_imp.dat
+MT9 impedance      !   8 ../fwd_3DMT/result/MT5_MT_imp.dat
+MT5 impedance      !   9 ../fwd_3DMT/result/MT5_MT_imp.dat
 MT1 impedance err  !   1 ../fwd_3DMT/mt_err/MT1_MT_imp_err.dat
 MT2 impedance err  !   2 ../fwd_3DMT/mt_err/MT2_MT_imp_err.dat
 MT3 impedance err  !   3 ../fwd_3DMT/mt_err/MT3_MT_imp_err.dat
 MT4 impedance err  !   4 ../fwd_3DMT/mt_err/MT4_MT_imp_err.dat
 MT5 impedance err  !   5 ../fwd_3DMT/mt_err/MT5_MT_imp_err.dat
+MT6 impedance err  !   6 ../fwd_3DMT/mt_err/MT5_MT_imp_err.dat
+MT7 impedance err  !   7 ../fwd_3DMT/mt_err/MT5_MT_imp_err.dat
+MT8 impedance err  !   8 ../fwd_3DMT/mt_err/MT5_MT_imp_err.dat
+MT9 impedance err  !   9 ../fwd_3DMT/mt_err/MT5_MT_imp_err.dat
 ########################################################################
 iflag_tipper       !1
 errorfloor         !0.01
@@ -68,6 +76,10 @@ MT2 tipper         !   2 ../fwd_3DMT/mt_err/MT2_TIP_err.dat
 MT3 tipper         !   3 ../fwd_3DMT/mt_err/MT3_TIP_err.dat
 MT4 tipper         !   4 ../fwd_3DMT/mt_err/MT4_TIP_err.dat
 MT5 tipper         !   5 ../fwd_3DMT/mt_err/MT5_TIP_err.dat
+MT6 tipper         !   6 ../fwd_3DMT/mt_err/MT5_TIP_err.dat
+MT7 tipper         !   7 ../fwd_3DMT/mt_err/MT5_TIP_err.dat
+MT8 tipper         !   8 ../fwd_3DMT/mt_err/MT5_TIP_err.dat
+MT9 tipper         !   9 ../fwd_3DMT/mt_err/MT5_TIP_err.dat
 ## icombine = 0: normal
 ## icombine = 1: integrate the outside blocks to one and assign one model parameter
 ## icombine = 2: integrate the outside blocks to one and fix the modelparameter with given cond

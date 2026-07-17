@@ -66,11 +66,16 @@ type param_source
  integer(4) :: iflag_map  !0:ECP, 1:UTM   2025.06.10
  integer(4) :: nsource    ! # of sources  added on 2017.07.11
  character(50),allocatable,dimension(:) :: sourcename ! 2017.07.11
- real(8),allocatable,dimension(:,:) :: xs1  ! [km] xyz coordinate of start electrode
- real(8),allocatable,dimension(:,:) :: xs2  ! [km] xyz coordinate of end electrode
- real(8),allocatable,dimension(:,:) :: lonlats1 ! [deg] lonlat of start electrode
- real(8),allocatable,dimension(:,:) :: lonlats2 ! [deg] xyz coordinate of end electrode
+ type(dipoles),allocatable,dimension(:) :: dipoles !(nsources) 2026.07.08
  real(8)                            :: I ! source current through wire [A]
+end type
+
+type dipoles ! 2026.07.08
+ integer(4) :: ndipoles      ! # of dipoles for each source 2026.07.08
+ real(8),allocatable,dimension(:,:) :: xs1  ! [km] xyz of start electrode (3,ndipoles) 2026.07.08
+ real(8),allocatable,dimension(:,:) :: xs2  ! [km] xyz of end electrode (3,ndipoles) 2026.07.08
+ real(8),allocatable,dimension(:,:) :: lonlats1 ! [deg] lonlat of start electrode 2026.07.08
+ real(8),allocatable,dimension(:,:) :: lonlats2 ! [deg] lonlat of end electrode 2026.07.08
 end type
 
 type param_cond
@@ -344,15 +349,21 @@ end do
  read(input,*) sparam%nsource       !2017.07.11, ! 11->* 2021.09.02
  nsource = sparam%nsource
  write(*,'(a,i3)') " # of source wires (nsource) =",nsource ! 2020.09.17
- allocate(sparam%xs1(3,nsource),    sparam%xs2(3,nsource))!2017.07.11
- allocate(sparam%lonlats1(2,nsource),sparam%lonlats2(2,nsource))!2017.07.11
- allocate(sparam%sourcename(nsource))
-
+ allocate(sparam%dipoles(nsource)) ! 2026.07.08
+ 
  ! lonlat input
  do i=1,nsource ! 2017.07.11
    read(input,*) sparam%sourcename(i) ! 10->* 2021.09.02
-   write(*,41) " source name: ",sparam%sourcename(i) ! 2020.09.29
+   read(input,*) sparam%dipoles(i)%ndipoles ! 2026.07.08
+   allocate(sparam%dipoles(i)%xs1(3,sparam%dipoles(i)%ndipoles)) ! 2026.07.08
+   allocate(sparam%dipoles(i)%xs2(3,sparam%dipoles(i)%ndipoles)) ! 2026.07.08
+   allocate(sparam%dipoles(i)%lonlats1(2,sparam%dipoles(i)%ndipoles)) ! 2026.07.08
+   allocate(sparam%dipoles(i)%lonlats2(2,sparam%dipoles(i)%ndipoles)) ! 2026.07.08
 
+   write(*,41) " source name: ",sparam%sourcename(i) ! 2020.09.29
+   write(*,*) "ndipoles =",sparam%dipoles(i)%ndipoles ! 2026.07.08
+
+  ! iflag_map = 1 (ECP) or 2 (UTM) and lonlatflag = 1 (lonlat) 2025.06.09
    if (   iflag_map .le. 2  .and. lonlatflag .eq. 1) then ! ECP or UTM 2025.06.09
      read(input,*) sparam%lonlats1(1:2,i),sparam%xs1(3,i)
      read(input,*) sparam%lonlats2(1:2,i),sparam%xs2(3,i)

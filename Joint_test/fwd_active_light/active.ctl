@@ -61,10 +61,8 @@ lonlat(1),xyz (2)  !1
 ixyflg 0:no,1:surfv!0
 # of sources       !2
 Source Name        !S1
-# of dipoles       !2
-1dipole start point!131.086490   32.877356   -0.001
-2dipole start point!131.088665   32.877507   -0.001
-2dipole end   point!131.090840   32.877658   -0.001
+source start point !131.086490   32.877356   -0.001
+source end   point !131.090840   32.877658   -0.001
 Source Name        !S2
 source start point !131.078109   32.889686   -0.001
 source end   point !131.082206   32.891490   -0.001
@@ -73,5 +71,5 @@ sigma_air    [S/m] !1.e-8
 condflag 0:home,1: !1
 ##nvolume            !1
 ##cond               !0.01
-condfile           !../structure/cond_G3.msh
+condfile           !../structure_light/cond_G3.msh
 

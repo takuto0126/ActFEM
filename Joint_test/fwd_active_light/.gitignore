@@ -1,0 +1,9 @@
+result/*
+data/*
+*.pdf
+tmp.ctl
+*.log
+*.dat
+
+!result/.gitkeep
+!data/.gitkeep

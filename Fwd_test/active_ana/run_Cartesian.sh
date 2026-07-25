@@ -10,7 +10,7 @@ make
 cd -
 
 time ${SRC}/active_ana.exe <<EOF
-ana.ctl
+ana_Cartesian.ctl
 EOF
 
 

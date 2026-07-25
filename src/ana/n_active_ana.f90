@@ -27,6 +27,15 @@ real(8)                 :: freq
   CALL ALLOCATERESP(nobs,nsr,resp5,nfreq)
 
 !#[4]## calculation
+ do iflag = 1,3 ! 2026.07.23 iflag=1: primary, iflag=2: secondary, iflag=3: total (global variable)
+  if ( iflag .eq. 1 ) then
+   write(*,*) "iflag",iflag,"Primary field calculation"
+  else if ( iflag .eq. 2 ) then
+   write(*,*) "iflag",iflag,"Secondary field calculation"
+  else if ( iflag .eq. 3 ) then
+   write(*,*) "iflag",iflag,"Total field calculation"
+  end if
+
  do j=1,nfreq
   freq=g_param_ana%freq(j)
   write(*,*) j,"freq",freq,"[Hz]"
@@ -35,6 +44,8 @@ real(8)                 :: freq
 
 !#[5]## output resp to obs file
  CALL OUTOBSFILESFWD(g_param_ana,sparam,nsr,resp5,nfreq) !2017.07.11 m_outresp.f90
+ 
+ end do ! 2026.07.26
 
 end program
 
@@ -68,6 +79,7 @@ end
 !# coded on 2017.07.11
 subroutine OUTOBSFILESFWD(g_param,sparam,nsr,tresp,nfreq)
 use param_active_ana
+use m_param_ana ! to check iflag 2027.07.11
 implicit none
 type(param_forward_ana),intent(in) :: g_param
 type(param_source),     intent(in) :: sparam
@@ -75,6 +87,7 @@ integer(4),             intent(in) :: nsr
 integer(4),             intent(in) :: nfreq
 type(respdata),         intent(in) :: tresp(5,nsr,nfreq)
 character(50)  :: head, sour, site
+character(4)   :: ext  ! 2027.07.26
 character(70)  :: filename
 integer(4)     :: i,j,k,l,nhead,nsite,nsour,nobs
 real(8)        :: freq
@@ -92,7 +105,14 @@ real(8)        :: freq
   do k=1,nsr
    sour     = sparam%sourcename(k)
    nsour    = len_trim(sour)
-   filename = head(1:nhead)//site(1:nsite)//"_"//sour(1:nsour)//".dat"
+   if ( iflag == 1 ) then ! 2027.07.26
+    ext = "_pri"
+   else if ( iflag == 2 ) then
+    ext = "_sec"
+   else if ( iflag == 3 ) then
+    ext = "" ! default file 2027.07.26
+   end if
+   filename = head(1:nhead)//site(1:nsite)//"_"//sour(1:nsour)//trim(ext)//".dat"
    open(31,file=filename)
 
    do i=1,nfreq

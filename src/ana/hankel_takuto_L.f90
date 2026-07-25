@@ -7,8 +7,8 @@
 ! Found that Ooura's package is much superior to Anderson's code!!!! 2016.04.07
 
 !program hankel_takuto
-subroutine dipole_l(xs1,xs2,I,ds,obsxy,exy,bxyz,freq)
-use m_param_ana
+subroutine dipole_l(xs1,xs2,I,ds,obsxy,exy,bxyz,freq)  !gaa_param_ana is added 2026.07.23
+use m_param_ana ! iflag_ana is global variable
 implicit none
 real(8),intent(in)  :: freq,xs1(2),xs2(2) ! source [m]
 real(8),intent(in)  :: I  ! current [A]
@@ -76,7 +76,7 @@ yobs   = -sin*x1(1) + cos*x1(2)
  ! BZ
  FNAME="FBZ ";jflag=1
  if ( R .eq. 0.d0 ) R=0.001d0 ! 1 mm
- iflag=3 ! 1,3
+ ! iflag = 1 ~ 3 is global variable, 1:primary, 2:secondary, 3:total see m_param_ana.f90  2026.07.23
     bz_total = 0.d0
     do is = 1, nsource
      R=dsqrt((xobs-x_source(is))**2.d0+yobs**2.d0) ![m]
@@ -88,7 +88,7 @@ yobs   = -sin*x1(1) + cos*x1(2)
     end do
 
  ! BY
- iflag=3 ! 1,3
+ ! iflag = 1 ~ 3 is global variable, 1:primary, 2:secondary, 3:total see m_param_ana.f90   2026.07.23
     FNAME="FBY1";jflag=1
     !# xobs + L, -L
     by_total = 0.d0
@@ -114,7 +114,7 @@ yobs   = -sin*x1(1) + cos*x1(2)
 
  ! BX
  FNAME="FBX ";jflag=1
- iflag=3
+ ! iflag = 2 ~ 2 is global variable, 1:primary, 2:secondary, 3:total see m_param_ana.f906.07.23
     bx_total = 0.d0
     do j=1,2
      R=dsqrt((xobs+isign(j)*L)**2.d0+yobs**2.d0) ! D is replaced by L
@@ -126,7 +126,7 @@ yobs   = -sin*x1(1) + cos*x1(2)
     bx_total= - (bxj1(1) - bxj1(2))
 
  !Ex
-    iflag=3
+    ! iflag = 2 ~ 2 is global variable, 1:primary, 2:secondary, 3:total see m_param_ana.f906.07.23
     ex_total=0.d0
     !#[J1]
     FNAME="FEX1";jflag=1
@@ -158,7 +158,7 @@ yobs   = -sin*x1(1) + cos*x1(2)
 !  write(16,*) yobs,amp(1),phase(1)
 
  !Ey
-  iflag=3
+  ! iflag = 2 ~ 2 is global variable, 1:primary, 2:secondary, 3:total see m_param_ana.f906.07.23
   ey_total = 0.d0
   !#[J1]
   FNAME="FEY1";jflag=1

@@ -1,4 +1,5 @@
 result/*
+result_loop/*
 data/*
 *.pdf
 tmp.ctl
@@ -6,4 +7,5 @@ tmp.ctl
 *.dat
 
 !result/.gitkeep
+!result_loop/.gitkeep
 !data/.gitkeep

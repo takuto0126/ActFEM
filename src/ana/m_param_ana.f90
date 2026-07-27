@@ -21,7 +21,7 @@ real(8),allocatable,dimension(:) :: cond   ! cond(0:nlayer) 2021.12.20
 !###############################################################
 ! global variables
 complex(8),parameter :: iunit=(0.d0,1.d0)
-integer(4) :: iflag ! 1: primary, 2: secondary, 3:total
+integer(4) :: iflag=3 ! 1: primary, 2: secondary, 3:total
 integer(4) :: iflag_realimag ! 1:real, 2:imaginary
 complex(8) :: RTE,RTM,u0,u1,G,G2
 real(8)    :: xobs      ! [m] Observation line

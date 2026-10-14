@@ -40,7 +40,7 @@ character(1) ::num
 !#[1]## Mesh READ
  CALL READMESH_TOTAL(g_mesh,g_param_mt%g_meshfile) ! 3D mesh
  CALL READMESH_TOTAL(h_mesh,g_param_mt%z_meshfile) ! topography file
- CALL PREPZOBSMT(h_mesh,g_param_mt) ! 2024.10.07
+ CALL PREPZOBSMT(h_mesh,g_param_mt)      ! 2026.07.29
  CALL GENXYZMINMAX_MT(g_mesh,g_param_mt) ! generate xyzminmax 2021.12.15
   if (g_cond%condflag .eq. 1) then !"1" : conductivity file is given
    g_cond%ntet   = g_mesh%ntet
@@ -675,7 +675,7 @@ subroutine PREPZOBSMT(h_mesh,g_param_mt)
  ntri      = h_mesh%ntri
  xyzobs    = g_param_mt%xyzobs
  xyzminmax = g_param_mt%xyzminmax
-
+ write(*,*) "xyzminmax",xyzminmax(1:6)
 
  !#[2]## cal z for nobsr
  nx=300;ny=300

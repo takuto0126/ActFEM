@@ -71,7 +71,7 @@ type param_source
 end type
 
 type dipoles ! 2026.07.08
- integer(4) :: ndipoles      ! # of dipoles for each source 2026.07.08
+ integer(4) :: ndipole      ! # of dipoles for each source 2026.10.14
  real(8),allocatable,dimension(:,:) :: xs1  ! [km] xyz of start electrode (3,ndipoles) 2026.07.08
  real(8),allocatable,dimension(:,:) :: xs2  ! [km] xyz of end electrode (3,ndipoles) 2026.07.08
  real(8),allocatable,dimension(:,:) :: lonlats1 ! [deg] lonlat of start electrode 2026.07.08
@@ -138,7 +138,12 @@ integer(4)                  :: i,j,nobs,input=2,nsource,iflag_map,lonlatflag!202
 character(50)               :: site
 real(8)                     :: lonorigin,latorigin,a
 character(100)              :: paramfile
+character(100)              :: line    ! 2026.10.14
 integer(4)                  :: ikeep=2 ! 2025.07.17
+!# 2026.10.14 for ndipole application
+ integer(4)                         :: npoint, nd      ! 2026.10.14
+ logical                            :: ifile           ! 2026.10.14
+ real(8),allocatable,dimension(:,:) :: xp, ll          ! 2026.10.14 (3,npoint),(2,npoint)
 !#
 write(*,*) ""
 write(*,*) "<Please input the forward parameter file>" ! 2020.09.28
@@ -345,57 +350,74 @@ end do
 
  ! # of sources 2017.07.11
  write(*,*) ""
- write(*,*) "< input # of source wires > "!2017.07.11
+ write(*,*) "< input # of sources > "!2026.10.14
  read(input,*) sparam%nsource       !2017.07.11, ! 11->* 2021.09.02
  nsource = sparam%nsource
  write(*,'(a,i3)') " # of source wires (nsource) =",nsource ! 2020.09.17
- allocate(sparam%dipoles(nsource)) ! 2026.07.08
- 
+ allocate(sparam%dipoles(nsource))    ! 2026.07.08
+ allocate(sparam%sourcename(nsource)) ! 2026.10.14
+
  ! lonlat input
  do i=1,nsource ! 2017.07.11
    read(input,*) sparam%sourcename(i) ! 10->* 2021.09.02
-   read(input,*) sparam%dipoles(i)%ndipoles ! 2026.07.08
-   allocate(sparam%dipoles(i)%xs1(3,sparam%dipoles(i)%ndipoles)) ! 2026.07.08
-   allocate(sparam%dipoles(i)%xs2(3,sparam%dipoles(i)%ndipoles)) ! 2026.07.08
-   allocate(sparam%dipoles(i)%lonlats1(2,sparam%dipoles(i)%ndipoles)) ! 2026.07.08
-   allocate(sparam%dipoles(i)%lonlats2(2,sparam%dipoles(i)%ndipoles)) ! 2026.07.08
+   write(*,41) " source name: ",trim(sparam%sourcename(i)) ! 2026.10.14
+   read(input,'(a)') line               ! line(100) character 2026.10.14
+   line = adjustl(line)                 ! 2026.10.14
+   ifile = ( line(1:5) == "File:" )     ! 2026.10.14
+   if ( ifile ) then                    ! 2026.10.14
+    open(1,file=trim(adjustl(line(6:100))),status="old") !2026.10.14
+    read(1,*) npoint                    ! # of points     2026.10.14
+   else         ! 2026.10.14
+    npoint = 2  ! 2026.10.14
+   end if       ! 2026.10.14
+   if ( npoint .lt. 2 )  then ! 2026.10.14
+     write(*,*) "GEGEGE npoint should be >= 2, npoint=",npoint ; stop ! 2026.10.14
+   end if                     ! 2026.10.14
+   allocate(xp(3,npoint), ll(2,npoint)) ; ll = 0.d0
 
-   write(*,41) " source name: ",sparam%sourcename(i) ! 2020.09.29
-   write(*,*) "ndipoles =",sparam%dipoles(i)%ndipoles ! 2026.07.08
+   !# read points and convert to xy [km]
+   do j=1,npoint
+     if ( ifile ) then  ! case for file is given
+       read(1,'(a)') line
+     else if ( j .ge. 2 ) then ! case for file is NOT given, where npoint = 2
+       read(input,'(a)') line
+     end if                                     ! j=1 & old format: use line already read
+     if ( lonlatflag .eq. 1 ) then              ! coordinates are given by lon lat
+       read(line,*) ll(1:2,j), xp(3,j)          ! lon lat z
+       if      ( iflag_map .eq. 1 ) then        ! ECP
+         call ECPXY(ll(1:2,j),lonorigin,latorigin,xp(1:2,j),c_param%angle)
+       else if ( iflag_map .eq. 2 ) then        ! UTM
+         call UTMXY(ll(1:2,j),lonorigin,latorigin,xp(1:2,j),c_param%UTM,c_param%angle)
+       else
+         goto 99
+       end if
+     else if ( lonlatflag .eq. 2 ) then ! coordinates are given by x, y
+       read(line,*) xp(1:3,j)                   ! x y z [km]
+     else
+       goto 99
+     end if
+   end do
+   if ( ifile ) close(1)
 
-  ! iflag_map = 1 (ECP) or 2 (UTM) and lonlatflag = 1 (lonlat) 2025.06.09
-   if (   iflag_map .le. 2  .and. lonlatflag .eq. 1) then ! ECP or UTM 2025.06.09
-     read(input,*) sparam%lonlats1(1:2,i),sparam%xs1(3,i)
-     read(input,*) sparam%lonlats2(1:2,i),sparam%xs2(3,i)
-     write(*,44) " Start point (lon,lat,z)=",sparam%lonlats1(1:2,i),sparam%xs1(3,i)
-     write(*,44) " End   point (lon,lat,z)=",sparam%lonlats2(1:2,i),sparam%xs2(3,i)
-   end if
+   !# set dipoles : dipole j = point j -> point j+1
+   nd = npoint - 1
+   sparam%dipoles(i)%ndipole = nd
+   allocate(sparam%dipoles(i)%xs1(     3,nd)) ! 2026.10.14
+   allocate(sparam%dipoles(i)%xs2(     3,nd)) ! 2026.10.14
+   allocate(sparam%dipoles(i)%lonlats1(2,nd)) ! 2026.10.14
+   allocate(sparam%dipoles(i)%lonlats2(2,nd)) ! 2026.10.14
+   sparam%dipoles(i)%xs1(:,1:nd)      = xp(:,1:nd)
+   sparam%dipoles(i)%xs2(:,1:nd)      = xp(:,2:npoint)
+   sparam%dipoles(i)%lonlats1(:,1:nd) = ll(:,1:nd)
+   sparam%dipoles(i)%lonlats2(:,1:nd) = ll(:,2:npoint)
+   deallocate(xp,ll)
 
-   if (      iflag_map .eq. 1  .and. lonlatflag .eq. 1  ) then ! lonlat (ECP) 2025.06.09
-     call ECPXY(sparam%lonlats1(1:2,i),lonorigin,latorigin,sparam%xs1(1:2,i),c_param%angle)
-     call ECPXY(sparam%lonlats2(1:2,i),lonorigin,latorigin,sparam%xs2(1:2,i),c_param%angle)
-     write(*,*) " converted with ECP to :"
-
-   else if ( iflag_map .eq. 2  .and. lonlatflag .eq. 1) then ! lonlat (UTM)
-     call UTMXY(sparam%lonlats1(1:2,i),lonorigin,latorigin,sparam%xs1(1:2,i),c_param%UTM,c_param%angle)! 2024.08.28 angle is added
-     call UTMXY(sparam%lonlats2(1:2,i),lonorigin,latorigin,sparam%xs2(1:2,i),c_param%UTM,c_param%angle)! 2024.08.28
-     write(*,*) " converted with UTM to :"
-
-   !# xy input
-   else if ( lonlatflag .eq. 2) then ! xyz
-     read(input,*) sparam%xs1(1:3,i)
-     read(input,*) sparam%xs2(1:3,i)
-     write(*,*) "Read xyz coordinates of start and end points are :" !2025.06.09
-
-    else
-     goto 99
-
-    end if
-
-    write(*,'(a,3f15.7)') " xs1 (x,y,z)=",sparam%xs1(1:3,i) !2020.09.29
-    write(*,'(a,3f15.7)') " xs2 (x,y,z)=",sparam%xs2(1:3,i) !2020.09.29
-
-  end do ! nsource loop end 2017.07.11
+   write(*,'(a,i4)') " ndipole =",nd
+   do j=1,nd
+     write(*,'(a,i4,a,3f15.7,a,3f15.7)') " dipole",j," xs1=",sparam%dipoles(i)%xs1(:,j), &
+          &                                        " xs2=",sparam%dipoles(i)%xs2(:,j)
+   end do
+ end do ! nsource loop end
 
  read(input,*) sparam%I ! [A] ! 11->* 2021.09.02
  write(*,'(a,g15.7,a)') " Electric source current :",sparam%I," [A]" ! 2020.09.29
@@ -546,17 +568,25 @@ real(8)                                 :: sigma_obs,A_obs
 real(8)                                 :: sigma_src,A_src
 integer(4)                              :: nobsr,nobs,i,j,icount
 integer(4)                              :: nsr ! # of source wires 2017.07.11
-
+integer(4) :: k, nd                     ! 2026.10.14
 write(*,'(a)') " ### CALOBSR START!! ###" ! 2021.09.29
 
 !#[1]## set
  nobs        = g_param%nobs
- nsr         = s_param%nsource   ! 2017.07.11 # of dipole sources
+ nsr  = 0                                 ! 2026.10.14 total # of dipoles
+ do k=1,s_param%nsource                   ! 2026.10.14
+   nsr = nsr + s_param%dipoles(k)%ndipole ! 2026.10.14
+ end do
  allocate(xs1(3,nsr),xs2(3,nsr)) ! 2017.07.11
  allocate(xyz(3,nobs))           ! 2017.07.11
  allocate(ss(nsr))               ! 2017.07.11
- xs1         = s_param%xs1
- xs2         = s_param%xs2
+ icount = 0 ! 2026.10.14
+ do k=1,s_param%nsource                 ! 2026.10.14 flatten dipoles
+   nd = s_param%dipoles(k)%ndipole
+   xs1(:,icount+1:icount+nd) = s_param%dipoles(k)%xs1(:,1:nd)
+   xs2(:,icount+1:icount+nd) = s_param%dipoles(k)%xs2(:,1:nd)
+   icount = icount + nd
+ end do
  dlen_source = g_param%dlen_source ! 2017.10.12
  xyz         = g_param%xyzobs
  sigma_obs   = g_param%sigma_obs

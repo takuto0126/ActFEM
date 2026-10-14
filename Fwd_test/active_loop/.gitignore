@@ -1,0 +1,6 @@
+tmp.ctl
+*.ps
+*.pdf
+result/*
+pullresult.sh
+!result/.gitkeep

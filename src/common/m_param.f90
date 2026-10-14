@@ -554,6 +554,8 @@ type(param_forward),intent(inout)       :: g_param
 type(param_source), intent(in)          :: s_param
 type source !========================= type source definition 2017.07.11
  integer(4)                             :: nobsr_per_src ! 2021.09.29
+ integer(4)                             :: istart        ! first index of xyz_src to be used 2026.10.14
+ integer(4)                             :: iend          ! last  index of xyz_src to be used 2026.10.14
  real(8),    allocatable,dimension(:,:) :: xyz_src
 end type
 !===================================== type source definition end 2021.09.29
@@ -569,6 +571,9 @@ real(8)                                 :: sigma_src,A_src
 integer(4)                              :: nobsr,nobs,i,j,icount
 integer(4)                              :: nsr ! # of source wires 2017.07.11
 integer(4) :: k, nd                     ! 2026.10.14
+logical,     allocatable,dimension(:)   :: lskip    ! .true.: skip start point of dipole 2026.10.14
+logical,     allocatable,dimension(:)   :: lskipend ! .true.: skip end point of dipole (closed loop) 2026.10.14
+real(8),     parameter                  :: eps_loop = 1.d-6 ! [km] threshold for closed loop 2026.10.14
 write(*,'(a)') " ### CALOBSR START!! ###" ! 2021.09.29
 
 !#[1]## set
@@ -580,11 +585,19 @@ write(*,'(a)') " ### CALOBSR START!! ###" ! 2021.09.29
  allocate(xs1(3,nsr),xs2(3,nsr)) ! 2017.07.11
  allocate(xyz(3,nobs))           ! 2017.07.11
  allocate(ss(nsr))               ! 2017.07.11
+ allocate(lskip(nsr),lskipend(nsr)) ! 2026.10.14
+ lskip = .false. ; lskipend = .false. ! 2026.10.14
  icount = 0 ! 2026.10.14
  do k=1,s_param%nsource                 ! 2026.10.14 flatten dipoles
    nd = s_param%dipoles(k)%ndipole
    xs1(:,icount+1:icount+nd) = s_param%dipoles(k)%xs1(:,1:nd)
    xs2(:,icount+1:icount+nd) = s_param%dipoles(k)%xs2(:,1:nd)
+   lskip(icount+2:icount+nd) = .true.   ! 2026.10.14 start of 2nd- dipoles = end of previous dipole
+   !# closed loop: end of last dipole = start of first dipole 2026.10.14
+   if ( nd .ge. 2 .and. sqrt(sum((xs2(:,icount+nd) - xs1(:,icount+1))**2)) .lt. eps_loop ) then ! 2026.10.14
+     lskipend(icount+nd) = .true.       ! 2026.10.14
+     write(*,'(a,i3)') " closed loop is detected for source",k ! 2026.10.14
+   end if                             ! 2026.10.14
    icount = icount + nd
  end do
  dlen_source = g_param%dlen_source ! 2017.10.12
@@ -605,24 +618,30 @@ write(*,'(a)') " ### CALOBSR START!! ###" ! 2021.09.29
   write(*,*) "nsource    =",ss(j)%nobsr_per_src,"for source",j ! 2021.09.29
   allocate( ss(j)%xyz_src(3,ss(j)%nobsr_per_src) ) !2021.0.29
   if (ss(j)%nobsr_per_src .gt. 1) then ! 2021.09.29
-  do i=1, ss(j)%nobsr_per_src ! 2021.09.29
-   ss(j)%xyz_src(1:3,i) = xs1(1:3,j) + float(i-1)/float(ss(j)%nobsr_per_src - 1)*xs12(1:3)!2021.09.29
-  end do
+   do i=1, ss(j)%nobsr_per_src ! 2021.09.29
+     ss(j)%xyz_src(1:3,i) = xs1(1:3,j) + float(i-1)/float(ss(j)%nobsr_per_src - 1)*xs12(1:3)!2021.09.29
+   end do
   else if ( ss(j)%nobsr_per_src .eq. 1) then ! 2021.09.29
-   ss(j)%xyz_src(1:3,1) = xs1(1:3,j) + xs12(1:3)/2.
+     ss(j)%xyz_src(1:3,1) = xs1(1:3,j) + xs12(1:3)/2.
   end if
+  ss(j)%istart = 1                    ! 2026.10.14
+  ss(j)%iend   = ss(j)%nobsr_per_src  ! 2026.10.14
+  if ( ss(j)%nobsr_per_src .gt. 1 ) then                        ! 2026.10.14 (midpoint is never skipped)
+    if ( lskip(j)    ) ss(j)%istart = 2                         ! 2026.10.14
+    if ( lskipend(j) ) ss(j)%iend   = ss(j)%nobsr_per_src - 1   ! 2026.10.14
+  end if                                                        ! 2026.10.14
  end do ! 2017.07.11
 
  !#[3]## calculate
   nobsr = nobs
  do j=1,nsr ! 2017.07.11
-  nobsr = nobsr + ss(j)%nobsr_per_src ! 2021.09.29
+  nobsr = nobsr + max(ss(j)%iend - ss(j)%istart + 1, 0) ! 2026.10.14
  end do
  allocate(xyz_r(3,nobsr),A_r(nobsr),sigma_r(nobsr))
  xyz_r(:,1:nobs)       = xyz(:,1:nobs)
  icount=0                     ! 2017.07.11
  do j=1,nsr                   ! 2017.07.11
-  do i=1,ss(j)%nobsr_per_src  ! 2021.09.29
+  do i=ss(j)%istart,ss(j)%iend ! 2026.10.14
    icount = icount + 1        ! 2017.07.11
    xyz_r(:,nobs+icount) = ss(j)%xyz_src(:,i) ! 2017.07.11
   end do                      ! 2017.07.11

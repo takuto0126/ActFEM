@@ -307,8 +307,8 @@ real(8)    :: omega,dd,ds ! 2025.06.11 pi is give by m_constants.f90
 !pi=4.d0*datan(1.d0) ! commented out 2025.06.11
 omega=2.d0*pi*freq
 
-x1(1:3)=sparam%xs1(1:3,1)*1.d3 ! [m]
-x2(1:3)=sparam%xs2(1:3,1)*1.d3 ! [m]
+x1(1:3)=sparam%dipoles(1)%xs1(1:3,1)*1.d3 ! [m] first dipole of first source only 2026.10.14
+x2(1:3)=sparam%dipoles(1)%xs2(1:3,1)*1.d3 ! [m] first dipole of first source only 2026.10.14
 ds=x2(1)-x1(1) ! [m]
 I      =sparam%I        ! [A]
 
@@ -766,7 +766,9 @@ real(8),   allocatable,dimension(:)   :: znew
 real(8)    :: a3(3)
 integer(4) :: iele,n1,n2,n3,j,k,ntri
 integer(4) :: nsr                                ! 2017.07.11
-real(8),allocatable,dimension(:,:)    :: xs1,xs2 ! 2017.07.18
+!real(8),allocatable,dimension(:,:)    :: xs1,xs2 ! 2017.07.18, commented out 2026.10.14
+integer(4) :: i_d                                ! dipole id in each source 2026.10.14
+real(8)    :: z0                                 ! z relative to the ground surface [km] 2026.10.14
 real(8)    :: xyzminmax(6)                       ! 2017.07.18
 
 !#[0]## cal xyzminmax of h_mesh
@@ -774,7 +776,7 @@ real(8)    :: xyzminmax(6)                       ! 2017.07.18
 
 !#[1]## set
 nsr       = s_param%nsource     ! 2017.07.11
-allocate(xs1(3,nsr),xs2(3,nsr)) ! 2017.07.11
+!allocate(xs1(3,nsr),xs2(3,nsr)) ! 2017.07.11, commented out 2026.10.14
 allocate(xyz(3,h_mesh%node),n3k(h_mesh%ntri,3))
 allocate(xyzobs(3,g_param%nobs))
 allocate(znew(g_param%nobs))
@@ -783,8 +785,8 @@ xyz       = h_mesh%xyz    ! triangle mesh
 n3k       = h_mesh%n3
 ntri      = h_mesh%ntri
 xyzobs    = g_param%xyzobs
-xs1       = s_param%xs1
-xs2       = s_param%xs2
+!xs1       = s_param%xs1 ! commented out 2026.10.14
+!xs2       = s_param%xs2 ! commented out 2026.10.14
 xyzminmax = g_param%xyzminmax
 
 
@@ -808,28 +810,32 @@ end do
 
 !#[3-2]## source z
  do k=1,nsr                                                               ! 2017.07.11
+  do i_d=1,s_param%dipoles(k)%ndipole                                     ! 2026.10.14
 !#  start point
-    call findtriwithgrid(h_mesh,glist,xs1(1:2,k),iele,a3)                 ! 2017.07.11
+    call findtriwithgrid(h_mesh,glist,s_param%dipoles(k)%xs1(1:2,i_d),iele,a3) ! 2026.10.14
     n1 = n3k(iele,1); n2 = n3k(iele,2) ; n3 = n3k(iele,3)
-    xs1(3,k) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + xs1(3,k) ! 2017.07.11
+    z0 = s_param%dipoles(k)%xs1(3,i_d)                                    ! 2026.10.14
+    s_param%dipoles(k)%xs1(3,i_d) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + z0 ! 2026.10.14
     !
-    write(*,'(a,i2,a,f12.5,3x,f12.5,a)')     " source",k," start point x,y=",xs1(1:2,k)," [km]"             ! 2025.07.31
-    write(*,'(a,f12.5,a,f12.5,a)')    "          start point   z=",s_param%xs1(3,k)," ->",xs1(3,k)," [km]" ! 2017.07.31
+    write(*,'(a,i2,a,i4,a,f12.5,3x,f12.5,a)') " source",k," dipole",i_d," start point x,y=",s_param%dipoles(k)%xs1(1:2,i_d)," [km]" ! 2026.10.14
+    write(*,'(a,f12.5,a,f12.5,a)')    "          start point   z=",z0," ->",s_param%dipoles(k)%xs1(3,i_d)," [km]" ! 2026.10.14
 
 !#  end point
-    call findtriwithgrid(h_mesh,glist,xs2(1:2,k),iele,a3)                 ! 2017.07.11
+    call findtriwithgrid(h_mesh,glist,s_param%dipoles(k)%xs2(1:2,i_d),iele,a3) ! 2026.10.14
     n1 = n3k(iele,1); n2 = n3k(iele,2) ; n3 = n3k(iele,3)
-    xs2(3,k) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + xs2(3,k) ! 2017.07.11
+    z0 = s_param%dipoles(k)%xs2(3,i_d)                                    ! 2026.10.14
+    s_param%dipoles(k)%xs2(3,i_d) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + z0 ! 2026.10.14
     !
-    write(*,'(a,i2,a,f12.5,3x,f12.5,a)')" source",k," end   point x,y=",xs2(1:2,k)," [km]"             ! 2025.07.31
-    write(*,'(a,f12.5,a,f12.5,a)')         "          end   point   z=",s_param%xs2(3,k)," ->",xs2(3,k)," [km]" ! 2025.07.31
+    write(*,'(a,i2,a,i4,a,f12.5,3x,f12.5,a)') " source",k," dipole",i_d," end   point x,y=",s_param%dipoles(k)%xs2(1:2,i_d)," [km]" ! 2026.10.14
+    write(*,'(a,f12.5,a,f12.5,a)')         "          end   point   z=",z0," ->",s_param%dipoles(k)%xs2(3,i_d)," [km]" ! 2026.10.14
+  end do                                                                  ! 2026.10.14
  end do                                                                   ! 2017.07.11
 
 
 !#[4]## set znew to xyz_r
     g_param%xyzobs(3,1:nobs) = znew(1:nobs)
-    s_param%xs1(3,:) = xs1(3,:)   ! 2017.07.11
-    s_param%xs2(3,:) = xs2(3,:)   ! 2017.07.11
+!    s_param%xs1(3,:) = xs1(3,:)   ! 2017.07.11, commented out 2026.10.14 (updated in [3-2])
+!    s_param%xs2(3,:) = xs2(3,:)   ! 2017.07.11, commented out 2026.10.14 (updated in [3-2])
 
 
 write(*,*) "### PREPZSRCOBS END ###"

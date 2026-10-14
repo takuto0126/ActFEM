@@ -121,22 +121,18 @@ complex(8)                          :: iunit=(0.d0, 1.d0), rhs1
 complex(8),         dimension(6,6)  :: elm_k, S1
 integer(4),         dimension(6)    :: table_dof_elm, idirection
 integer(4) :: iele, i, j, k, l, m, n, ii, jj, id_group,nsource
+integer(4) :: idp ! dipole id in each source 2026.10.14
 !---------------  scales ------------------------------------------------------
 real(8), parameter                  :: L0=1.d+3  ! [m]  scale length
 real(8)                             :: AA, a1(4),a2(4),sigma_bell
 complex(8)                          :: BB
 complex(8)                          :: b3(3,4),bl(6)
 logical                             :: itrue
-real(8), allocatable,dimension(:,:) :: x3s,x3e  ! 2017.07.11
 real(8),             dimension(3)   :: x3p1,x3p2,localPQ,x1,x2,x3
 
 !  sigma_bell = g_param%sigma_bell ! [S/m]
   nsource       = sparam%nsource   ! 2017.07.11 for multiple sources
-  allocate(x3s(3,nsource),x3e(3,nsource)   ) ! 2017.07.11
-  do j=1,nsource                        ! 2017.07.11
-   x3s(1:3,j)    = sparam%xs1(1:3,j)     ! [km] 2017.07.11
-   x3e(1:3,j)    = sparam%xs2(1:3,j)     ! [km] 2017.07.11
-  end do ! 2017.07.11
+  ! x3s, x3e are replaced by sparam%dipoles(j)%xs1, xs2 2026.10.14
 
 !#[1] ## left-hand side matrix
 do iele=1, h_mesh%ntet  ! start elemetn loop
@@ -218,7 +214,8 @@ do iele=1, h_mesh%ntet  ! start elemetn loop
 !# [7] ## set right hand side vector, b_vec  ############## Right Hand Side
 !# [7-1] ## method for js expressed by Heaviseide function
   do j=1,nsource  ! 2017.07.11
-   call checksourceelement(x3s(:,j),x3e(:,j),elm_xyz,itrue,x3p1,x3p2)!check penetrtn
+   do idp=1,sparam%dipoles(j)%ndipole ! sum over dipoles in source j 2026.10.14
+   call checksourceelement(sparam%dipoles(j)%xs1(:,idp),sparam%dipoles(j)%xs2(:,idp),elm_xyz,itrue,x3p1,x3p2)!check penetrtn 2026.10.14
    if (itrue) then ! when the cell includes the wire current
     !CALL checkcoeff(elm_xyz,xx,gn,elm_k,S,6,S1,6,6,v)
     call nodebasisfun(elm_xyz,x3p1,a1)
@@ -236,6 +233,7 @@ do iele=1, h_mesh%ntet  ! start elemetn loop
      b_vec(ii,j)=b_vec(ii,j) + rhs1 ! 2017.07.11
     end do
    end if ! itrue is .true. end
+   end do ! dipole loop 2026.10.14
   end do  ! nsource loop, 2017.07.11
 end do    ! element loop end
 

@@ -1,5 +1,8 @@
 result/*
+result_Cartesian/*
 tmp.ctl
+*.pdf
 
 !result/.gitkeep
+!result_Cartesian/.gitkeep
 

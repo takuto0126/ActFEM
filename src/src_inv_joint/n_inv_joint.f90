@@ -766,8 +766,8 @@ if (ACT) then
   !# source info for ACTIVE
   do i=1,sparam%nsource
     open(1,file=trim(g_param_joint%outputfolder)//trim(sparam%sourcename(i))//"_site.dat")
-    write(1,'(3f15.7,1x,a)') sparam%xs1(1:3,i)
-    write(1,'(3f15.7,1x,a)') sparam%xs2(1:3,i)
+    write(1,'(3f15.7)') sparam%dipoles(i)%xs1(1:3,1:sparam%dipoles(i)%ndipole) ! all start points 2026.11.23
+    write(1,'(3f15.7)') sparam%dipoles(i)%xs2(1:3,sparam%dipoles(i)%ndipole)   ! last end point   2026.11.23
     close(1)
   end do
 
@@ -2730,14 +2730,14 @@ subroutine PREPZSRCOBS(h_mesh,g_param,s_param)
  integer(4) :: iele,n1,n2,n3,j,k,ntri
  integer(4) :: nsr                                ! 2017.07.14
  real(8)    :: xyzminmax(6),zorigin
- real(8),   allocatable,dimension(:,:) :: xs1,xs2 ! 2017.07.14
+ integer(4) :: i_d                                ! dipole id in each source 2026.11.23
+ real(8)    :: z0                                 ! z relative to the ground surface [km] 2026.11.23
 
  !#[0]## cal xyzminmax of h_mesh
   CALL GENXYZMINMAX(h_mesh,g_param)
 
  !#[1]## set
  nsr       = s_param%nsource     ! 2017.07.14
- allocate(xs1(3,nsr),xs2(3,nsr)) ! 2017.07.14
  allocate(xyz(3,h_mesh%node),n3k(h_mesh%ntri,3))
  allocate(xyzobs(3,g_param%nobs))
  allocate(znew(g_param%nobs))
@@ -2746,8 +2746,6 @@ subroutine PREPZSRCOBS(h_mesh,g_param,s_param)
  n3k       = h_mesh%n3
  ntri      = h_mesh%ntri
  xyzobs    = g_param%xyzobs
- xs1       = s_param%xs1
- xs2       = s_param%xs2
  xyzminmax = g_param%xyzminmax
 
 
@@ -2768,26 +2766,28 @@ subroutine PREPZSRCOBS(h_mesh,g_param,s_param)
     write(*,11) "   z =",xyzobs(3,j)," ->",znew(j),    " [km]" ! 2020.09.17
  end do
 
- !#[3-2]## source z
+ !#[3-2]## source z (all dipoles of each source) 2026.11.23
    do k=1,nsr !2017.07.14
+    write(*,9 ) " Src # = ",k    ! 2020.09.17
+    do i_d=1,s_param%dipoles(k)%ndipole                                           ! 2026.11.23
      !#  start point
-     call findtriwithgrid(h_mesh,glist,xs1(1:2,k),iele,a3)     ! 2017.07.14
+     call findtriwithgrid(h_mesh,glist,s_param%dipoles(k)%xs1(1:2,i_d),iele,a3)  ! 2026.11.23
      n1 = n3k(iele,1); n2 = n3k(iele,2) ; n3 = n3k(iele,3)
-     xs1(3,k) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + xs1(3,k) ! 2017.07.14
-    
-     write(*,9 ) " Src # = ",k    ! 2020.09.17
-     write(*,*)   "Start point:"  ! 2020.09.17
-     write(*,11) " x,y =",xs1(1,k),        " , ",xs1(2,k)," [km]"   ! 2020.09.17
-     write(*,11) "   z =",s_param%xs1(3,k)," ->",xs1(3,k)," [km]"   ! 2020.09.17
+     z0 = s_param%dipoles(k)%xs1(3,i_d)                                          ! 2026.11.23
+     s_param%dipoles(k)%xs1(3,i_d) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + z0 ! 2026.11.23
+     write(*,'(a,i4,a)') " Dipole",i_d," start point:"                            ! 2026.11.23
+     write(*,11) " x,y =",s_param%dipoles(k)%xs1(1,i_d)," , ",s_param%dipoles(k)%xs1(2,i_d)," [km]" ! 2026.11.23
+     write(*,11) "   z =",z0," ->",s_param%dipoles(k)%xs1(3,i_d)," [km]"          ! 2026.11.23
 
      !#  end point
-     call findtriwithgrid(h_mesh,glist,xs2(1:2,k),iele,a3)                 ! 2017.07.14
+     call findtriwithgrid(h_mesh,glist,s_param%dipoles(k)%xs2(1:2,i_d),iele,a3)  ! 2026.11.23
      n1 = n3k(iele,1); n2 = n3k(iele,2) ; n3 = n3k(iele,3)
-     xs2(3,k) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + xs2(3,k)
-    !
-     write(*,*)   "End point:"    ! 2020.09.17
-     write(*,11) " x,y =",xs2(1,k),        " , ",xs2(2,k)," [km]" ! 2020.09.17
-     write(*,11) "   z =",s_param%xs2(3,k)," ->",xs2(3,k)," [km]" ! 2020.09.17
+     z0 = s_param%dipoles(k)%xs2(3,i_d)                                          ! 2026.11.23
+     s_param%dipoles(k)%xs2(3,i_d) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + z0 ! 2026.11.23
+     write(*,'(a,i4,a)') " Dipole",i_d," end point:"                              ! 2026.11.23
+     write(*,11) " x,y =",s_param%dipoles(k)%xs2(1,i_d)," , ",s_param%dipoles(k)%xs2(2,i_d)," [km]" ! 2026.11.23
+     write(*,11) "   z =",z0," ->",s_param%dipoles(k)%xs2(3,i_d)," [km]"          ! 2026.11.23
+    end do                                                                        ! 2026.11.23
    end do
 
  9  format(a,i3)
@@ -2796,8 +2796,8 @@ subroutine PREPZSRCOBS(h_mesh,g_param,s_param)
 
  !#[4]## set znew to xyz_r
     g_param%xyzobs(3,1:nobs) = znew(1:nobs)
-    s_param%xs1(3,:) = xs1(3,:)                 ! 2017.07.14
-    s_param%xs2(3,:) = xs2(3,:)                 ! 2017.07.14
+!    s_param%xs1(3,:) = xs1(3,:)  ! 2017.07.14, commented out 2026.11.23 (updated in [3-2])
+!    s_param%xs2(3,:) = xs2(3,:)  ! 2017.07.14, commented out 2026.11.23 (updated in [3-2])
 
  !#[5]## kill mesh for memory 2017.05.15
   !  call killmesh(h_mesh) ! see m_mesh_type.f90 commented out 2024.10.07

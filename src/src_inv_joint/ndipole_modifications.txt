@@ -1,0 +1,77 @@
+ndipole (multi-dipole source) support in joint inversion (src/src_inv_joint)
+Date: 2026.11.23
+Branch: add_ndipoles
+
+Background
+----------
+src/common/m_param.f90 now stores each source as type(dipoles)
+(sparam%dipoles(i)%ndipole, %xs1(3,nd), %xs2(3,nd), %lonlats1(2,nd), %lonlats2(2,nd)).
+The old arrays sparam%xs1(3,nsource), sparam%xs2, sparam%lonlats1, sparam%lonlats2
+were removed, so ebfem_inv_joint.exe was changed to use sparam%dipoles.
+A source can be given either by start/end points (1 dipole) or by "File:<file>"
+(npoint points -> npoint-1 dipoles in series), as in the forward code.
+All modified lines are marked with "! 2026.11.23" in the source code.
+
+Modified places
+---------------
+1. src/src_inv_joint/m_shareformpi_joint.f90, subroutine sharesource (l.355-)
+   - Added local variables i, nd.
+   - Removed allocation/MPI_BCAST of sparam%xs1, xs2, lonlats1, lonlats2.
+   - ip /= 0: allocate sparam%dipoles(nsource).
+   - For each source: MPI_BCAST of dipoles(i)%ndipole, allocate xs1/xs2/lonlats1/lonlats2
+     on ip /= 0, and MPI_BCAST of these arrays.
+   - Added MPI_BCAST of sparam%sourcename (character(50) x nsource); it was not
+     broadcast before (only allocated on ip /= 0).
+
+2. src/src_inv_joint/forward_joint.f90, subroutine GENMAT (l.378-)
+   - Added local variable idp (dipole id).
+   - Removed local arrays x3s, x3e and their setup from sparam%xs1/xs2(:,srcindex(j)).
+   - Right-hand side [7-1]: added loop "do idp=1,sparam%dipoles(srcindex(j))%ndipole"
+     inside the source loop, and checksourceelement is called with
+     sparam%dipoles(srcindex(j))%xs1(:,idp), xs2(:,idp). The source term of all dipoles
+     in one source is summed into rf(:,j) (same as solver/forward_bxyz.f90).
+
+3. src/src_inv_joint/n_inv_joint.f90, subroutine OUTSITEINFO (l.749-, l.769-770)
+   - <outputfolder>/<sourcename>_site.dat now lists all vertices of the source:
+     start points of dipoles 1..ndipole, then the end point of the last dipole
+     (ndipole+1 lines). For a single dipole, it is the same 2 lines as before.
+   - Format changed from '(3f15.7,1x,a)' to '(3f15.7)' (no character item is written).
+
+4. src/src_inv_joint/n_inv_joint.f90, subroutine PREPZSRCOBS (l.2714-)
+   - Removed local arrays xs1, xs2 (allocation and copy from s_param%xs1/xs2).
+   - Added local variables i_d, z0.
+   - [3-2] source z: for each source and each dipole, z of the start/end points
+     (relative to the ground surface) is converted to absolute z by the 2-D triangle mesh,
+     and written directly to s_param%dipoles(k)%xs1(3,i_d) / xs2(3,i_d)
+     (same as solver/n_ebfem_bxyz.f90).
+   - [4]: "s_param%xs1(3,:) = xs1(3,:)" and "s_param%xs2(3,:) = xs2(3,:)" are commented out.
+
+Not modified (not compiled into ebfem_inv_joint.exe)
+-------------------------------------------------
+The following files still use the old sparam%xs1/xs2 and cannot be compiled with the
+current m_param.f90. They are not in objs1 of src/src_inv_joint/Makefile.
+   - src/src_inv_joint/forward_apinv.f90, src/src_inv_joint/m_shareformpi_ap.f90
+   - src/src_inv_ap/, src/src_inv/, src/src_inv_mpi/, src/src_inv_mdm/
+   - src/solver_mpi/, src/common_mpi/m_shareformpi.f90, src/common_mpi/m_shareformpi_fwd.f90
+   - src/solver/eprimary2.f90, bprimary2.f90, forward_bxyz_old.f90
+
+Tests (2026.11.23, mpiifx, mpiexec -n 6, OMP_NUM_THREADS=2, ACTIVE only (ijoint=1))
+-----
+Common setting: mesh Joint_test/mesh_joint/, 5 frequencies, 4 sites,
+  S1 = closed loop of 19 dipoles (File:S1.dat, = Fwd_test/active_loop/S1.dat),
+  S2 = single dipole given by start/end points (conventional format).
+  Synthetic data: solver/ebfem_bxyz.exe + Joint_test/fwd_active_light/src/generr_active.f90
+  (error 1%). Inversion control file: Joint_test/inv_act/inv_act.ctl with data paths changed.
+
+Test 1 (consistency): true model = initial model = structure/cond_homo.msh
+  -> normalized RMS at the initial model = 4.8e-5 (converged at iteration 0).
+     The forward calculation inside the inversion reproduces ebfem_bxyz.exe for the
+     19-dipole source. ndipole = 19 / 1 and z of all 20 vertices are shown in the log,
+     and S1_site.dat has 20 lines, S2_site.dat 2 lines.
+
+Test 2 (inversion): true model = structure/cond_G3.msh, initial/reference = cond_homo.msh
+  -> normalized RMS: 13.66 -> 7.73 -> 2.10 -> 2.06 -> 0.95 (converged, 5.9 min).
+
+Note: Joint_test/fwd_active/active.ctl (inv_act/, inv_joint/, inv_*_icomb-1/active.ctl
+are symbolic links to it) still has the draft format "# of dipoles !2" for S1, which the
+current reader cannot read. Use start/end points or "File:" for S1.

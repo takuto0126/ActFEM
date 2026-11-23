@@ -15,5 +15,5 @@ export OMP_NUM_THREADS=4
 time mpiexec -n 6 ${src}/ebfem_inv_joint.exe <<EOF | tee result_inv/inv.log # 2025.07.31
 2
 mt.ctl
-inv_mt_tipper.ctl
+inv_mt_tip.ctl
 EOF

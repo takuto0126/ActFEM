@@ -247,7 +247,7 @@ do iele=1, h_mesh%ntet  ! start elemetn loop
 
   !# [4] ## Second term from i * omega * mu * sigma * int{ sigma w cdot w }dv {Bsl}
   !# [4-1] ## assemble coefficient for i * omega*
-  j = h_mesh%n4flag(iele,1)                 ! 2017.09.29
+  j = h_mesh%n4flag(iele,2)                 ! 2017.09.29
   if ( j .eq. 1 ) sigma=g_cond%sigma_air    ! 2017.09.29
   if ( j .ge. 2 ) then                      ! 2017.09.29
    if ( g_cond%condflag .eq. 0  )     sigma = g_cond%sigma_land(j-1) ! 2017.09.29

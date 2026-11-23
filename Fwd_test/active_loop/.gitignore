@@ -1,0 +1,8 @@
+tmp.ctl
+*.ps
+*.pdf
+result/*
+pullresult.sh
+!result/.gitkeep
+ana_loop.ctl
+result_ana/

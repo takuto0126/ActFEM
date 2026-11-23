@@ -405,25 +405,20 @@ complex(8)                            :: iunit=(0.d0, 1.d0), rhs1
 complex(8),           dimension(6,6)  :: elm_k, S1
 integer(4),           dimension(6)    :: table_dof_elm, idirection
 integer(4) :: iele, i, j, k, l, m, n, ii, jj, id_group
+integer(4) :: idp ! dipole id in each source 2026.11.23
 !---------------  scales ------------------------------------------------------
 real(8), parameter                    :: L0=1.d+3  ! [m]  scale length
 real(8)                               :: AA, a1(4),a2(4), sigma_bell
 complex(8)                            :: BB
 complex(8)                            :: b3(3,4),bl(6)
 logical                               :: itrue
-real(8),allocatable,dimension(:,:)    :: x3s,x3e ! 2017.07.13
+! x3s,x3e are replaced by sparam%dipoles(srcindex(j))%xs1,xs2 2026.11.23
 real(8)            ,dimension(3)      :: PQ,unitPQ,x3p1,x3p2,localPQ,x1,x2,x3
 
 !#[0]## set
   nsr_inv  = g_param_joint%nsr_inv   ! 2017.08.31
   allocate(srcindex(nsr_inv))        ! 2017.07.13
   srcindex = g_param_joint%srcindex  ! 2017.08.31
-  allocate(x3s(3,nsr_inv),x3e(3,nsr_inv)   ) ! 2017.07.11
-
-  do j=1,nsr_inv                          ! 2017.07.13
-   x3s(1:3,j)=sparam%xs1(1:3,srcindex(j))  ! [km]   2017.07.13
-   x3e(1:3,j)=sparam%xs2(1:3,srcindex(j))  ! [km]   2017.07.13
-  end do
 
 do iele=1, h_mesh%ntet  ! start elemetn loop
 !#
@@ -504,7 +499,9 @@ do iele=1, h_mesh%ntet  ! start elemetn loop
   !# [7] ## set right hand side vector, rf  #################### Right Hand Side
   !# [7-1] ## method for js expressed by Heaviseide function
   do j=1,nsr_inv  ! 2017.07.13
-   call checksourceelement(x3s(:,j),x3e(:,j),elm_xyz,itrue,x3p1,x3p2)!check penetration
+   do idp=1,sparam%dipoles(srcindex(j))%ndipole ! sum over dipoles in source 2026.11.23
+   call checksourceelement(sparam%dipoles(srcindex(j))%xs1(:,idp),sparam%dipoles(srcindex(j))%xs2(:,idp),&
+   &                       elm_xyz,itrue,x3p1,x3p2)!check penetration 2026.11.23
    if (itrue) then ! when the cell includes the wire current
     !CALL checkcoeff(elm_xyz,xx,gn,elm_k,S,6,S1,6,6,v)
     call nodebasisfun(elm_xyz,x3p1,a1)
@@ -522,6 +519,7 @@ do iele=1, h_mesh%ntet  ! start elemetn loop
      rf(ii,j)=rf(ii,j) + rhs1  ! 2017.07.13
     end do
    end if ! itrue is .true. end
+   end do ! dipole loop 2026.11.23
   end do  ! nsr_inv loop, 2017.07.13
 end do ! element loop end
 

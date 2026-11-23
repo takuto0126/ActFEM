@@ -274,6 +274,8 @@ $ ./generr.sh
 ```
 その結果、Joint_test/fwd_active/data/ に `A0*_S?_amp.dat` と `A0*_S?_pha.dat` が生成されます。`A0*` は active.ctl に記載された観測点名、`S?` は active.ctl に記載された電気ダイポール送信源の名前です。
 
+なお、Joint_test/inv_act/、inv_joint/、inv_act_icomb-1/、inv_joint_icomb-1/ の active.ctl は Joint_test/fwd_active/active.ctl へのシンボリックリンクで、インバージョンでも同じ送信源が使われます。各送信源は、始点・終点、または `File:` による送信源点ファイルで指定できます（[7.2](#Source_definition) 参照）。
+
 ### 4.4 Step 4: インバージョン用 MT サンプルデータの作成
 次に、ActFEM/Joint_test/fwd_3DMT/ で MT データを用意します。
 ```bash
@@ -471,6 +473,7 @@ Source Name        !S1
 - 最後の点が最初の点と一致する（1 mm 以内）場合、その送信源は**閉ループ**とみなされます。
 - `File:` は大文字小文字を区別し、値の先頭に書く必要があります（前の空白は可）。送信源点ファイルには、1行に1点ずつ座標だけを書いてください（ラベル不要）。
 - メッシュ生成では、各ダイポールに沿って細分化点（`dlen_source`, `sigma_src`, `A_src`）が配置されます。連続するダイポールのつなぎ目（および閉ループの始点）で重複する点は自動的に除かれます。
+- どちらの入力方法も、ACTIVE 順計算コード（ebfem_bxyz.exe）、メッシュ生成コード（src/src_mesh）、同時インバージョンコード（ebfem_inv_joint.exe。Joint_test/inv_act/、inv_joint/ などで使用）で使えます。インバージョンでは、出力フォルダの `<送信源名>_site.dat` に送信源の全頂点（全ダイポールの始点と最後のダイポールの終点）が出力されます。その他の MPI 版コード（src/src_inv_ap、src/solver_mpi など）は、まだこの形式に対応していません。
 
 例: Fwd_test/active_loop/（active.ctl, S1.dat, S2.dat）。実行手順は 3.5 を参照。
 
@@ -545,7 +548,7 @@ condmesh.sh では、ActFEMv1.0/src/src_mesh/gridmdl2mesh.exe を使って cond_
 ## 10 バージョン履歴 <a id="Version_notes"></a>
 
 #### Version 1.4
-2026年11月23日：ACTIVE 順計算とメッシュ生成で、折れ線（複数ダイポール）送信源が利用可能になりました。各送信源は、始点・終点（単一ダイポール、従来形式）または `File:` による送信源点ファイル（閉ループを含む、直列につながった複数ダイポール）で指定できます（[7.2](#Source_definition) 参照）。ループ送信源のテスト（Fwd_test/active_loop/）と、解析解との比較スクリプト（compana_loop.py）を追加しました（3.5 参照）。
+2026年11月23日：ACTIVE 順計算、メッシュ生成、同時インバージョン（ebfem_inv_joint.exe）で、折れ線（複数ダイポール）送信源が利用可能になりました。各送信源は、始点・終点（単一ダイポール、従来形式）または `File:` による送信源点ファイル（閉ループを含む、直列につながった複数ダイポール）で指定できます（[7.2](#Source_definition) 参照）。ループ送信源のテスト（Fwd_test/active_loop/）と、解析解との比較スクリプト（compana_loop.py）を追加しました（3.5 参照）。
 
 2026年5月30日：ACTIVE（CSEM）および MT インピーダンスとの同時インバージョンで、ティッパーインバージョンが利用可能になりました。
 

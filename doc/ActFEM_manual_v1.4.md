@@ -274,6 +274,8 @@ $ ./generr.sh
 ```
 As results, `A0*_S?_amp.dat` and `A0*_S?_pha.dat` are generated in Joint_test/fwd_active/data/. Here, `A0*` are site names written in active.ctl, while `S?` is the source name of electric dipole as written in active.ctl.
 
+Note that active.ctl in Joint_test/inv_act/, inv_joint/, inv_act_icomb-1/ and inv_joint_icomb-1/ are symbolic links to Joint_test/fwd_active/active.ctl, so the same sources are used in the inversions. Each source can be given by start/end points or by a source point file with `File:` (see [7.2](#Source_definition)).
+
 ### 4.4 Step 4: Generation of MT sample data for inversion
 Secondly, MT data is prepared in ActFEM/Joint_test/fwd_3DMT/
 ```bash
@@ -469,6 +471,7 @@ The source point file has the following format:
 - If the last point coincides with the first point (within 1 mm), the source is regarded as a **closed loop**.
 - The `File:` keyword is case-sensitive and must be at the head of the value (leading spaces are allowed). In the source point file, write coordinates only (one point per line, no labels).
 - In mesh generation, refinement points (`dlen_source`, `sigma_src`, `A_src`) are placed along every dipole; the duplicated points at the junctions of consecutive dipoles (and at the start point of a closed loop) are automatically removed.
+- Both input styles are available in the ACTIVE forward code (ebfem_bxyz.exe), the mesh generation codes (src/src_mesh) and the joint inversion code (ebfem_inv_joint.exe, used in Joint_test/inv_act/, inv_joint/, etc.). In the inversion, `<source name>_site.dat` in the output folder lists all vertices of the source (start points of all dipoles and the end point of the last dipole). The other MPI codes (src/src_inv_ap, src/solver_mpi, etc.) are not yet updated for this format.
 
 Example: Fwd_test/active_loop/ (active.ctl, S1.dat, S2.dat); see 3.5 for how to run it.
 
@@ -543,7 +546,7 @@ Figure. Outline of condmesh.sh
 ## 10 Version notes <a id="Version_notes"></a>
 
 #### Version 1.4
-Nov 23, 2026: Polyline (multi-dipole) sources are now available for ACTIVE forward modelling and mesh generation. Each source can be given either by start/end points (single dipole, conventional format) or by a source point file with `File:` (multiple dipoles connected in series, including closed loops) (see [7.2](#Source_definition)). A test for loop sources (Fwd_test/active_loop/) and its comparison script with the analytical solution (compana_loop.py) are added (see 3.5).
+Nov 23, 2026: Polyline (multi-dipole) sources are now available for ACTIVE forward modelling, mesh generation and the joint inversion (ebfem_inv_joint.exe). Each source can be given either by start/end points (single dipole, conventional format) or by a source point file with `File:` (multiple dipoles connected in series, including closed loops) (see [7.2](#Source_definition)). A test for loop sources (Fwd_test/active_loop/) and its comparison script with the analytical solution (compana_loop.py) are added (see 3.5).
 
 May 30, 2026: Tipper inversion is now available jointly with ACTIVE (CSEM) and MT impedance inversions.
 

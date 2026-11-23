@@ -12,7 +12,7 @@
 # Manual of ActFEM v1.4
 ## ACTIVE forward-inversion simulation code using FEM
 
-#### As of May 30, 2026
+#### As of November 23, 2026
 
 Takuto MINAMI
 tminami@port.kobe-u.ac.jp
@@ -121,7 +121,39 @@ If the following panels appear, both active modelling and analytical solution ca
 
 Figure. The symbols are the calculated ACTIVE response in Fwd_test/active/, while the lines are the analytical solutions calculated in Fwd_test/active_ana/. (Top: amplitude [nT/A]; Bottom: phase [deg])
 
-### 3.5 Step 5: MT forward calculation (without MPI) with homogeneous resistivity
+### 3.5 Step 5: Active forward modelling with polyline (multi-dipole) sources
+ActFEM can treat a source wire consisting of multiple dipoles connected in series (e.g., a loop or a bent cable), where the vertices of the wire are given by a source point file (see [7.2](#Source_definition)). In Fwd_test/active_loop/, two closed-loop sources are prepared: S1 (19 dipoles given by S1.dat) and S2 (13 dipoles given by S2.dat). The mesh of Step 1 (Fwd_test/mesh_flat/) is used.
+```bash
+$ cd ActFEM/Fwd_test/active_loop
+$ chmod +x run.sh
+$ ./run.sh > result/fwd.log
+```
+In result/fwd.log, you can confirm that the dipoles are read from the source point files:
+```
+ source name: S1
+ ndipole =  19
+ dipole   1 xs1=      0.1763144     -0.8313663     -0.0010000 xs2=      0.2645611     -0.8773202     -0.0010000
+ ...
+ source name: S2
+ ndipole =  13
+```
+and `A0*_S1.dat` and `A0*_S2.dat` are generated in result/.
+
+Then, the results can be compared with the analytical solution. Because the analytical code (src/ana) treats only single-dipole sources, compana_loop.py gives each dipole as an independent source to active_ana.exe and sums the complex Bz over the dipoles of each source (superposition). active_ana.exe should be built beforehand (Step 2).
+```bash
+$ python3 compana_loop.py
+```
+The ratio of amplitudes (FEM/analytical) and the phase difference [deg] are printed for each site, source and frequency, and the summed analytical responses are written in result_ana/ (columns: frequency [Hz], Bz amplitude [nT/A], Bz phase [deg]). For most site-source pairs, the amplitude ratio is within 0.995-1.006 and the phase difference is less than 0.3 degree:
+```
+site src  f[Hz]     |Bz|ana     |Bz|FEM  ratio  pha_ana  pha_FEM   dpha
+A02  S1       1  3.8740e-02  3.8701e-02  0.999  -179.29  -179.29   0.00
+A02  S1      99  4.9982e-02  4.9886e-02  0.998   169.98   169.83  -0.14
+...
+A03  S1       1  9.4048e+00  1.0659e+01  1.133  -179.99  -179.99  -0.00
+```
+Note that site A03 is located only ~18 m from the wire of S1, where Bz varies steeply and the FEM accuracy depends strongly on the mesh around the wire (Fwd_test/mesh_flat/ is refined along the straight sources in aso.ctl, not along the loops). To refine the mesh along the polyline sources, give the same `File:` lines in the source block of the mesh control file (aso.ctl); refinement points are then placed along every dipole (see [7.2](#Source_definition)). Note also that file names in control files are read as `character(50)`, so keep the paths short.
+
+### 3.6 Step 6: MT forward calculation (without MPI) with homogeneous resistivity
 For MT calculations, there are serial (openMP) mode and Hybrid (openMP + MPI) mode. First, you can check serial model.
 ```bash
 $ cd ActFEM/Fwd_test/MTfwd_test
@@ -132,7 +164,7 @@ If the calculation is successful, you can see the output:
 
 <img src="./images/v1.4_image8.png" width="63%">
 
-### 3.6 Step 6: Check the results of MT forward calculation accuracy
+### 3.7 Step 7: Check the results of MT forward calculation accuracy
 After finishing the calculations, please see how MT simulation finished.
 ```bash
 $ chmod +x plot_rho.sh
@@ -143,7 +175,7 @@ $ ./plot_rho.sh
 
 As seen in the panels, MT simulation with ActFEM succeeded in generating 100 Ohm.m apparent resistivity and 45 degrees phase over the frequency ranging from 1 to 100 Hz with less than 1% numerical error.
 
-### 3.7 Step 7: MT forward calculation (without MPI) with lateral inhomogeneous structure
+### 3.8 Step 8: MT forward calculation (without MPI) with lateral inhomogeneous structure
 MT forward calculation can calculate tipper as well. You can check how it works with laterally inhomogeneous structure. First it is need to generate the inhomogeneous structure. In ActFEM/Fwd_test/MTfwd_test/
 ```bash
 $ chmod +x change_model2cond.sh
@@ -178,7 +210,7 @@ $ ./plot_tip.sh
 
 As seen in the panel, the real part of induction vector points west due to lower resistivity on the western side.
 
-### 3.8 Step 8: MT forward simulation with MPI + OpenMP
+### 3.9 Step 9: MT forward simulation with MPI + OpenMP
 Only MT forward simulation is now parallelized with MPI. You can do the same calculation as Fwd_test/MTfwd_test in Fwd_test/MTfwd_test_mpi/ with MPI.
 ```bash
 $ cd Fwd_test/MTfwd_test_mpi/
@@ -396,16 +428,49 @@ lonlatorigin !131.084782 32.884882 (lon lat origin of mesh)
 4 Name !A03 (Site 4)
 4 xyz,sigma,A[km] !131.086847 32.881981 -0.001 (Lon lat alt, alt is from ground surface)
 ixyflg 0:no,1:surfv!0 (surface map flag)
-# of sources !1 (number of electric dipole sources)
+# of sources !2 (number of sources; each source is a single dipole or a polyline of dipoles)
 Source Name !S1 (name of the first source)
 source start point !131.0784333 32.8908028 -0.001 (dipole starting point)
 source end point !131.0814639 32.8912333 -0.001 (dipole ending point)
-Elcetric current[A]! 1.0 (value of electric current through the electric dipole)
+Source Name !S2 (name of the second source)
+2nd source file !File:S2.dat (polyline source given by a source point file, see 7.2)
+Elcetric current[A]! 1.0 (value of electric current through the source wire, common to all sources)
 sigma_air [S/m] !1.e-8 (electric conductivity of the air)
 condflag 0:home,1: !0 (subsurface conductivity flag, 0: homogeneous earth, 1 for file input)
 nvolume !1 (when flag is 0,number of volume is specified here)
 cond !0.01 (conductivity of the first volume under the ground surface)
 ```
+
+### 7.2 Source definition (single dipole / multiple dipoles) <a id="Source_definition"></a>
+Each source is specified by the line `Source Name` followed by the source geometry. Two input styles are available and can be mixed among sources.
+
+**(a) Single dipole (conventional format).** Two lines give the start and end points of one electric dipole.
+```
+Source Name        !S1
+source start point !131.086490   32.877356   -0.001
+source end   point !131.090840   32.877658   -0.001
+```
+
+**(b) Multiple dipoles given by a source point file.** Write `File:` followed by the path of the source point file (relative to the directory where the program is executed) in the line after `Source Name`.
+```
+Source Name        !S1
+1st source file    !File:S1.dat
+```
+The source point file has the following format:
+```
+20                                 <- 1st line: number of points npoint (>= 2)
+131.086490  32.877356  -0.001      <- 2nd- lines: coordinates of each point
+131.087423  32.876926  -0.001
+...
+131.086490  32.877356  -0.001
+```
+- Points are connected in order, and dipole *j* is defined from point *j* to point *j*+1, i.e., `npoint` points give `npoint - 1` dipoles connected in series (a polyline wire). The same electric current `Elcetric current[A]` flows through all dipoles.
+- The coordinate format of each point follows the `lonlat(1),xyz (2)` flag of the observatory block: `lon lat alt` (alt [km] relative to the ground surface) for 1, and `x y z` [km] for 2. Lon/lat are converted with the projection given by `iflag_map` (ECP or UTM).
+- If the last point coincides with the first point (within 1 mm), the source is regarded as a **closed loop**.
+- The `File:` keyword is case-sensitive and must be at the head of the value (leading spaces are allowed). In the source point file, write coordinates only (one point per line, no labels).
+- In mesh generation, refinement points (`dlen_source`, `sigma_src`, `A_src`) are placed along every dipole; the duplicated points at the junctions of consecutive dipoles (and at the start point of a closed loop) are automatically removed.
+
+Example: Fwd_test/active_loop/ (active.ctl, S1.dat, S2.dat); see 3.5 for how to run it.
 
 ## 8 Mesh generation tutorial <a id="Mesh_generation_tutorial"></a>
 The mesh generation for FEM modelling is one of toughest works for forward/inversion preparation. Here, simple tutorial help the users to utilize the mesh generation codes in ActFEM forward/inversion. Please start the tutorial in the folder, ActFEMv1.0/mesh_demo_Aso/.
@@ -478,6 +543,8 @@ Figure. Outline of condmesh.sh
 ## 10 Version notes <a id="Version_notes"></a>
 
 #### Version 1.4
+Nov 23, 2026: Polyline (multi-dipole) sources are now available for ACTIVE forward modelling and mesh generation. Each source can be given either by start/end points (single dipole, conventional format) or by a source point file with `File:` (multiple dipoles connected in series, including closed loops) (see [7.2](#Source_definition)). A test for loop sources (Fwd_test/active_loop/) and its comparison script with the analytical solution (compana_loop.py) are added (see 3.5).
+
 May 30, 2026: Tipper inversion is now available jointly with ACTIVE (CSEM) and MT impedance inversions.
 
 #### Version 1.0

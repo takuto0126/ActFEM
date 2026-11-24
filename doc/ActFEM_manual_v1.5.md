@@ -89,6 +89,8 @@ In ActFEM, the following coordinate system is used:
 - Y : North
 - Z : Upward
 
+z is the elevation [km] (sea level is z = 0) in the mesh and in resistivity models, while z of observatories and sources in control files is the height relative to the ground surface (see [7.1.1](#sec7_1_1)).
+
 ## 3 Run samples for forward modeling <a id="Run_the_sample"></a>
 There is a forward sample folder, ActFEM/Fwd_test. Users can check how ActFEM calculates forward simulations: Active and MT.
 
@@ -417,7 +419,7 @@ Mesh generation (meshgen1.exe, meshgen2.exe, mkline.exe and mkface.exe in src/sr
 - Do not insert blank lines.
 - File names and folder names are read as `character(50)`. Keep each path within 50 characters (relative paths are recommended).
 - Lengths and coordinates are in [km]. x is eastward, y is northward and z is upward (see [2](#Coordinate_system)). When lon/lat input is used, it is converted to x, y with the origin given by `lonlatorigin`.
-- The altitude (third value) of observatories and source points is relative to the ground surface (e.g., -0.001 means 1 m below the surface). It is converted to the absolute z by the 2-D surface mesh in forward modelling and inversions.
+- **The z (third value) of observatories and source points is the height [km] relative to the ground surface, not the elevation**, for both input formats (`lonlat(1),xyz (2)` = 1: lon lat z, = 2: x y z). For example, -0.001 means 1 m below the ground surface and 0.1 means 100 m above it. Each program interpolates the elevation of the ground surface z_surface(x, y) from the 2-D surface mesh with topography and uses z_surface(x, y) + z as the absolute z: calzobsr (src/common/calzobsr.f90) in mesh generation (meshgen2.exe), PREPZSRCOBS in ACTIVE forward modelling (src/solver/n_ebfem_bxyz.f90) and the inversion (src/src_inv_joint/n_inv_joint.f90), and PREPZOBSMT in MT forward modelling and the inversion. The converted absolute z is shown in the log (e.g., `z=    -0.00100 ->     1.28612 [km]` for site A02 in Joint_test/fwd_active/, whose ground surface is at about 1.287 km). When itopofile = 0, the ground surface is at z = 0, so the given z is equal to the absolute z.
 - Mesh generation does not read the items after `Electric current [A]` (conductivity), while forward modelling reads all items. Mesh parameters (`west bound` - `A_src`) must also be written in the forward control file, but they are not used in the forward calculation (except for `west bound` - `north bound` when `ixyflg = 1`).
 
 #### 7.1.2 Items <a id="sec7_1_2"></a>
@@ -457,9 +459,9 @@ The items are read in the following order. "Used by" shows the programs which us
 | 33 | `sigma_src [km]` | | Radius [km] of mesh refinement around each refinement point of sources. | M |
 | 34 | `A_src [km]` | | Element size [km] at each refinement point of sources. | M |
 | 35 | `# of observatory` | | Number of observatories, nobs. | M, F |
-| 36 | `lonlat(1),xyz (2)` | | Coordinate format of observatories and sources. 1: lon lat altitude (itopofile = 1 is required), 2: x y z [km]. | M, F |
+| 36 | `lonlat(1),xyz (2)` | | Coordinate format of observatories and sources. 1: lon lat z (itopofile = 1 is required), 2: x y z [km]. In both cases, z is the height [km] relative to the ground surface (see [7.1.1](#sec7_1_1)). | M, F |
 | 37 | `Name` | repeated nobs times with #38 | Name of the observatory (used in output file names). | M, F |
-| 38 | `xyz` | repeated nobs times with #37 | Coordinates of the observatory (format of #36). | M, F |
+| 38 | `xyz` | repeated nobs times with #37 | Coordinates of the observatory (format of #36; z is relative to the ground surface). | M, F |
 | 39 | `ixyflg` | | 0: nothing, 1: field values are also calculated on nx × ny grid points in the inner area (west - east, south - north bounds). | F |
 | 40 | `xy file header` | ixyflg = 1 | Header of the output files for the grid points. | F |
 | 41 | `nx ny` | ixyflg = 1 | Number of grid points in x and y. | F |
@@ -578,7 +580,7 @@ The source point file has the following format:
 131.086490  32.877356  -0.001
 ```
 - Points are connected in order, and dipole *j* is defined from point *j* to point *j*+1, i.e., `npoint` points give `npoint - 1` dipoles connected in series (a polyline wire). The same electric current `Elcetric current[A]` flows through all dipoles.
-- The coordinate format of each point follows the `lonlat(1),xyz (2)` flag of the observatory block: `lon lat alt` (alt [km] relative to the ground surface) for 1, and `x y z` [km] for 2. Lon/lat are converted with the projection given by `iflag_map` (ECP or UTM).
+- The coordinate format of each point follows the `lonlat(1),xyz (2)` flag of the observatory block: `lon lat z` for 1, and `x y z` [km] for 2. In both cases, z [km] is the height relative to the ground surface (see [7.1.1](#sec7_1_1)). Lon/lat are converted with the projection given by `iflag_map` (ECP or UTM).
 - If the last point coincides with the first point (within 1 mm), the source is regarded as a **closed loop**.
 - The `File:` keyword is case-sensitive and must be at the head of the value (leading spaces are allowed). In the source point file, write coordinates only (one point per line, no labels).
 - In mesh generation, refinement points (`dlen_source`, `sigma_src`, `A_src`) are placed along every dipole; the duplicated points at the junctions of consecutive dipoles (and at the start point of a closed loop) are automatically removed.

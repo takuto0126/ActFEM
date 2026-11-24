@@ -3,7 +3,8 @@
 FC=ifx
 #OPT=-i-dynamic
 VPATH = ../common
-OPT0= -O3 -xAVX -qmkl=parallel
+OPT0= -O3 -qmkl=parallel
+#OPT0= -O3 -xAVX -qmkl=parallel # -xAVX is for Intel Xeon 
 #OPT0= -O -fpe0 -check bounds -traceback -g  -mkl=parallel
 
 target1=ebfem_bxyz.exe

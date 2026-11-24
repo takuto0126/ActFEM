@@ -1,6 +1,6 @@
 FC=ifort    # for EIC
 #OPT=-i-dynamic
-VPATH = ../common ../solver  ../src_inv/ ../common_mpi
+VPATH = ../common ../solver ../common_mpi  # ../src_inv is removed 2026.11.25 CC
 #OPT0= -O3 -xAVX -mkl=parallel
 OPT0= -O3 -check bounds -traceback -g -qmkl=parallel -qopenmp
 

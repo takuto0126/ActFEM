@@ -50,10 +50,11 @@ Not modified (not compiled into ebfem_inv_joint.exe)
 -------------------------------------------------
 The following files still use the old sparam%xs1/xs2 and cannot be compiled with the
 current m_param.f90. They are not in objs1 of src/src_inv_joint/Makefile.
-   - src/src_inv_joint/forward_apinv.f90, src/src_inv_joint/m_shareformpi_ap.f90
-   - src/src_inv_ap/, src/src_inv/, src/src_inv_mpi/, src/src_inv_mdm/
    - src/solver_mpi/, src/common_mpi/m_shareformpi.f90, src/common_mpi/m_shareformpi_fwd.f90
    - src/solver/eprimary2.f90, bprimary2.f90, forward_bxyz_old.f90
+(2026.11.25) src/src_inv_joint/forward_apinv.f90, m_shareformpi_ap.f90 and the former
+inversion codes src/src_inv/, src_inv_ap/, src_inv_mpi/, src_inv_mdm/ were removed when
+the inversion codes were integrated into src/src_inv_joint/.
 
 Tests (2026.11.23, mpiifx, mpiexec -n 6, OMP_NUM_THREADS=2, ACTIVE only (ijoint=1))
 -----

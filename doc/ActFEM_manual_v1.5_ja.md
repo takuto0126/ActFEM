@@ -382,13 +382,21 @@ mt impedanceのerrorfloorは0.1、tipperのerrorfloorは0.1に設定し、αはp
 
 ## 5 ソースフォルダ構成 <a id="Source_folder_tree"></a>
 
-| フォルダ             | 内容                              | テストフォルダ      |
-|----------------------|-----------------------------------|---------------------|
-| src/solver/          | シリアル版 ACTIVE 順計算ソルバー  | Fwd_test/active     |
-| src/solver_mpi/      | MPI 版 ACTIVE 順計算ソルバー      | Fwd_test/active_mpi |
-| src/src_3DMT/        | シリアル版 3次元 MT ソルバー      |                     |
-| src/src_3DMT_mpi/    | MPI 版 3次元 MT ソルバー          |                     |
-| src/src_inv_joint/   | ACTIVE/MT/同時インバージョンコード |                     |
+| フォルダ | 内容 | テストフォルダ |
+|---|---|---|
+| src/common/ | 全プログラムで使う共通モジュール（パラメータ、メッシュ、行列、モデルのパラメータ化など） | |
+| src/common_mpi/ | MPI 通信用のモジュール | |
+| src/solver/ | シリアル（OpenMP）版 ACTIVE 順計算ソルバー（ebfem_bxyz.exe） | Fwd_test/active、Fwd_test/active_loop、Joint_test/fwd_active |
+| src/src_2D/ | 2次元 TM モードソルバー（MT の境界条件に使用） | |
+| src/src_3DMT/ | シリアル（OpenMP）版 3次元 MT 順計算ソルバー（n_ebfem_3DMT.exe） | Fwd_test/MTfwd_test、Joint_test/fwd_3DMT |
+| src/src_3DMT_mpi/ | MPI 版 3次元 MT 順計算ソルバー（n_ebfem_3DMT.exe） | Fwd_test/MTfwd_test_mpi、Joint_test/fwd_3DMT |
+| src/src_inv_joint/ | ACTIVE・MT・ティッパー・同時インバージョンコード（ebfem_inv_joint.exe） | Joint_test/inv_* |
+| src/src_mesh/ | メッシュ生成（meshgen1.exe、meshgen2.exe、mkline.exe、mkface.exe） | Fwd_test/mesh_flat、Joint_test/mesh_joint、Joint_test/mesh_light |
+| src/src_post/ | 後処理（change_model2cond.exe、slice.exe など） | Joint_test/structure、Joint_test/inv_*/view_slice.sh |
+| src/ana/ | ACTIVE の解析解（active_ana.exe） | Fwd_test/active_ana |
+| src/solver_mpi/ | MPI 版 ACTIVE 順計算ソルバー（現在のバージョンに未対応で、コンパイルできません） | |
+
+インバージョンコードはすべて src/src_inv_joint/ に統合されています。以前のインバージョンコード（src/src_inv/、src/src_inv_ap/、src/src_inv_mpi/、src/src_inv_mdm/）はバージョン 1.5 で削除しました。src/src_inv/ のうち他のプログラムが使っていたファイル（m_modelpart.f90 と solvebeta.f90）は src/common/ に移しました。
 
 ## 6 支配方程式と離散化 <a id="Governing_equation_and_discretization"></a>
 ActFEM の順計算・インバージョンの詳細は Minami et al. (2018) を参照してください。ベクトルポテンシャル $\mathbf{A}$ に関する誘導方程式
@@ -586,7 +594,7 @@ Source Name        !S1
 - 最後の点が最初の点と一致する（1 mm 以内）場合、その送信源は**閉ループ**とみなされます。
 - `File:` は大文字小文字を区別し、値の先頭に書く必要があります（前の空白は可）。送信源点ファイルには、1行に1点ずつ座標だけを書いてください（ラベル不要）。
 - メッシュ生成では、各ダイポールに沿って細分化点（`dlen_source`, `sigma_src`, `A_src`）が配置されます。連続するダイポールのつなぎ目（および閉ループの始点）で重複する点は自動的に除かれます。
-- どちらの入力方法も、ACTIVE 順計算コード（ebfem_bxyz.exe）、メッシュ生成コード（src/src_mesh）、同時インバージョンコード（ebfem_inv_joint.exe。Joint_test/inv_act/、inv_joint/ などで使用）で使えます。インバージョンでは、出力フォルダの `<送信源名>_site.dat` に送信源の全頂点（全ダイポールの始点と最後のダイポールの終点）が出力されます。その他の MPI 版コード（src/src_inv_ap、src/solver_mpi など）は、まだこの形式に対応していません。
+- どちらの入力方法も、ACTIVE 順計算コード（ebfem_bxyz.exe）、メッシュ生成コード（src/src_mesh）、同時インバージョンコード（ebfem_inv_joint.exe。Joint_test/inv_act/、inv_joint/ などで使用）で使えます。インバージョンでは、出力フォルダの `<送信源名>_site.dat` に送信源の全頂点（全ダイポールの始点と最後のダイポールの終点）が出力されます。src/solver_mpi/ はこの形式に対応していません。
 
 例: Fwd_test/active_loop/（active.ctl, S1.dat, S2.dat）。実行手順は [3.5](#sec3_5) を参照。
 
@@ -756,7 +764,7 @@ view_slice.sh は、slice.exe（src/src_post）で比抵抗ファイルから断
 ## 10 バージョン履歴 <a id="Version_notes"></a>
 
 #### Version 1.5
-2026年11月25日：マニュアルを大幅修正しました。メッシュ生成・順計算の制御ファイルの説明（[7.1](#Control_files)）を現在の形式に合わせて書き直し（項目、条件、各項目を使うプログラム、例）、水位制御ファイルの説明を追加しました。メッシュ生成チュートリアル（[8](#Mesh_generation_tutorial)）を、現在のメッシュフォルダ（Fwd_test/mesh_flat/、Joint_test/mesh_joint/、Joint_test/mesh_light/）に合わせて書き直し、比抵抗モデルの作成（[9](#Generation_of_resistivity_model)）を change_model2cond.exe による現在の手順に合わせて書き直しました。すべての節・小節にアンカーを付け、本文中の節番号への参照をリンクにし、目次に小節を加えました。
+2026年11月25日：マニュアルを大幅修正しました。メッシュ生成・順計算の制御ファイルの説明（[7.1](#Control_files)）を現在の形式に合わせて書き直し（項目、条件、各項目を使うプログラム、例）、水位制御ファイルの説明を追加しました。メッシュ生成チュートリアル（[8](#Mesh_generation_tutorial)）を、現在のメッシュフォルダ（Fwd_test/mesh_flat/、Joint_test/mesh_joint/、Joint_test/mesh_light/）に合わせて書き直し、比抵抗モデルの作成（[9](#Generation_of_resistivity_model)）を change_model2cond.exe による現在の手順に合わせて書き直しました。インバージョンコードを src/src_inv_joint/ に統合し、ソースフォルダ構成（[5](#Source_folder_tree)）を更新しました。すべての節・小節にアンカーを付け、本文中の節番号への参照をリンクにし、目次に小節を加えました。
 
 #### Version 1.4
 2026年11月23日：ACTIVE 順計算、メッシュ生成、同時インバージョン（ebfem_inv_joint.exe）で、折れ線（複数ダイポール）送信源が利用可能になりました。各送信源は、始点・終点（単一ダイポール、従来形式）または `File:` による送信源点ファイル（閉ループを含む、直列につながった複数ダイポール）で指定できます（[7.2](#Source_definition) 参照）。ループ送信源のテスト（Fwd_test/active_loop/）と、解析解との比較スクリプト（compana_loop.py）を追加しました（[3.5](#sec3_5) 参照）。

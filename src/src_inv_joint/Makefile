@@ -2,7 +2,7 @@
 
 #FC=mpiifort    # for poseidon
 FC=mpiifx
-VPATH= ../common ../solver  ../src_inv/ ../common_mpi ../src_3DMT/ ../src_2D
+VPATH= ../common ../solver ../common_mpi ../src_3DMT/ ../src_2D  # ../src_inv is removed 2026.11.25 CC
 
 # for poseidon/triton
 OPT0= -O3 -fpe0 -check bounds -traceback -g  -mkl=parallel -lmpi -I/opt/intel/compilers_and_libraries/linux/mpi/include64 -I/opt/intel/compilers_and_libraries_2018.5.274/linux/mkl/include -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -ldl
@@ -27,7 +27,7 @@ $(target1) : $(objs1)
 
 clean:
 	rm -f *.o  *.mod *.exe
-	rm -f  ../src_inv/*.o ../src_inv/*.mod  ../src_inv/*.exe
+	# rm -f  ../src_inv/*.o ../src_inv/*.mod  ../src_inv/*.exe  # commented out 2026.11.25 CC (src_inv is removed)
 	rm -f  ../src_mesh/*.o ../src_mesh/*.mod  ../src_mesh/*.exe
 	rm -f  ../solver/*.o ../solver/*.mod ../solver/*.exe
 	rm -f ../src_3DMT/*.o ../src_3DMT/*.mod ../src_3DMT/*.exe

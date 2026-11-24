@@ -26,8 +26,7 @@ Build an executable by `cd`-ing into the relevant `src/` subdirectory and runnin
 | Executable | Source dir | Purpose |
 |---|---|---|
 | `ebfem_bxyz.exe` | `src/solver/` | Active source forward modeling |
-| `n_ebfem_3DMT.exe` | `src/src_3DMT/` | MT 3D forward modeling |
-| `ebfem_inv_ap.exe` | `src/src_inv_ap/` | Active source inversion (MPI) |
+| `n_ebfem_3DMT.exe` | `src/src_3DMT/`, `src/src_3DMT_mpi/` | MT 3D forward modeling (serial / MPI) |
 | `ebfem_inv_joint.exe` | `src/src_inv_joint/` | Joint inversion ACTIVE+MT+Tipper (MPI) |
 | `meshgen1.exe`, `meshgen2.exe`, `mkline.exe`, `mkface.exe`, etc. | `src/src_mesh/` | Mesh generation tools |
 | `slice.exe`, `change_model2cond.exe`, `modmodel.exe`, `n_model2cond.exe` | `src/src_post/` | Post-processing |
@@ -101,7 +100,8 @@ The mesh control file (e.g., `aso.ctl`) specifies geometry bounds, element sizes
 - `m_param.f90` — `param_forward`, `param_cond`, `param_source` types; central parameter container
 - `m_mesh_type.f90` — `mesh` type for tetrahedral 3D mesh
 - `m_matrix.f90` — Sparse matrix types (`real_crs_matrix`, `complex_crs_matrix`, `global_matrix`)
-- `m_modelpart.f90` — `model`, `modelpara` types for conductivity model parameterization
+- `m_modelpart.f90` — `model`, `modelpara` types for conductivity model parameterization (moved from the removed `src/src_inv/`)
+- `solvebeta.f90` — used by the inversion (moved from the removed `src/src_inv/`)
 - `m_constants.f90` — Physical constants
 - `m_outresp.f90` — Response data types (`respdata`, `respmt`, `resptip`)
 
@@ -116,7 +116,7 @@ The mesh control file (e.g., `aso.ctl`) specifies geometry bounds, element sizes
 
 **`src/src_3DMT/`** — 3D MT forward; calls 2D solver for each surface
 
-**`src/src_inv_joint/`** — Main joint inversion (most actively developed):
+**`src/src_inv_joint/`** — The only inversion code; ACTIVE, MT, tipper and joint inversions are all done here. The former inversion directories (`src_inv`, `src_inv_ap`, `src_inv_mpi`, `src_inv_mdm`) were removed on 2026.11.25. `src/solver_mpi/` (MPI ACTIVE forward) is kept but is not maintained and does not compile with the current `src/common/`.
 - `n_inv_joint.f90` — Main program entry point
 - `forward_joint.f90` (module `forward_joint_inv`) — Runs FEM forward for ACTIVE and/or MT at one frequency
 - `m_jacobian_joint.f90` — Jacobian computation for both data types

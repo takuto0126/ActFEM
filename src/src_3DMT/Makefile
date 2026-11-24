@@ -2,7 +2,7 @@
 
 FC=ifx# for EIC
 #OPT=-i-dynamic
-VPATH = ../common ../solver  ../src_2D/ ../src_inv/
+VPATH = ../common ../solver  ../src_2D/  # ../src_inv is removed 2026.11.25 CC
 OPT0= -O3 -xAVX -mkl=parallel
 OPT0= -O -check bounds -traceback -g -qmkl=parallel
 
@@ -24,7 +24,7 @@ $(target1) : $(objs1)
 	$(FC) -c $< -o $@
 
 clean:
-	rm -f *.o    ../solver/*.o    ../src_2D/*.o   ../src_inv/*.o
-	rm -f *.mod  ../solver/*.mod  ../src_2D/*.mod ../src_inv/*.mod
-	rm -f *.exe  ../solver/*.exe  ../src_2D/*.exe ../src_inv/*.exe
+	rm -f *.o    ../solver/*.o    ../src_2D/*.o  # ../src_inv is removed 2026.11.25 CC
+	rm -f *.mod  ../solver/*.mod  ../src_2D/*.mod  # ../src_inv is removed 2026.11.25 CC
+	rm -f *.exe  ../solver/*.exe  ../src_2D/*.exe  # ../src_inv is removed 2026.11.25 CC
 

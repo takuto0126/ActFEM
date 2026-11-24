@@ -382,13 +382,21 @@ mt impedanceのerrorfloorは0.1、tipperのerrorfloorは0.1に設定し、αはp
 
 ## 5 Source folder tree <a id="Source_folder_tree"></a>
 
-| Folder               | Description                      | Test folder         |
-|----------------------|----------------------------------|---------------------|
-| src/solver/          | Serial ACTIVE forward solver     | Fwd_test/active     |
-| src/solver_mpi/      | MPI ACTIVE forward solver        | Fwd_test/active_mpi |
-| src/src_3DMT/        | Sequential 3-D MT solver         |                     |
-| src/src_3DMT_mpi/    | MPI 3-D MT solver                |                     |
-| src/src_inv_joint/   | ACTIVE/MT/Joint inversion code   |                     |
+| Folder | Description | Test folders |
+|---|---|---|
+| src/common/ | Common modules (parameters, mesh, matrix, model parameterization, etc.) used by all programs | |
+| src/common_mpi/ | Modules for MPI communication | |
+| src/solver/ | Serial (OpenMP) ACTIVE forward solver (ebfem_bxyz.exe) | Fwd_test/active, Fwd_test/active_loop, Joint_test/fwd_active |
+| src/src_2D/ | 2-D TM mode solver (used as boundary conditions for MT) | |
+| src/src_3DMT/ | Serial (OpenMP) 3-D MT forward solver (n_ebfem_3DMT.exe) | Fwd_test/MTfwd_test, Joint_test/fwd_3DMT |
+| src/src_3DMT_mpi/ | MPI 3-D MT forward solver (n_ebfem_3DMT.exe) | Fwd_test/MTfwd_test_mpi, Joint_test/fwd_3DMT |
+| src/src_inv_joint/ | ACTIVE, MT, tipper and joint inversion code (ebfem_inv_joint.exe) | Joint_test/inv_* |
+| src/src_mesh/ | Mesh generation (meshgen1.exe, meshgen2.exe, mkline.exe, mkface.exe) | Fwd_test/mesh_flat, Joint_test/mesh_joint, Joint_test/mesh_light |
+| src/src_post/ | Post processing (change_model2cond.exe, slice.exe, etc.) | Joint_test/structure, Joint_test/inv_*/view_slice.sh |
+| src/ana/ | Analytical solution for ACTIVE (active_ana.exe) | Fwd_test/active_ana |
+| src/solver_mpi/ | MPI ACTIVE forward solver (not updated for the current version and cannot be compiled) | |
+
+All the inversion codes are integrated into src/src_inv_joint/. The former inversion codes (src/src_inv/, src/src_inv_ap/, src/src_inv_mpi/ and src/src_inv_mdm/) were removed in version 1.5; the files of src/src_inv/ still used by other programs (m_modelpart.f90 and solvebeta.f90) were moved to src/common/.
 
 ## 6 Governing equation and discretization <a id="Governing_equation_and_discretization"></a>
 See Minami et al. (2018) for details about forward and inversion modelling in ActFEM. The induction equation in terms of the vector magnetic potential $\mathbf{A}$,
@@ -584,7 +592,7 @@ The source point file has the following format:
 - If the last point coincides with the first point (within 1 mm), the source is regarded as a **closed loop**.
 - The `File:` keyword is case-sensitive and must be at the head of the value (leading spaces are allowed). In the source point file, write coordinates only (one point per line, no labels).
 - In mesh generation, refinement points (`dlen_source`, `sigma_src`, `A_src`) are placed along every dipole; the duplicated points at the junctions of consecutive dipoles (and at the start point of a closed loop) are automatically removed.
-- Both input styles are available in the ACTIVE forward code (ebfem_bxyz.exe), the mesh generation codes (src/src_mesh) and the joint inversion code (ebfem_inv_joint.exe, used in Joint_test/inv_act/, inv_joint/, etc.). In the inversion, `<source name>_site.dat` in the output folder lists all vertices of the source (start points of all dipoles and the end point of the last dipole). The other MPI codes (src/src_inv_ap, src/solver_mpi, etc.) are not yet updated for this format.
+- Both input styles are available in the ACTIVE forward code (ebfem_bxyz.exe), the mesh generation codes (src/src_mesh) and the joint inversion code (ebfem_inv_joint.exe, used in Joint_test/inv_act/, inv_joint/, etc.). In the inversion, `<source name>_site.dat` in the output folder lists all vertices of the source (start points of all dipoles and the end point of the last dipole). src/solver_mpi/ is not updated for this format.
 
 Example: Fwd_test/active_loop/ (active.ctl, S1.dat, S2.dat); see [3.5](#sec3_5) for how to run it.
 
@@ -754,7 +762,7 @@ view_slice.sh runs slice.exe (src/src_post) to cut the slices out of the resisti
 ## 10 Version notes <a id="Version_notes"></a>
 
 #### Version 1.5
-Nov 25, 2026: The manual is largely revised. The description of the control files for mesh generation and forward modelling ([7.1](#Control_files)) is updated to the current format (items, conditions, programs using each item, and an example), and the water level control file is described. The mesh generation tutorial ([8](#Mesh_generation_tutorial)) is rewritten for the current mesh folders (Fwd_test/mesh_flat/, Joint_test/mesh_joint/ and Joint_test/mesh_light/), and the generation of resistivity models ([9](#Generation_of_resistivity_model)) is rewritten for the current procedure with change_model2cond.exe. Anchors are added to all sections and subsections, the references to sections in the text are linked, and the contents list the subsections.
+Nov 25, 2026: The manual is largely revised. The description of the control files for mesh generation and forward modelling ([7.1](#Control_files)) is updated to the current format (items, conditions, programs using each item, and an example), and the water level control file is described. The mesh generation tutorial ([8](#Mesh_generation_tutorial)) is rewritten for the current mesh folders (Fwd_test/mesh_flat/, Joint_test/mesh_joint/ and Joint_test/mesh_light/), and the generation of resistivity models ([9](#Generation_of_resistivity_model)) is rewritten for the current procedure with change_model2cond.exe. The inversion codes are integrated into src/src_inv_joint/ and the source folder tree ([5](#Source_folder_tree)) is updated. Anchors are added to all sections and subsections, the references to sections in the text are linked, and the contents list the subsections.
 
 #### Version 1.4
 Nov 23, 2026: Polyline (multi-dipole) sources are now available for ACTIVE forward modelling, mesh generation and the joint inversion (ebfem_inv_joint.exe). Each source can be given either by start/end points (single dipole, conventional format) or by a source point file with `File:` (multiple dipoles connected in series, including closed loops) (see [7.2](#Source_definition)). A test for loop sources (Fwd_test/active_loop/) and its comparison script with the analytical solution (compana_loop.py) are added (see [3.5](#sec3_5)).

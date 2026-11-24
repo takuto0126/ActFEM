@@ -3,7 +3,7 @@
 
 FC=mpiifort
 #OPT=-i-dynamic
-VPATH = ../common ../solver ../common_mpi ../src_inv
+VPATH = ../common ../solver ../common_mpi  # ../src_inv is removed 2026.11.25 CC
 #OPT0= -O3 -xAVX -mkl=parallel -lmpi
 #OPT0= -O -fpe0 -check bounds -traceback -g  -mkl=parallel -lmpi
 

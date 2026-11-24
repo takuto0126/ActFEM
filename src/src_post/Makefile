@@ -4,7 +4,7 @@
 FC=ifx
 MPIFC=mpif90
 #OPT=-i-dynamic
-VPATH = ../common ../solver ../src_mesh ../src_inv
+VPATH = ../common ../solver ../src_mesh  # ../src_inv is removed 2026.11.25 CC
 #OPT0= -O3 -xAVX -mkl=parallel
 OPT0= -O -fpe0 -check bounds -traceback -g -qmkl=parallel
 
@@ -64,6 +64,6 @@ $(target7) : $(objs7)
 	$(FC) -c $(OPT0) $< -o $@
 
 clean:
-	rm -f *.o    ../src_mesh/*.o   ../solver/*.o ../src_inv/*.o
-	rm -f *.mod  ../src_mesh/*.mod  ../solver/*.mod ../src_inv/*.mod
-	rm -f *.exe  ../src_mesh/*.exe ../solver/*.exe ../src_inv/*.exe
+	rm -f *.o    ../src_mesh/*.o   ../solver/*.o  # ../src_inv is removed 2026.11.25 CC
+	rm -f *.mod  ../src_mesh/*.mod  ../solver/*.mod  # ../src_inv is removed 2026.11.25 CC
+	rm -f *.exe  ../src_mesh/*.exe ../solver/*.exe  # ../src_inv is removed 2026.11.25 CC

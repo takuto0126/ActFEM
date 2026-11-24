@@ -23,12 +23,38 @@ tminami@port.kobe-u.ac.jp
 1. [必要な環境](#Required_environment)
 2. [座標系](#Coordinate_system)
 3. [順計算サンプルの実行](#Run_the_sample)
+   - [3.1 Step 1: メッシュ生成（地形なし）](#sec3_1)
+   - [3.2 Step 2: ACTIVE の解析解の準備](#sec3_2)
+   - [3.3 Step 3: ACTIVE 順計算](#sec3_3)
+   - [3.4 Step 4: ACTIVE 順計算結果と解析解の比較](#sec3_4)
+   - [3.5 Step 5: 折れ線（複数ダイポール）送信源による ACTIVE 順計算](#sec3_5)
+   - [3.6 Step 6: 一様比抵抗構造での MT 順計算（MPI なし）](#sec3_6)
+   - [3.7 Step 7: MT 順計算の精度確認](#sec3_7)
+   - [3.8 Step 8: 水平方向に不均質な構造での MT 順計算（MPI なし）](#sec3_8)
+   - [3.9 Step 9: MPI + OpenMP による MT 順計算](#sec3_9)
 4. [インバージョンサンプルの実行](#Run_samples_for_inversions)
+   - [4.1 Step 1: メッシュの準備](#sec4_1)
+   - [4.2 Step 2: 真の比抵抗構造の準備](#sec4_2)
+   - [4.3 Step 3: インバージョン用 ACTIVE サンプルデータの作成](#sec4_3)
+   - [4.4 Step 4: インバージョン用 MT サンプルデータの作成](#sec4_4)
+   - [4.5 Step 5: サンプルインバージョンの実行](#sec4_5)
 5. [ソースフォルダ構成](#Source_folder_tree)
 6. [支配方程式と離散化](#Governing_equation_and_discretization)
 7. [ファイル形式](#File_formats)
+   - [7.1 メッシュ生成・順計算の制御ファイル](#Control_files)
+      - [7.1.1 共通の規則](#sec7_1_1)
+      - [7.1.2 項目一覧](#sec7_1_2)
+      - [7.1.3 例](#sec7_1_3)
+      - [7.1.4 水位制御ファイル](#sec7_1_4)
+   - [7.2 送信源の指定（単一ダイポール／複数ダイポール）](#Source_definition)
 8. [メッシュ生成チュートリアル](#Mesh_generation_tutorial)
+   - [8.1 メッシュフォルダ](#sec8_1)
+   - [8.2 meshgen.sh の実行](#sec8_2)
+   - [8.3 メッシュの調整方法](#sec8_3)
 9. [順計算・インバージョン用比抵抗モデルの作成](#Generation_of_resistivity_model)
+   - [9.1 比抵抗ファイル（cond.msh）](#sec9_1)
+   - [9.2 change_model2cond.exe による作成](#sec9_2)
+   - [9.3 比抵抗モデルの確認](#sec9_3)
 10. [バージョン履歴](#Version_notes)
 11. [参考文献](#References)
 
@@ -66,7 +92,7 @@ ActFEM では以下の座標系を用います。
 ## 3 順計算サンプルの実行 <a id="Run_the_sample"></a>
 順計算のサンプルフォルダ ActFEM/Fwd_test があります。ここで、ActFEM による ACTIVE と MT の順計算を確認できます。
 
-### 3.1 Step 1: メッシュ生成（地形なし）
+### 3.1 Step 1: メッシュ生成（地形なし） <a id="sec3_1"></a>
 ```bash
 $ cd ActFEM/Fwd_test/mesh_flat
 $ chmod +x meshgen.sh
@@ -85,7 +111,7 @@ $ gmsh nakadake3d.msh
 
 図. Tools > Options > Mesh で「3D element faces」にチェックを入れると中央の図のように表示されます。「Tools > Visibility > Volume 2 を選択 > Apply」で陸側の要素のみが表示され、観測点付近の高解像度領域を確認できます。
 
-### 3.2 Step 2: ACTIVE の解析解の準備
+### 3.2 Step 2: ACTIVE の解析解の準備 <a id="sec3_2"></a>
 順計算の精度を評価するため、順計算の前に解析解を用意しておきます。
 ```bash
 $ cd ActFEM/Fwd_test/active_ana/
@@ -96,7 +122,7 @@ $ run.sh
 
 <img src="./images/v1.4_image5.png" width="52%">
 
-### 3.3 Step 3: ACTIVE 順計算
+### 3.3 Step 3: ACTIVE 順計算 <a id="sec3_3"></a>
 メッシュを生成したら、ACTIVE と MT の順計算を実行できます。
 ```bash
 $ cd ActFEM/Fwd_test/active
@@ -107,7 +133,7 @@ ACTIVE 順計算が正常に終了すると、次のように表示されます�
 
 <img src="./images/v1.4_image6.png" width="43%">
 
-### 3.4 Step 4: ACTIVE 順計算結果と解析解の比較
+### 3.4 Step 4: ACTIVE 順計算結果と解析解の比較 <a id="sec3_4"></a>
 ACTIVE の計算が終わったら、Fwd_test/active_ana/result の解析解と比較して順計算の精度を確認できます。
 
 Fwd_test/active/ で
@@ -121,8 +147,8 @@ $ ./compana.sh
 
 図. シンボルは Fwd_test/active/ で計算した ACTIVE 応答、線は Fwd_test/active_ana/ で計算した解析解です。（上：振幅 [nT/A]、下：位相 [deg]）
 
-### 3.5 Step 5: 折れ線（複数ダイポール）送信源による ACTIVE 順計算
-ActFEM では、複数のダイポールを直列につないだ送信ケーブル（ループや折れ曲がったケーブルなど）を扱えます。ケーブルの頂点は送信源点ファイルで与えます（[7.2](#Source_definition) 参照）。Fwd_test/active_loop/ には、閉ループの送信源 S1（S1.dat で与える19本のダイポール）と S2（S2.dat で与える13本のダイポール）が用意されています。メッシュは Step 1 のもの（Fwd_test/mesh_flat/）を使います。
+### 3.5 Step 5: 折れ線（複数ダイポール）送信源による ACTIVE 順計算 <a id="sec3_5"></a>
+ActFEM では、複数のダイポールを直列につないだ送信ケーブル（ループや折れ曲がったケーブルなど）を扱えます。ケーブルの頂点は送信源点ファイルで与えます（[7.2](#Source_definition) 参照）。Fwd_test/active_loop/ には、閉ループの送信源 S1（S1.dat で与える19本のダイポール）と S2（S2.dat で与える13本のダイポール）が用意されています。メッシュは [Step 1](#sec3_1) のもの（Fwd_test/mesh_flat/）を使います。
 ```bash
 $ cd ActFEM/Fwd_test/active_loop
 $ chmod +x run.sh
@@ -139,7 +165,7 @@ result/fwd.log で、送信源点ファイルからダイポールが読み込�
 ```
 また、result/ に `A0*_S1.dat` と `A0*_S2.dat` が出力されます。
 
-次に、結果を解析解と比較します。解析解のコード（src/ana）は単一ダイポールの送信源しか扱えないため、compana_loop.py は各ダイポールを独立な送信源として active_ana.exe に与え、送信源ごとに複素 Bz をダイポールについて足し合わせます（重ね合わせ）。active_ana.exe は事前にビルドしておいてください（Step 2）。
+次に、結果を解析解と比較します。解析解のコード（src/ana）は単一ダイポールの送信源しか扱えないため、compana_loop.py は各ダイポールを独立な送信源として active_ana.exe に与え、送信源ごとに複素 Bz をダイポールについて足し合わせます（重ね合わせ）。active_ana.exe は事前にビルドしておいてください（[Step 2](#sec3_2)）。
 ```bash
 $ python3 compana_loop.py
 ```
@@ -153,7 +179,7 @@ A03  S1       1  9.4048e+00  1.0659e+01  1.133  -179.99  -179.99  -0.00
 ```
 なお、観測点 A03 は S1 のケーブルから約 18 m しか離れていません。ここでは Bz が急変するため、FEM の精度はケーブル周辺のメッシュに強く依存します（Fwd_test/mesh_flat/ は aso.ctl の直線送信源に沿って細分化されており、ループには沿っていません）。折れ線送信源に沿ってメッシュを細分化するには、メッシュ制御ファイル（aso.ctl）の送信源ブロックにも同じ `File:` 行を書きます。これで各ダイポールに沿って細分化点が配置されます（[7.2](#Source_definition) 参照）。また、制御ファイル中のファイル名は `character(50)` で読み込まれるため、パスは短くしてください。
 
-### 3.6 Step 6: 一様比抵抗構造での MT 順計算（MPI なし）
+### 3.6 Step 6: 一様比抵抗構造での MT 順計算（MPI なし） <a id="sec3_6"></a>
 MT 計算には、シリアル（OpenMP）モードとハイブリッド（OpenMP + MPI）モードがあります。まずシリアルモードを確認します。
 ```bash
 $ cd ActFEM/Fwd_test/MTfwd_test
@@ -164,7 +190,7 @@ $ ./run_homo.sh
 
 <img src="./images/v1.4_image8.png" width="63%">
 
-### 3.7 Step 7: MT 順計算の精度確認
+### 3.7 Step 7: MT 順計算の精度確認 <a id="sec3_7"></a>
 計算が終わったら、MT 計算の結果を確認してください。
 ```bash
 $ chmod +x plot_rho.sh
@@ -175,7 +201,7 @@ $ ./plot_rho.sh
 
 図のとおり、ActFEM の MT 計算は 1〜100 Hz の周波数範囲で、見かけ比抵抗 100 Ohm.m・位相 45 度を数値誤差 1% 未満で再現できています。
 
-### 3.8 Step 8: 水平方向に不均質な構造での MT 順計算（MPI なし）
+### 3.8 Step 8: 水平方向に不均質な構造での MT 順計算（MPI なし） <a id="sec3_8"></a>
 MT 順計算ではティッパーも計算できます。水平方向に不均質な構造でその動作を確認できます。まず不均質構造を作成します。ActFEM/Fwd_test/MTfwd_test/ で
 ```bash
 $ chmod +x change_model2cond.sh
@@ -210,7 +236,7 @@ $ ./plot_tip.sh
 
 図のとおり、西側の比抵抗が低いため、インダクションベクトルの実部は西を向いています。
 
-### 3.9 Step 9: MPI + OpenMP による MT 順計算
+### 3.9 Step 9: MPI + OpenMP による MT 順計算 <a id="sec3_9"></a>
 現在、MPI で並列化されているのは MT 順計算のみです。Fwd_test/MTfwd_test と同じ計算を、Fwd_test/MTfwd_test_mpi/ で MPI を使って実行できます。
 ```bash
 $ cd Fwd_test/MTfwd_test_mpi/
@@ -226,7 +252,7 @@ ip=1（ノード1）が freq=3.0Hz を、ip=3（ノード3）が freq=30Hz を�
 ## 4 インバージョンサンプルの実行 <a id="Run_samples_for_inversions"></a>
 ActFEM には、ACTIVE 2件、MT 2件、ACTIVE+MT 同時インバージョン 2件の、計6件のインバージョンサンプルがあります。インバージョンを実行するには、まず ACTIVE と MT のサンプルデータセットを用意します。
 
-### 4.1 Step 1: メッシュの準備
+### 4.1 Step 1: メッシュの準備 <a id="sec4_1"></a>
 サンプルインバージョンは阿蘇の実地形を用いて行います。まずメッシュを生成しましょう。
 ```bash
 $ cd ActFEM/Joint_test/mesh_joint
@@ -242,7 +268,7 @@ $ gmth nakadake3d.msh
 
 図. 阿蘇火山（九州中部）中岳第一火口周辺の四面体メッシュ。
 
-### 4.2 Step 2: 真の比抵抗構造の準備
+### 4.2 Step 2: 真の比抵抗構造の準備 <a id="sec4_2"></a>
 インバージョンのチュートリアルでは、目標とする比抵抗構造を仮定する必要があります。ActFEM では ActFEM/Joint_test/structure に次の目標構造を用意しています。
 ```bash
 $ cd ActFEM/Joint_test/structure
@@ -260,7 +286,7 @@ $ ./view_slice.sh
 
 図のとおり、異常体は火口底の直下に広がる直方体です。
 
-### 4.3 Step 3: インバージョン用 ACTIVE サンプルデータの作成
+### 4.3 Step 3: インバージョン用 ACTIVE サンプルデータの作成 <a id="sec4_3"></a>
 真のモデルができたので、順計算によってインバージョン用のサンプルデータを作成します。まず ACTIVE データを次のように用意します。
 ```bash
 $ cd ActFEM/Joint_test/fwd_active/
@@ -276,7 +302,7 @@ $ ./generr.sh
 
 なお、Joint_test/inv_act/、inv_joint/、inv_act_icomb-1/、inv_joint_icomb-1/ の active.ctl は Joint_test/fwd_active/active.ctl へのシンボリックリンクで、インバージョンでも同じ送信源が使われます。各送信源は、始点・終点、または `File:` による送信源点ファイルで指定できます（[7.2](#Source_definition) 参照）。
 
-### 4.4 Step 4: インバージョン用 MT サンプルデータの作成
+### 4.4 Step 4: インバージョン用 MT サンプルデータの作成 <a id="sec4_4"></a>
 次に、ActFEM/Joint_test/fwd_3DMT/ で MT データを用意します。
 ```bash
 $ cd ActFEM/Joint_test/fwd_3DMT/
@@ -290,7 +316,7 @@ $ ./generr.sh
 ```
 すると **mt_err/MT1_MT_imp.err** などの誤差ファイルが作成されます。
 
-### 4.5 Step 5: サンプルインバージョンの実行
+### 4.5 Step 5: サンプルインバージョンの実行 <a id="sec4_5"></a>
 以上で、すべてのインバージョンの準備が整いました。どのサンプルも手順は同じで、**run.sh** を実行し、**plot_rms.sh** と **view_slice.sh** で結果を確認します。たとえば Joint_test/inv_act/ では次のようにします。
 ```bash
 $ cd ActFEM/Joint_test/inv_act/
@@ -382,21 +408,21 @@ $$\nabla \times \nabla \times \mathbf{E} + i\omega\mu\widehat{\sigma}\mathbf{E} 
 - メッシュ生成：Fwd_test/mesh_flat/aso.ctl、Joint_test/mesh_joint/aso.ctl
 - 順計算：Fwd_test/active/active.ctl、Fwd_test/active_loop/active.ctl、Joint_test/fwd_active/active.ctl
 
-#### 7.1.1 共通の規則
+#### 7.1.1 共通の規則 <a id="sec7_1_1"></a>
 - `##` で始まる行（1〜2列目）はコメント行で、読み飛ばされます。
 - それ以外の行では、**1〜20列目はラベル**で、読み込まれません。値は **21列目から**読み込まれます。慣例として、ラベルと値の区切りに20列目に `!` を書きます。
   ```
   ##-----10!-------20!
   iflag_map          !2
   ```
-- ラベルは自由な文字列です。項目は 7.1.2 に示す決まった順番で読み込まれます。フラグに応じた行（例：`iflag_map = 2` のときだけの `UTM zone`）や、個数に応じて繰り返す行（地形ファイル、周波数、観測点、送信源）を除き、行を足したり減らしたりしないでください。
+- ラベルは自由な文字列です。項目は [7.1.2](#sec7_1_2) に示す決まった順番で読み込まれます。フラグに応じた行（例：`iflag_map = 2` のときだけの `UTM zone`）や、個数に応じて繰り返す行（地形ファイル、周波数、観測点、送信源）を除き、行を足したり減らしたりしないでください。
 - 空行を入れないでください。
 - ファイル名・フォルダ名は `character(50)` で読み込まれます。各パスは50文字以内にしてください（相対パスを推奨します）。
 - 長さと座標の単位は [km] です。x は東向き、y は北向き、z は上向きです（[2](#Coordinate_system) 参照）。経度緯度で入力した場合は、`lonlatorigin` を原点として x, y に変換されます。
 - 観測点と送信源の点の高度（3番目の値）は、地表面からの値です（例：-0.001 は地表面下 1 m）。順計算とインバージョンでは、2次元の地表面メッシュを使って絶対的な z に変換されます。
 - メッシュ生成では `Electric current [A]` より後ろの項目（電気伝導度）は読み込まれません。順計算ではすべての項目が読み込まれます。メッシュ用パラメータ（`west bound`〜`A_src`）は順計算の制御ファイルにも書く必要がありますが、順計算では使われません（`ixyflg = 1` のときの `west bound`〜`north bound` を除く）。
 
-#### 7.1.2 項目一覧
+#### 7.1.2 項目一覧 <a id="sec7_1_2"></a>
 項目は次の順に読み込まれます。「使用」は、その項目を使うプログラムです（M：メッシュ生成、F：順計算）。
 
 | # | ラベル（例） | 条件 | 説明 | 使用 |
@@ -412,7 +438,7 @@ $$\nabla \times \nabla \times \mathbf{E} + i\omega\mu\widehat{\sigma}\mathbf{E} 
 | 9 | `2d triangle z file` | | 地形付きの2次元地表面メッシュ（`<header2d>z.msh`）。観測点と送信源の高度の変換に使う。 | F |
 | 10 | `local line file` | | 辺情報ファイル（mkline.exe で作られる `lineinfo.dat`）。 | F |
 | 11 | `angle` | | もともと東を向いている x 軸の回転角 [deg]（北から東回り）。通常は 0.0。 | M, F |
-| 12 | `water level` | | 0：水位の制御なし、1：次の行で水位制御ファイルを与える（7.1.4 参照）。 | M |
+| 12 | `water level` | | 0：水位の制御なし、1：次の行で水位制御ファイルを与える（[7.1.4](#sec7_1_4) 参照）。 | M |
 | 13 | `water level file` | water level = 1 | 水位制御ファイル。 | M |
 | 14 | `output folder` | | 順計算結果の出力フォルダ（`/` で終える。例：`./result/`）。メッシュ生成では使わない（`-` など任意の文字列）。 | F |
 | 15 | `header2d` | | メッシュ生成で作る2次元メッシュファイルのヘッダ（`<header2d>.geo`、`.pos`、`.msh`、`<header2d>z.msh` など）。 | M |
@@ -450,7 +476,7 @@ $$\nabla \times \nabla \times \mathbf{E} + i\omega\mu\widehat{\sigma}\mathbf{E} 
 
 メッシュの細分化：内側の領域では、観測点（または送信源の細分化点）からの水平距離 r の位置の要素サイズを、r ≤ 3σ の範囲で sizein − (sizein − A) exp(−r² / 2σ²) とします。A と σ は、観測点では A_obs と sigma_obs、送信源では A_src と sigma_src です。全観測点・全細分化点のうち最も小さい値が使われます。
 
-#### 7.1.3 例
+#### 7.1.3 例 <a id="sec7_1_3"></a>
 Fwd_test/active/active.ctl（順計算）：
 ```
 ## lines starting with "##" work as lines for comments ! 2020.09.28
@@ -517,9 +543,9 @@ condflag 0:homo,1: !0
 nvolume            !1
 cond               !0.01
 ```
-メッシュ生成の制御ファイル Fwd_test/mesh_flat/aso.ctl も同じ構成です。メッシュ生成では、`mesh file`、`2d triangle z file`、`local line file`、`output folder`、周波数は読み込まれますが使われません。メッシュ制御ファイルの観測点と送信源は、メッシュを細分化する場所を決めます。そのため、順計算で使うすべての観測点と送信源を含めてください（Joint_test/mesh_joint/aso.ctl のように、火口の下の点など細分化のためだけの点を加えることもできます）。メッシュ生成の出力は、カレントフォルダに `header2d` と `header3d` で指定した名前で書き出されます。`lineinfo.dat` と `faceinfo.dat`（mkface.exe。MT で必要）も同じ場所に書き出されます。
+メッシュ生成の制御ファイル Fwd_test/mesh_flat/aso.ctl も同じ構成です。メッシュ生成では、`mesh file`、`2d triangle z file`、`local line file`、`output folder`、周波数は読み込まれますが使われません。メッシュ制御ファイルの観測点と送信源は、メッシュを細分化する場所を決めます。そのため、順計算で使うすべての観測点と送信源を含めてください（Joint_test/mesh_joint/aso.ctl のように、火口の下の点など細分化のためだけの点を加えることもできます）。メッシュ生成の出力は、カレントフォルダに `header2d` と `header3d` で指定した名前で書き出されます。`lineinfo.dat`（mkline.exe）と `faceinfo.dat`（mkface.exe）も同じ場所に書き出されます。なお、現在のバージョンでは `faceinfo.dat` は読み込まれません。インバージョンコードは制御ファイルの `face info file` のパスを読み込みますが、面の情報は内部で作成しています。
 
-#### 7.1.4 水位制御ファイル
+#### 7.1.4 水位制御ファイル <a id="sec7_1_4"></a>
 `water level` が 1 のとき、メッシュ生成では次の行で指定した水位制御ファイルが読み込まれます。形式は次のとおりです（各行の1〜20列目はラベル）。
 ```
 header line
@@ -560,85 +586,178 @@ Source Name        !S1
 - メッシュ生成では、各ダイポールに沿って細分化点（`dlen_source`, `sigma_src`, `A_src`）が配置されます。連続するダイポールのつなぎ目（および閉ループの始点）で重複する点は自動的に除かれます。
 - どちらの入力方法も、ACTIVE 順計算コード（ebfem_bxyz.exe）、メッシュ生成コード（src/src_mesh）、同時インバージョンコード（ebfem_inv_joint.exe。Joint_test/inv_act/、inv_joint/ などで使用）で使えます。インバージョンでは、出力フォルダの `<送信源名>_site.dat` に送信源の全頂点（全ダイポールの始点と最後のダイポールの終点）が出力されます。その他の MPI 版コード（src/src_inv_ap、src/solver_mpi など）は、まだこの形式に対応していません。
 
-例: Fwd_test/active_loop/（active.ctl, S1.dat, S2.dat）。実行手順は 3.5 を参照。
+例: Fwd_test/active_loop/（active.ctl, S1.dat, S2.dat）。実行手順は [3.5](#sec3_5) を参照。
 
 ## 8 メッシュ生成チュートリアル <a id="Mesh_generation_tutorial"></a>
-有限要素計算のためのメッシュ生成は、順計算・インバージョンの準備の中で最も手間のかかる作業の一つです。ここでは、ActFEM の順計算・インバージョンでメッシュ生成コードを使うための簡単なチュートリアルを示します。チュートリアルは ActFEMv1.0/mesh_demo_Aso/ フォルダで始めてください。
+有限要素計算のためのメッシュ生成は、順計算・インバージョンの準備の中で最も手間のかかる作業の一つです。この節では、ActFEM で3次元四面体メッシュを作る手順と、メッシュの調整方法を説明します。メッシュ制御ファイルの形式は [7.1](#Control_files) を参照してください。
 
-メッシュ制御ファイルの形式は [7.1](#Control_files) を参照してください。
+### 8.1 メッシュフォルダ <a id="sec8_1"></a>
+次のメッシュフォルダが用意されています。各フォルダには、制御ファイル（aso.ctl）とスクリプト（meshgen.sh）があります。
 
-ActFEM/mesh_demo_Aso/ では、meshgen.sh と meshgen_add.sh を使って2種類の3次元メッシュを作成できます。両者の違いは、使用する制御ファイル（aso.ctl と aso_add.ctl）だけです。ActFEM/mesh_demo_Aso/ で次のいずれかを実行してください。
+| フォルダ | 地形 | 使っているサンプル | メッシュの規模 |
+|---|---|---|---|
+| Fwd_test/mesh_flat/ | 平坦（topo/topo_aso_flat.dat） | Fwd_test/ の順計算サンプル（[3 節](#Run_the_sample)） | 節点 93,381、四面体 562,852 |
+| Joint_test/mesh_joint/ | 阿蘇の地形（topo/aso_map.data と topo/topo127_134_29_36.xyz） | Joint_test/ のインバージョンサンプル（[4 節](#Run_samples_for_inversions)） | 節点 112,898、四面体 692,839 |
+| Joint_test/mesh_light/ | mesh_joint と同じ | 軽量版サンプル（Joint_test/fwd_3DMT_light/、inv_tip_light/） | 節点 71,594、四面体 434,529 |
+
+mesh_light は、mesh_joint と同じ観測点・送信源を使い、計算領域を小さく、要素を大きくしたものです（`lenout` 8.0 → 5.0 km、`sizein` 0.1 → 0.11 km、`sizebo` 3.0 → 2.0 km、`A_obs` 0.008 → 0.01 km、`dlen_source` 0.3 → 0.5 km、`A_src` 0.006 → 0.01 km）。
+
+### 8.2 meshgen.sh の実行 <a id="sec8_2"></a>
+このチュートリアルでは Joint_test/mesh_joint/ を使います。次を実行してください。
 ```bash
-$ ./meshgen.sh
+$ cd ActFEM/Joint_test/mesh_joint
+$ chmod +x meshgen.sh
+$ ./meshgen.sh > log.txt
 ```
-または
+meshgen.sh は、まず src/src_mesh のプログラムを gfortran（Makefile_gfort）でコンパイルし、次の手順を順に実行します。出力はすべてカレントフォルダに書き出されます。`nakadake2d` と `nakadake3d` は、aso.ctl の `header2d` と `header3d` で指定したヘッダです。
+
+| 手順 | コマンド | 主な出力 |
+|---|---|---|
+| 1 | `meshgen1.exe`（aso.ctl を読む） | nakadake2d.geo、nakadake2d.pos（2次元の形状と、要素サイズを決める背景メッシュ） |
+| 2 | `gmsh -2 nakadake2d.geo -bgm nakadake2d.pos -format msh2` | nakadake2d.msh（地表面の2次元三角形メッシュ） |
+| 3 | `meshgen2.exe`（aso.ctl を読む） | nakadake2dz.msh、nakadake2d_lonlatz.msh（地形付きの地表面メッシュ）、nakadake3d.geo、nakadake3d.pos |
+| 4 | `gmsh -3 nakadake3d.geo -bgm nakadake3d.pos -format msh2` | nakadake3d.msh（3次元四面体メッシュ）、nakadake3d.log |
+| 5 | `mkline.exe`（aso.ctl を読む） | lineinfo.dat（辺情報） |
+| 6 | `mkface.exe`（aso.ctl を読む） | faceinfo.dat（面情報） |
+
+Fwd_test/mesh_flat/meshgen.sh では、手順4を背景メッシュ（`-bgm`）なしで実行し、手順6は実行しません。全体の所要時間は、mesh_joint で約30秒（mesh_light で約20秒）です。
+
+meshgen.sh が正常に終了すると、log.txt に生成したメッシュの概要が出力されます。2次元メッシュ（手順3）は次のとおりです。
+```
+ # of nodes         (node) :     13683
+ # of elements      (nele) :     27368
+ # of Point       elements :         4
+ # of Line        elements :        72
+ # of Triangle    elements :     27292
+ # of Tetrahedron elements :         0
+```
+3次元メッシュ（手順5・6）は次のとおりです。
+```
+ # of nodes         (node) :    112898
+ # of elements      (nele) :    692848
+ # of Point       elements :         0
+ # of Line        elements :         9
+ # of Triangle    elements :         0
+ # of Tetrahedron elements :    692839
+ ...
+ nline=      806917
+ ### MKLINE END ###
+ ...
+ nface=     1386859
+ ### MKFACE END ###
+```
+最終的な3次元メッシュは nakadake3d.msh です。順計算で使うファイルは nakadake3d.msh、nakadake2dz.msh、lineinfo.dat で、順計算の制御ファイルの `mesh file`、`2d triangle z file`、`local line file` に指定します。meshgen.sh では、gmsh の乱数の種を `-string "Mesh.RandomSeed=1;"` で固定しています。そのため、同じ aso.ctl で meshgen.sh を再実行すると同じ nakadake3d.msh が得られます。出力をすべて削除するには `./clean.sh` を実行してください。
+
+生成したメッシュは gmsh ビューアで確認できます。
 ```bash
-$ ./meshgen_add.sh
+$ gmsh nakadake3d.msh
 ```
-meshgen.sh と meshgen_add.sh の出力ファイル名はすべて同じである点に注意してください。meshgen.sh または meshgen_add.sh で生成した出力ファイルをすべて削除したい場合は、ActFEM/mesh_demo_Aso/ で
-```bash
-$ ./clean.sh
-```
-を実行してください。2つのスクリプトの違い、すなわち2つの制御ファイルの違いは観測点の数です。aso_add.ctl にのみ観測点 B02 が追加されており、観測点数は aso.ctl の7点に対して aso_add.ctl では8点になります。違いを下図に示します。
+「Tools > Options > Mesh > 3D element faces」で四面体の面が表示されます。「Tools > Visibility > Volume 2 を選択 > Apply」で陸側の要素だけが表示され、観測点や送信源のまわりの細分化された領域を確認できます。
 
-<img src="./images/v1.4_image31.png" width="50%"> <img src="./images/v1.4_image32.png" width="46%">
+なお、Joint_test/structure/ の電気伝導度ファイル（cond_G3.msh と cond_homo.msh）は、Joint_test/mesh_joint/nakadake3d.msh に対応しています。mesh_joint/aso.ctl を変更してメッシュを作り直した場合は、電気伝導度ファイルも作り直してください（[4.2](#sec4_2) 参照）。
 
-図. メッシュ細分化のために aso.ctl（左）と aso_add.ctl（右）で設定した観測点。aso_add.ctl では B02 が追加されています。
+### 8.3 メッシュの調整方法 <a id="sec8_3"></a>
+メッシュは制御ファイル（aso.ctl）を編集して調整します。主なパラメータは次のとおりです（詳しくは [7.1.2](#sec7_1_2) 参照）。
+- **計算領域**：`west bound`〜`north bound` で内側の領域（細分化する領域）を、`upz in` と `downz in` でその鉛直方向の範囲を、`lenout`、`zmax`、`zmin` で外側の境界を指定します。
+- **要素サイズ**：`sizein`（内側の領域）と `sizebo`（外側の境界）。小さくすると要素が増えます。
+- **観測点のまわりの細分化**：要素サイズは各観測点で `A_obs` になり、半径約 3 × `sigma_obs` の範囲で `sizein` に近づきます。順計算とインバージョンで使う観測点は、すべてメッシュ制御ファイルに含めてください。
+- **メッシュのためだけの細分化点**：観測点として使わない点も、細分化のためだけに観測点のリストに加えられます。例えば Joint_test/mesh_joint/aso.ctl には、ACTIVE の観測点 A01〜A04 のほかに、DUM と DM1（原点の 100 m 下と 400 m 下）、DM2 と DM3（原点の西側の地表面下 100 m）、MT1〜MT4（MT の観測点）が含まれています。点を加えたら、観測点の数（`# of observatory`）も合わせて変えてください。
+- **送信源に沿った細分化**：各送信源のすべてのダイポールに沿って、間隔 `dlen_source` で細分化点が置かれ、そこで要素サイズが `A_src`（半径 `sigma_src`）になります。`File:` で与える折れ線送信源（[7.2](#Source_definition) 参照）も、すべてのダイポールに沿って細分化されます。
 
-meshgen.sh または meshgen_add.sh の実行に成功し、ActFEM の順計算・インバージョン用の3次元メッシュが生成されると、次のファイルが得られます。
-
-<img src="./images/v1.4_image33.png" width="30%">
-
-各出力ファイルがどの段階で生成されるかは meshgen.sh を参照してください。最終的な3次元四面体メッシュは nakadake3d.msh です。生成された3次元四面体メッシュの詳細は gmsh の GUI で確認できます。「Tools > Visibility > Volume 2 を選択 > Apply」で、生成された3次元メッシュの地表面が表示されます。
-
-![](./images/v1.4_image34.png)
-
-次に、生成された3次元メッシュの地表面を示す下の2枚の図を確認してください。meshgen_add.sh（aso_add.ctl）で生成したメッシュでは、B02 に対応する細分化領域が見られます。このように aso.ctl から aso_add.ctl へ変更するのと同様に、制御ファイルを編集することで生成される3次元メッシュを調整できます。
-
-<img src="./images/v1.4_image35.png" width="40%"> <img src="./images/v1.4_image36.png" width="45%">
-
-図. meshgen.sh で生成した nakadake3d.msh（左）と meshgen_add.sh で生成したもの（右）。
+aso.ctl を編集したら meshgen.sh を再実行し、log.txt の節点数・要素数を比べてください。mesh_joint と mesh_light の違い（[8.1](#sec8_1)）は、要素サイズのパラメータでメッシュの規模がどう変わるかの例になっています。
 
 ## 9 順計算・インバージョン用比抵抗モデルの作成 <a id="Generation_of_resistivity_model"></a>
-ActFEM で順計算・インバージョンを行うには、与えられた3次元四面体メッシュに対応する比抵抗モデルを用意する必要があります。ここでは、前節で生成した3次元メッシュに対して比抵抗モデルを作成する簡単なチュートリアルを示します。このチュートリアルを始める前に、ActFEMv1.0/mesh_demo_Aso/ で meshgen.sh または meshgen_add.sh を実行しておいてください（詳細は[8章](#Mesh_generation_tutorial)を参照）。
+ActFEM で順計算・インバージョンを行うには、使う3次元四面体メッシュに対応する比抵抗モデルを用意する必要があります。この節では、比抵抗（電気伝導度）ファイルの形式と、change_model2cond.exe（src/src_post）による作り方を説明します。例は Joint_test/structure/（Joint_test/mesh_joint/ 用）と Joint_test/structure_light/（Joint_test/mesh_light/ 用）にあります。
 
-まず ActFEMv1.0/mesh_demo_rec2tet/ に移動してください。ここでは ActFEMv1.0/mesh_demo_Aso/nakadake3d.msh をもとに比抵抗モデルを作成します。ActFEMv1.0/mesh_demo_rec2tet/ で次を実行します。
-```bash
-$ ./condmesh.sh
+### 9.1 比抵抗ファイル（cond.msh） <a id="sec9_1"></a>
+比抵抗モデルは、順計算の制御ファイルでは `condflag = 1` のときの `condfile`（[7.1](#Control_files) 参照）、インバージョンの制御ファイルでは `ref cond file` と `init cond file` で指定します。ファイルは gmsh の ElementData 形式で、陸域のすべての四面体の比抵抗 [Ohm.m] を与えます。
 ```
-condmesh.sh の実行に成功すると、次のファイルが得られます。
-
-<img src="./images/v1.4_image37.png" width="35%">
-
-cond_init.ctl は出力ファイルではなく、condmesh.sh 実行用の制御ファイルです。cond_init.msh は ActFEM の順計算・インバージョンで使用できるファイルです。生成される cond_init.msh は、Kanda et al. (2018, JpGU) に基づき Minami et al. (2018, EPS) の初期モデルとして使われたものです。cond_init.msh には3次元メッシュの情報が含まれていないため、`gmsh cond_init.msh` だけでは表示できない点に注意してください。init.msh は mesh_demo_rec2tet/cond_init.msh と mesh_demo_Aso/nakadake3d.msh を結合したファイルです。cond_init.msh と init.msh の構造の違いは次のとおりです。
-
-![](./images/v1.4_image38.png)
-
-図. nakadake3d.msh、cond_init.msh、init.msh の構造
-
-生成された比抵抗モデルは
-```bash
-$ gmsh init.msh
+$MeshFormat
+2.2 0 8
+$EndMeshFormat
+$ElementData
+1
+"A rho model view"
+1
+0.0
+3
+0
+1
+    405664                              <- 陸域の要素数
+      287185   300.00000000000000       <- 要素番号、比抵抗 [Ohm.m]
+      287186   300.00000000000000
+...
+$EndElementData
 ```
-で表示し、下図のようにビューアのパラメータを設定してください。
+最初の11行はヘッダです。要素番号は3次元メッシュファイルの要素番号に対応しているため、**比抵抗ファイルは作成に使った3次元メッシュと組になっています**。別の制御ファイルでメッシュを作り直した場合は、比抵抗ファイルも作り直してください。比抵抗ファイルにはメッシュが含まれないため、gmsh 単独では表示できません。`gmsh nakadake3d.msh cond_G3.msh` のようにメッシュと一緒に読み込むと表示できます。
 
-![](./images/v1.4_image39.png)
+### 9.2 change_model2cond.exe による作成 <a id="sec9_2"></a>
+change_model2cond.exe は、元になるモデル（一様モデル、既存の比抵抗ファイル、またはインバージョン結果）から出発し、指定した直方体の中に重心がある要素の比抵抗を変更します。Joint_test/structure/ で
+```bash
+$ cd ActFEM/Joint_test/structure
+$ ./cond_homo.sh
+$ ./cond_G3.sh
+```
+を実行すると、cond_homo.msh（一様 300 Ohm.m）と cond_G3.msh（[4 節](#Run_samples_for_inversions)のインバージョンサンプルの真のモデル。[4.2](#sec4_2) 参照）が作られます。各スクリプトは制御ファイルを書き出し、src/src_post を gfortran（Makefile_gfort）でコンパイルしてから、`change_model2cond.exe < 制御ファイル` を実行します。
 
-図. gmsh GUI による init.msh の表示。カラースケールを反転したい場合（高比抵抗を寒色で表示したい場合）は、Option パネルの Map タブをクリックして「i」を押してください。
+change_model2cond.exe の制御ファイルは次のとおりです。[7.1](#Control_files) と同じく、各行の1〜20列目はラベルで、値は21列目から読み込まれます。1行目はヘッダで、このファイルではコメント行（`##`）は使えません。
 
-condmesh.sh では、ActFEMv1.0/src/src_mesh/gridmdl2mesh.exe を使って cond_init.msh を生成しています。condmesh.sh の処理の概略を下図に示します。出力する比抵抗ファイルを変更するには、cond_init.ctl を編集してください。
+| # | ラベル（例） | 条件 | 説明 |
+|---|---|---|---|
+| 1 | `!------10!-------20!` | | ヘッダ行（読み飛ばす）。 |
+| 2 | `input 3d mshfile` | | 3次元メッシュファイル（例：../mesh_joint/nakadake3d.msh）。 |
+| 3 | `0homo,1cond,2model` | | 元になるモデル。0：一様、1：既存の比抵抗ファイル、2：インバージョン結果。 |
+| 4 | `homo resistivity` | 元モデル = 0 | 一様モデルの比抵抗 [Ohm.m]。 |
+| 4 | `input cond` | 元モデル = 1 | 比抵抗ファイル（cond.msh 形式）。 |
+| 4-5 | `model connect file`、`input model` | 元モデル = 2 | インバージョンの出力フォルダにある model_connect.dat と modelNN.dat。 |
+| 6 | `output cond` | | 出力する比抵抗ファイル。 |
+| 7 | `0:elevation,1:depth` | | 直方体の z の範囲の与え方。0：標高 [km]、1：地表面からの深さ [km]（負の値。例：-0.3 と -0.1）。 |
+| 8 | `2d topo file` | z の範囲 = 1 | 地形付きの2次元地表面メッシュ（例：../mesh_joint/nakadake2dz.msh）。 |
+| 9 | `# of cuboid` | | 直方体の数 ncuboid（変更しない場合は 0）。 |
+| 10-13 | `xminmax [km]`、`yminmax [km]`、`zminmax [km]`、`rho [Ohm.m]` | ncuboid 回 | 直方体の x、y、z の範囲 [km]（各2つの値）と比抵抗 [Ohm.m]。 |
 
-![](./images/v1.4_image40.png)
+直方体は書いた順に適用されるため、重なる部分では後の直方体が前の直方体を上書きします。例えば cond_G3.sh では次の制御ファイルを使っており、10 Ohm.m の直方体 C22 を先に、1 Ohm.m の直方体 C20 と C21 を後に与えています。
+```
+!------10!-------20!----
+input 3d mshfile   !../mesh_joint/nakadake3d.msh
+0homo,1cond,2model !0
+homo resistivity   !100.0
+output cond        !./cond_G3.msh
+0:elevation,1:depth!0
+# of cuboid        !4
+C22 xminmax [km]   !-0.150         0.1500
+C22 yminmax [km]   !-0.1500        0.1500
+C22 zminmax [km]   ! 0.5000        1.05
+C22 rho    [Ohm.m] !10.0
+C20 xminmax [km]   !-0.0500         0.0500
+C20 yminmax [km]   !-0.05000        0.0500
+C20 zminmax [km]   ! 0.500         1.05
+C20 rho    [Ohm.m] !1.0
+C21 xminmax [km]   !-0.200          0.0500
+C21 yminmax [km]   !-0.0500         0.0500
+C21 zminmax [km]   ! 0.9500         1.05
+C21 rho    [Ohm.m] !1.0
+C21 xminmax [km]   !-0.2000         -0.100
+C21 yminmax [km]   !-0.0500         0.050
+C21 zminmax [km]   ! 0.9500         1.15
+C21 rho    [Ohm.m] !1.0
+```
+そのほかの制御ファイルの例（既存の比抵抗ファイルやインバージョン結果を元モデルにする例、地表面からの深さで直方体を与える例）は、cond_G3.sh の中に test1.ctl〜test5.ctl として書かれています。スクリプトでは使われていません（使う場合は、中のメッシュファイルのパスを書き換えてください）。元モデル = 2 を使うと、インバージョン結果（modelNN.dat）を比抵抗ファイルに変換でき、例えば別のインバージョンの初期モデルとして使えます。Joint_test/structure_light/ では、cond_homo.sh と cond_lateral.sh が同じ方法で mesh_light 用のモデルを作ります。
 
-図. condmesh.sh の概要
+### 9.3 比抵抗モデルの確認 <a id="sec9_3"></a>
+作成した比抵抗モデルは、鉛直断面と水平断面で確認できます。
+```bash
+$ ./view_slice.sh
+```
+view_slice.sh は、slice.exe（src/src_post）で比抵抗ファイルから断面を切り出し、GMT で描画します（断面のパラメータは view_slice.sh の冒頭の説明を参照）。初期設定では、cond_G3.msh について東西（y = 0）と南北（x = 0）の鉛直断面と、z = 1.0 km の水平断面を描きます（[4.2](#sec4_2) の図を参照）。別のモデルを表示するには、view_slice.sh の `ID` と `condfile` を書き換えてください。
 
 ## 10 バージョン履歴 <a id="Version_notes"></a>
 
 #### Version 1.5
-2026年11月25日：マニュアルを大幅修正しました。メッシュ生成・順計算の制御ファイルの説明（7.1）を現在の形式に合わせて書き直し（項目、条件、各項目を使うプログラム、例）、水位制御ファイルの説明を追加しました。
+2026年11月25日：マニュアルを大幅修正しました。メッシュ生成・順計算の制御ファイルの説明（[7.1](#Control_files)）を現在の形式に合わせて書き直し（項目、条件、各項目を使うプログラム、例）、水位制御ファイルの説明を追加しました。メッシュ生成チュートリアル（[8](#Mesh_generation_tutorial)）を、現在のメッシュフォルダ（Fwd_test/mesh_flat/、Joint_test/mesh_joint/、Joint_test/mesh_light/）に合わせて書き直し、比抵抗モデルの作成（[9](#Generation_of_resistivity_model)）を change_model2cond.exe による現在の手順に合わせて書き直しました。すべての節・小節にアンカーを付け、本文中の節番号への参照をリンクにし、目次に小節を加えました。
 
 #### Version 1.4
-2026年11月23日：ACTIVE 順計算、メッシュ生成、同時インバージョン（ebfem_inv_joint.exe）で、折れ線（複数ダイポール）送信源が利用可能になりました。各送信源は、始点・終点（単一ダイポール、従来形式）または `File:` による送信源点ファイル（閉ループを含む、直列につながった複数ダイポール）で指定できます（[7.2](#Source_definition) 参照）。ループ送信源のテスト（Fwd_test/active_loop/）と、解析解との比較スクリプト（compana_loop.py）を追加しました（3.5 参照）。
+2026年11月23日：ACTIVE 順計算、メッシュ生成、同時インバージョン（ebfem_inv_joint.exe）で、折れ線（複数ダイポール）送信源が利用可能になりました。各送信源は、始点・終点（単一ダイポール、従来形式）または `File:` による送信源点ファイル（閉ループを含む、直列につながった複数ダイポール）で指定できます（[7.2](#Source_definition) 参照）。ループ送信源のテスト（Fwd_test/active_loop/）と、解析解との比較スクリプト（compana_loop.py）を追加しました（[3.5](#sec3_5) 参照）。
 
 2026年5月30日：ACTIVE（CSEM）および MT インピーダンスとの同時インバージョンで、ティッパーインバージョンが利用可能になりました。
 

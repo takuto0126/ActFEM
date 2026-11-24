@@ -19,7 +19,7 @@ $ctlfile
 EOF
 
 #![2]##
-gmsh -2 nakadake2d.geo -bgm nakadake2d.pos -format msh2
+gmsh -2 -string "Mesh.RandomSeed=1;" nakadake2d.geo -bgm nakadake2d.pos -format msh2 # random seed is fixed 2026.11.25 CC
 
 #![3]##
 ${SRC}/meshgen2.exe << EOF
@@ -28,7 +28,7 @@ EOF
 
 #![4]##
 #gmsh -3 nakadake3d.geo -bgm nakadake3d.pos -format msh2 > nakadake3d.log
-gmsh -3 nakadake3d.geo  -format msh2 > nakadake3d.log
+gmsh -3 -string "Mesh.RandomSeed=1;" nakadake3d.geo  -format msh2 > nakadake3d.log # random seed is fixed 2026.11.25 CC
 
 #![5]## mkline
 ${SRC}/mkline.exe <<EOF

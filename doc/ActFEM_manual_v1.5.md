@@ -1,0 +1,773 @@
+<script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/MathJax.js?config=TeX-MML-AM_CHTML">
+</script>
+<script type='text/x-mathjax-config'>
+	MathJax.Hub.Config({
+		tex2jax: {
+			inlineMath: [['$', '$']],
+			displayMath: [ ['$$','$$'],["\\[","\\]"] ]
+		}
+	});
+</script>
+
+# Manual of ActFEM v1.5
+## ACTIVE forward-inversion simulation code using FEM
+
+#### As of November 25, 2026
+
+Takuto MINAMI
+tminami@port.kobe-u.ac.jp
+(Faculty of Science, Kobe University)
+
+### Contents
+
+1. [Required environment](#Required_environment)
+2. [Coordinate system](#Coordinate_system)
+3. [Run samples for forward modeling](#Run_the_sample)
+4. [Run samples for inversions](#Run_samples_for_inversions)
+5. [Source folder tree](#Source_folder_tree)
+6. [Governing equation and discretization](#Governing_equation_and_discretization)
+7. [File formats](#File_formats)
+8. [Mesh generation tutorial](#Mesh_generation_tutorial)
+9. [Generation of resistivity model for forward/inversion](#Generation_of_resistivity_model)
+10. [Version notes](#Version_notes)
+11. [References](#References)
+
+- [Appendix A: Derivation of the discretized form of governing equation](#AppendixA)
+- [Appendix B: Scaling of the governing equation for ActFEM calculation](#AppendixB)
+
+
+
+## 1 Required environment <a id="Required_environment"></a>
+ActFEM requires Intel compiler (ifx or ifort, mpiifx or mpiifort) for openMP and intel MPI. There are serial modes only with openMP for forward modeling code. As for inversions, on the other hand, ActFEM has only hybrid (OpenMP and MPI) parallel codes for inversions. The required environments are as follows:
+
+### Forward / inversion modelling
+- Intel compiler (Linear systems are solved by PARDISO in intel MKL library)
+- gmsh
+  - on Mac → `brew install gmsh`
+  - on Ubuntu → `sudo apt install gmsh`
+
+### Viewer
+- GMT6
+  - on Mac → `brew install gmt`
+  - on Ubuntu → `sudo apt install gmt`
+- Gnuplot
+  - on Mac → `brew install gnuplot`
+  - on Ubuntu → `sudo apt install gnuplot`
+
+gfortran can be used for mesh generation (src/src_mesh) and post processing data (src/src_post).
+
+## 2 Coordinate system <a id="Coordinate_system"></a>
+In ActFEM, the following coordinate system is used:
+
+- X : East
+- Y : North
+- Z : Upward
+
+## 3 Run samples for forward modeling <a id="Run_the_sample"></a>
+There is a forward sample folder, ActFEM/Fwd_test. Users can check how ActFEM calculates forward simulations: Active and MT.
+
+### 3.1 Step 1: Mesh generation (no topography)
+```bash
+$ cd ActFEM/Fwd_test/mesh_flat
+$ chmod +x meshgen.sh
+$ ./meshgen.sh
+```
+meshgen.sh first compile the source in ActFEM/src/src_mesh with gfortran and run the program with gmsh. If you successfully installed gmsh, you can see the following output in the terminal.
+
+<img src="./images/v1.4_image1.png" width="50%">
+
+Then please check the mesh by gmsh viewer:
+```bash
+$ gmsh nakadake3d.msh
+```
+
+<img src="./images/v1.4_image2.png" width="30%"> <img src="./images/v1.4_image3.png" width="27%"> <img src="./images/v1.4_image4.png" width="36%">
+
+Figure. Tools > Options > Mesh > check 3D element faces shows the center panel. “Tools > Visibility > select Volume 2 > apply” shows only land elements, where you can check high resolution area for site locations.
+
+### 3.2 Step 2: Prepare analytical solution for ACTIVE
+For evaluatng forward calucualtions, you can prepare analytical solution before forward modelling.
+```bash
+$ cd ActFEM/Fwd_test/active_ana/
+$ chmod +x run.sh
+$ run.sh
+```
+As default, run.sh run with ifx to compile source programs in src/ana. If run.sh successfully finish, you can see:
+
+<img src="./images/v1.4_image5.png" width="52%">
+
+### 3.3 Step 3: Active forward modelling
+After generating mesh, you can run forward modelling for ACTIVE and MT.
+```bash
+$ cd ActFEM/Fwd_test/active
+$ chmod +x run.sh
+$ ./run.sh
+```
+If the active forward modelling finishes successfully, you can see:
+
+<img src="./images/v1.4_image6.png" width="43%">
+
+### 3.4 Step 4: Compare the active forward results with analytical solution
+After you finish active modeling, you can check the accuracy of forward simulation with analytical solution in Fwd_test/active_ana/result.
+
+In Fwd_test/active/
+```bash
+$ chmod +x compana.sh
+$ ./compana.sh
+```
+If the following panels appear, both active modelling and analytical solution calculations succeeded.
+
+<img src="./images/v1.4_image7.png" width="72%">
+
+Figure. The symbols are the calculated ACTIVE response in Fwd_test/active/, while the lines are the analytical solutions calculated in Fwd_test/active_ana/. (Top: amplitude [nT/A]; Bottom: phase [deg])
+
+### 3.5 Step 5: Active forward modelling with polyline (multi-dipole) sources
+ActFEM can treat a source wire consisting of multiple dipoles connected in series (e.g., a loop or a bent cable), where the vertices of the wire are given by a source point file (see [7.2](#Source_definition)). In Fwd_test/active_loop/, two closed-loop sources are prepared: S1 (19 dipoles given by S1.dat) and S2 (13 dipoles given by S2.dat). The mesh of Step 1 (Fwd_test/mesh_flat/) is used.
+```bash
+$ cd ActFEM/Fwd_test/active_loop
+$ chmod +x run.sh
+$ ./run.sh > result/fwd.log
+```
+In result/fwd.log, you can confirm that the dipoles are read from the source point files:
+```
+ source name: S1
+ ndipole =  19
+ dipole   1 xs1=      0.1763144     -0.8313663     -0.0010000 xs2=      0.2645611     -0.8773202     -0.0010000
+ ...
+ source name: S2
+ ndipole =  13
+```
+and `A0*_S1.dat` and `A0*_S2.dat` are generated in result/.
+
+Then, the results can be compared with the analytical solution. Because the analytical code (src/ana) treats only single-dipole sources, compana_loop.py gives each dipole as an independent source to active_ana.exe and sums the complex Bz over the dipoles of each source (superposition). active_ana.exe should be built beforehand (Step 2).
+```bash
+$ python3 compana_loop.py
+```
+The ratio of amplitudes (FEM/analytical) and the phase difference [deg] are printed for each site, source and frequency, and the summed analytical responses are written in result_ana/ (columns: frequency [Hz], Bz amplitude [nT/A], Bz phase [deg]). For most site-source pairs, the amplitude ratio is within 0.995-1.006 and the phase difference is less than 0.3 degree:
+```
+site src  f[Hz]     |Bz|ana     |Bz|FEM  ratio  pha_ana  pha_FEM   dpha
+A02  S1       1  3.8740e-02  3.8701e-02  0.999  -179.29  -179.29   0.00
+A02  S1      99  4.9982e-02  4.9886e-02  0.998   169.98   169.83  -0.14
+...
+A03  S1       1  9.4048e+00  1.0659e+01  1.133  -179.99  -179.99  -0.00
+```
+Note that site A03 is located only ~18 m from the wire of S1, where Bz varies steeply and the FEM accuracy depends strongly on the mesh around the wire (Fwd_test/mesh_flat/ is refined along the straight sources in aso.ctl, not along the loops). To refine the mesh along the polyline sources, give the same `File:` lines in the source block of the mesh control file (aso.ctl); refinement points are then placed along every dipole (see [7.2](#Source_definition)). Note also that file names in control files are read as `character(50)`, so keep the paths short.
+
+### 3.6 Step 6: MT forward calculation (without MPI) with homogeneous resistivity
+For MT calculations, there are serial (openMP) mode and Hybrid (openMP + MPI) mode. First, you can check serial model.
+```bash
+$ cd ActFEM/Fwd_test/MTfwd_test
+$ chmod +x run.sh
+$ ./run_homo.sh
+```
+If the calculation is successful, you can see the output:
+
+<img src="./images/v1.4_image8.png" width="63%">
+
+### 3.7 Step 7: Check the results of MT forward calculation accuracy
+After finishing the calculations, please see how MT simulation finished.
+```bash
+$ chmod +x plot_rho.sh
+$ ./plot_rho.sh
+```
+
+<img src="./images/v1.4_image9.png" width="56%">
+
+As seen in the panels, MT simulation with ActFEM succeeded in generating 100 Ohm.m apparent resistivity and 45 degrees phase over the frequency ranging from 1 to 100 Hz with less than 1% numerical error.
+
+### 3.8 Step 8: MT forward calculation (without MPI) with lateral inhomogeneous structure
+MT forward calculation can calculate tipper as well. You can check how it works with laterally inhomogeneous structure. First it is need to generate the inhomogeneous structure. In ActFEM/Fwd_test/MTfwd_test/
+```bash
+$ chmod +x change_model2cond.sh
+$ ./change_model2cond.sh
+```
+The output is like the following, resulting in **cond_lateral.msh**.
+
+<img src="./images/v1.4_image10.png" width="64%">
+
+To check the generated resistivity structure, type the below command:
+```bash
+$ chmod +x view_slcie.sh
+$ view_slcie.sh
+```
+
+<img src="./images/v1.4_image11.png" width="59%">
+
+As seen in the WE and SN cross sections, the generated resistivity structure is lateral jump in resistivity at x=0 from 10 Ohm.m on the western side to 100 Ohm.m on the eastern side.
+
+Then run the MT forward calculation with this structure by
+```bash
+$ chmod +x run_lateral.sh
+$ ./run_lateral.sh
+```
+After finishing the calculation, you can see the tipper by
+```bash
+$ chmod +x plot_tip.sh
+$ ./plot_tip.sh
+```
+
+<img src="./images/v1.4_image12.png" width="51%">
+
+As seen in the panel, the real part of induction vector points west due to lower resistivity on the western side.
+
+### 3.9 Step 9: MT forward simulation with MPI + OpenMP
+Only MT forward simulation is now parallelized with MPI. You can do the same calculation as Fwd_test/MTfwd_test in Fwd_test/MTfwd_test_mpi/ with MPI.
+```bash
+$ cd Fwd_test/MTfwd_test_mpi/
+$ chmod +x run_homo.sh
+$ ./run_homo.sh
+```
+If the calculation is successful, the output is like:
+
+<img src="./images/v1.4_image13.png" width="55%">
+
+Here you can see ip=1 (node#1) calculates freq=3.0Hz, while ip=3 (node#3) does freq=30Hz, etc. Each frequency calculation is assigned to each MPI process. Then the calculation is much faster than serial version. Please confirm the results in MTfwd_test/result_homo/ and MTfwd_test_mpi/result_homo/ are identical.
+
+## 4 Run samples for inversions <a id="Run_samples_for_inversions"></a>
+In ActFEM, there 6 inversion samples: two ACTIVE, two MT, and two ACTIVE+MT joint inversion samples. To run inversions, prepare sample ACTIVE and MT data sets.
+
+### 4.1 Step 1: Prepare mesh
+Sample inversions are performed with real Aso topography. Let’s generate mesh first.
+```bash
+$ cd ActFEM/Joint_test/mesh_joint
+$ chmod +x meshgen.sh
+$ ./meshgen.sh
+```
+After generating the mesh, please check how it looks by gmsh viewer.
+```bash
+$ gmth nakadake3d.msh
+```
+
+<img src="./images/v1.4_image14.png" width="34%"> <img src="./images/v1.4_image15.png" width="36%">
+
+Figure. Generated tetrahedral mesh for Nakadake first crater of Aso volcano, Central Kyushu, Japan.
+
+### 4.2 Step 2: Prepare true resistivity structure
+For inversion tutorials, we should assume some goal resistivity structure. ActFEM prepares the following goal resistivity structure in ActFEM/Joint_test/structure.
+```bash
+$ cd ActFEM/Joint_test/structure
+$ ./cond_G3.sh
+$ ./cond_homo.sh
+```
+If it is successful, **cond_G3.msh** and **cond_homo.msh** are generated. cond_G3.msh is the goal structure below and cond_homo.msh will be used as initial and reference homogeneous structure in the following inversions. Note that cond_\*.msh files are uniquely tied to original mesh_joint/nakadake3d.msh. If you update mesh_joint/nakadake3d.msh, please regenerate cond_G3.msh and cond_homo.msh.
+
+You can check how the anomaly of cond_G3.msh looks by
+```bash
+$ ./view_slice.sh
+```
+
+<img src="./images/v1.4_image16.png" width="79%">
+
+As seen in the panels, the anomaly is rectangular body extending just below the crater bottom.
+
+### 4.3 Step 3: Generation of ACTIVE sample data for inversion
+Now that we have true model, let’s generate sample inversion data by forward modelling. Firstly, active data is prepared as follows:
+```bash
+$ cd ActFEM/Joint_test/fwd_active/
+$ chmod +x run.sh
+$ ./run.sh
+```
+After finishing the forward calculation, prepare data with error in ActFEM/Joint_test/fwd_active:
+```bash
+$ chmod + generr.sh
+$ ./generr.sh
+```
+As results, `A0*_S?_amp.dat` and `A0*_S?_pha.dat` are generated in Joint_test/fwd_active/data/. Here, `A0*` are site names written in active.ctl, while `S?` is the source name of electric dipole as written in active.ctl.
+
+Note that active.ctl in Joint_test/inv_act/, inv_joint/, inv_act_icomb-1/ and inv_joint_icomb-1/ are symbolic links to Joint_test/fwd_active/active.ctl, so the same sources are used in the inversions. Each source can be given by start/end points or by a source point file with `File:` (see [7.2](#Source_definition)).
+
+### 4.4 Step 4: Generation of MT sample data for inversion
+Secondly, MT data is prepared in ActFEM/Joint_test/fwd_3DMT/
+```bash
+$ cd ActFEM/Joint_test/fwd_3DMT/
+$ chmod +x run.sh
+$ ./run.sh
+```
+The implementation generates **result/MT1_MT.dat** etc. The data with error are prepared by
+```bash
+$ chmod +x generr.sh
+$ ./generr.sh
+```
+Then there are error files like **mt_err/MT1_MT_imp.err**, etc.
+
+### 4.5 Step 5: Run sample inversions!!
+Above, preparation for all the inversions are complete. The procedures for running inversion samples are the same. Run **run.sh**, and see the results by **plot_rms.sh** and **view_slice.sh**. For example, in Joint_test/inv_act/
+```bash
+$ cd ActFEM/Joint_test/inv_act/
+$ ./run.sh
+```
+In run.sh, you should edit the number of OpenMP threads and MPI processes corresponding to your environment.
+
+In the following, only the results are shown for obtained inversions results:
+
+#### Results of Joint_test/inv_act
+```bash
+$ plot_rms.sh
+$ ./view_slice.sh 06
+```
+Here 06 means to show model06 which is converged model.
+
+<img src="./images/v1.4_image17.png" width="28%"> <img src="./images/v1.4_image18.png" width="66%">
+
+#### Results of Joint_test/inv_mt/
+```bash
+$ ./plot_rms.sh
+$ ./view_slice.sh 09
+```
+
+<img src="./images/v1.4_image19.png" width="31%"> <img src="./images/v1.4_image20.png" width="63%">
+
+#### Result of Joint_test/inv_joint/
+```bash
+$ ./plot_rms.sh
+$ ./view_slice.sh 08
+```
+
+<img src="./images/v1.4_image21.png" width="30%"> <img src="./images/v1.4_image22.png" width="64%">
+
+> **The following results are icombine = -1., which allows inversion to use inner outer model parametrization. The details are shown in the next section.**
+
+#### Results of Joint_test/inv_act_icomb-1
+```bash
+$ plot_rms.sh
+$ ./view_slice.sh 06
+```
+
+<img src="./images/v1.4_image23.png" width="28%"> <img src="./images/v1.4_image24.png" width="66%">
+
+#### Results of Joint_test/inv_mt_icomb-1
+```bash
+$ plot_rms.sh
+$ ./view_slice.sh 10
+```
+
+<img src="./images/v1.4_image25.png" width="31%"> <img src="./images/v1.4_image26.png" width="63%">
+
+#### Results of Joint_test/inv_joint_icomb-1
+
+<img src="./images/v1.4_image27.png" width="29%"> <img src="./images/v1.4_image28.png" width="66%">
+
+#### Results of Joint_test/inv_mt_tip
+mt impedanceのerrorfloorは0.1、tipperのerrorfloorは0.1に設定し、αはpower -0.3で減少させた。-0.3が大きいと、構造の変動が大きくなり収束しない。
+
+<img src="./images/v1.4_image29.png" width="33%"> <img src="./images/v1.4_image30.png" width="62%">
+
+## 5 Source folder tree <a id="Source_folder_tree"></a>
+
+| Folder               | Description                      | Test folder         |
+|----------------------|----------------------------------|---------------------|
+| src/solver/          | Serial ACTIVE forward solver     | Fwd_test/active     |
+| src/solver_mpi/      | MPI ACTIVE forward solver        | Fwd_test/active_mpi |
+| src/src_3DMT/        | Sequential 3-D MT solver         |                     |
+| src/src_3DMT_mpi/    | MPI 3-D MT solver                |                     |
+| src/src_inv_joint/   | ACTIVE/MT/Joint inversion code   |                     |
+
+## 6 Governing equation and discretization <a id="Governing_equation_and_discretization"></a>
+See Minami et al. (2018) for details about forward and inversion modelling in ActFEM. The induction equation in terms of the vector magnetic potential $\mathbf{A}$,
+
+$$\nabla \times \left( \nabla \times \mathbf{A} \right) + i\omega\mu\widehat{\sigma}\mathbf{A} = \mu\mathbf{i}_{s},$$
+
+is solved by the edge-based finite element method. $\widehat{\sigma} = \sigma + i\omega\epsilon$, where $\epsilon$ is the electric permittivity. $\omega$ is the angular frequency, $\mu$ is the magnetic permeability, $\mathbf{i}_{s}$ is the source electric current density. Note that the equation is easily converted to the induction equation in terms of the electric field $\mathbf{E}$, by using the relationship of $\mathbf{E} = i\omega\mathbf{A}$,
+
+$$\nabla \times \nabla \times \mathbf{E} + i\omega\mu\widehat{\sigma}\mathbf{E} = i\omega\mu\mathbf{i}_{s}.$$
+
+The magnetic field is obtained by $\mathbf{B} = \nabla \times \mathbf{A}$, after the equation is solved with respect to $\mathbf{A}$.
+
+## 7 File formats <a id="File_formats"></a>
+
+### 7.1 Control files for mesh generation and forward modelling <a id="Control_files"></a>
+Mesh generation (meshgen1.exe, meshgen2.exe, mkline.exe and mkface.exe in src/src_mesh) and ACTIVE forward modelling (ebfem_bxyz.exe in src/solver) use control files in **the same format**, which are read by the same subroutine (`readparam` in src/common/m_param.f90). The ACTIVE control file for inversions (e.g., Joint_test/inv_act/active.ctl) is also in this format. Typical examples are:
+- Mesh generation: Fwd_test/mesh_flat/aso.ctl, Joint_test/mesh_joint/aso.ctl
+- Forward modelling: Fwd_test/active/active.ctl, Fwd_test/active_loop/active.ctl, Joint_test/fwd_active/active.ctl
+
+#### 7.1.1 General rules
+- Lines starting with `##` (at columns 1-2) are comment lines and are skipped.
+- In the other lines, **columns 1-20 are a label** and are ignored. The value is read **from column 21**. By convention, `!` is written at column 20 to separate the label and the value:
+  ```
+  ##-----10!-------20!
+  iflag_map          !2
+  ```
+- Labels are free text; the items are read in the fixed order shown in 7.1.2. Do not add or remove lines, except for the lines that depend on flags (e.g., `UTM zone` only for `iflag_map = 2`) or on the number of items (topography files, frequencies, observatories, sources).
+- Do not insert blank lines.
+- File names and folder names are read as `character(50)`. Keep each path within 50 characters (relative paths are recommended).
+- Lengths and coordinates are in [km]. x is eastward, y is northward and z is upward (see [2](#Coordinate_system)). When lon/lat input is used, it is converted to x, y with the origin given by `lonlatorigin`.
+- The altitude (third value) of observatories and source points is relative to the ground surface (e.g., -0.001 means 1 m below the surface). It is converted to the absolute z by the 2-D surface mesh in forward modelling and inversions.
+- Mesh generation does not read the items after `Electric current [A]` (conductivity), while forward modelling reads all items. Mesh parameters (`west bound` - `A_src`) must also be written in the forward control file, but they are not used in the forward calculation (except for `west bound` - `north bound` when `ixyflg = 1`).
+
+#### 7.1.2 Items
+The items are read in the following order. "Used by" shows the programs which use the item (M: mesh generation, F: forward modelling).
+
+| # | Label (example) | Condition | Description | Used by |
+|---|---|---|---|---|
+| 1 | `itopofile` | | 0: no topography file (flat surface at z = 0; coordinates of observatories and sources must be given by xyz). 1: topography file(s) are given. | M, F |
+| 2 | `iflag_map` | itopofile = 1 | Map projection for lon/lat. 1: Equidistant Cylindrical Projection (ECP), 2: UTM. | M, F |
+| 3 | `UTM zone` | iflag_map = 2 | UTM zone (e.g., `52S`). | M, F |
+| 4 | `lonlatorigin` | itopofile = 1 | Longitude and latitude [deg] of the origin of x, y. | M, F |
+| 5 | `# of topo file` | itopofile = 1 | Number of topography files, nfile. Give files from the narrowest area to the widest area. | M |
+| 6 | `topofile` | itopofile = 1, repeated nfile times with #7 | Topography file (lon, lat, altitude). | M |
+| 7 | `lon lat shift` | itopofile = 1, repeated nfile times with #6 | Shift of lon, lat [deg] applied to the topography file. | M |
+| 8 | `mesh file` | | 3-D mesh file used in the forward calculation (`<header3d>.msh` generated by mesh generation). | F |
+| 9 | `2d triangle z file` | | 2-D surface mesh with topography (`<header2d>z.msh`). Used to convert the altitude of observatories and sources. | F |
+| 10 | `local line file` | | Edge information file (`lineinfo.dat` generated by mkline.exe). | F |
+| 11 | `angle` | | Rotation angle [deg] (N deg E) of the x axis, which originally points east. Usually 0.0. | M, F |
+| 12 | `water level` | | 0: no water level control, 1: water level control file is given in the next line (see 7.1.4). | M |
+| 13 | `water level file` | water level = 1 | Water level control file. | M |
+| 14 | `output folder` | | Output folder for the forward results (end with `/`, e.g., `./result/`). Not used in mesh generation (any string, e.g., `-`). | F |
+| 15 | `header2d` | | Header of the 2-D mesh files generated by mesh generation (`<header2d>.geo`, `.pos`, `.msh`, `<header2d>z.msh`, etc.). | M |
+| 16 | `header3d` | | Header of the 3-D mesh files (`<header3d>.geo`, `.pos`, `.msh`). | M |
+| 17 | `# of frequency` | | Number of frequencies, nfreq. | F |
+| 18 | `Frequency [Hz]` | repeated nfreq times | Frequency [Hz]. | F |
+| 19-22 | `west bound`, `east bound`, `south bound`, `north bound` | | x of the west and east, and y of the south and north boundaries [km] of the inner (focus) area. | M (F for ixyflg = 1) |
+| 23 | `lenout [km]` | | Horizontal distance [km] from the inner area to the outer boundary. The outer boundary is at x = west bound - lenout and x = -(west bound - lenout) (same for y). | M |
+| 24 | `upz in [km]` | | Upper z [km] of the inner area. | M |
+| 25 | `downz in [km]` | | Lower z [km] of the inner area. | M |
+| 26 | `zmax [km]` | | Top of the calculation domain (air) [km]. | M |
+| 27 | `zmin [km]` | | Bottom of the calculation domain [km]. | M |
+| 28 | `sizein [km]` | | Element size [km] in the inner area. | M |
+| 29 | `sizebo [km]` | | Element size [km] at the outer boundary. | M |
+| 30 | `sigma_obs [km]` | | Radius [km] of mesh refinement around each observatory (see below). | M |
+| 31 | `A_obs [km]` | | Element size [km] at each observatory. | M |
+| 32 | `dlen_source [km]` | | Interval [km] of the refinement points placed along each dipole. A dipole shorter than dlen_source has one refinement point at its midpoint. | M |
+| 33 | `sigma_src [km]` | | Radius [km] of mesh refinement around each refinement point of sources. | M |
+| 34 | `A_src [km]` | | Element size [km] at each refinement point of sources. | M |
+| 35 | `# of observatory` | | Number of observatories, nobs. | M, F |
+| 36 | `lonlat(1),xyz (2)` | | Coordinate format of observatories and sources. 1: lon lat altitude (itopofile = 1 is required), 2: x y z [km]. | M, F |
+| 37 | `Name` | repeated nobs times with #38 | Name of the observatory (used in output file names). | M, F |
+| 38 | `xyz` | repeated nobs times with #37 | Coordinates of the observatory (format of #36). | M, F |
+| 39 | `ixyflg` | | 0: nothing, 1: field values are also calculated on nx × ny grid points in the inner area (west - east, south - north bounds). | F |
+| 40 | `xy file header` | ixyflg = 1 | Header of the output files for the grid points. | F |
+| 41 | `nx ny` | ixyflg = 1 | Number of grid points in x and y. | F |
+| 42 | `# of sources` | | Number of sources, nsource. | M, F |
+| 43 | `Source Name` | repeated nsource times | Name of the source (used in output file names), followed by the source geometry: two lines of start and end points, or one line of `File:<source point file>` (see [7.2](#Source_definition)). | M, F |
+| 44 | `Electric current [A]` | | Electric current [A] through the source wire (common to all sources). | F |
+| 45 | `sigma_air [S/m]` | forward only | Conductivity of the air [S/m]. | F |
+| 46 | `condflag` | forward only | 0: (partitioned) homogeneous earth given by #47-48, 1: conductivity file given by #49. | F |
+| 47 | `nvolume` | condflag = 0 | Number of physical volumes in the land region, nvolume. | F |
+| 48 | `cond` | condflag = 0, repeated nvolume times | Conductivity [S/m] of each volume. | F |
+| 49 | `condfile` | condflag = 1 | Conductivity file (see [9](#Generation_of_resistivity_model)). | F |
+
+Mesh refinement: in the inner area, the element size at a horizontal distance r from an observatory (or a refinement point of a source) is given by sizein - (sizein - A) exp(-r² / 2σ²) for r ≤ 3σ, where A and σ are A_obs and sigma_obs (A_src and sigma_src for sources). The smallest value among all observatories and refinement points is used.
+
+#### 7.1.3 Example
+Fwd_test/active/active.ctl (forward modelling):
+```
+## lines starting with "##" work as lines for comments ! 2020.09.28
+## this file is forward control file
+##-----10!-------20!
+   itopofile       !1
+iflag_map          !2
+UTM zone           !52S
+lonlatorigin       !131.084782     32.884882
+# of topo file     !1
+topofile           !../mesh_flat/topo_aso_flat.dat
+lon lat shift      !0.0         0.0
+mesh file          !../mesh_flat/nakadake3d.msh
+2d triangle z file !../mesh_flat/nakadake2dz.msh
+local line file    !../mesh_flat/lineinfo.dat
+angle              !0.0
+water level        !0
+output folder      !./result/
+header2d  (a50)    !nakadake2d
+header3d  (a50)    !nakadake3d
+# of frequency     !5
+Frequency [Hz]     !1.d0
+Frequency [Hz]     !3.d0
+Frequency [Hz]     !11.d0
+Frequency [Hz]     !33.d0
+Frequency [Hz]     !99.d0
+west bound         !-1.7
+east bound         !1.7
+south bound        !-1.5
+north bound        !1.5
+lenout [km]        !50.0
+upz in [km]  (>0)  !1.3
+downz in [km](<0)  !-1.1
+zmax   [km]        !50.0
+zmin   [km]        !-50.0
+sizein [km]        !0.15
+sizebo [km]        !10.0
+sigma_obs [km]     !0.4
+A_obs     [km]     !0.01
+dlen_source [km]   !0.1
+sigma_src [km]     !0.3
+A_src     [km]     !0.005
+# of observatory   !4
+lonlat(1),xyz (2)  !1
+1  Name            !A02
+1  xyz             !131.083411   32.886706  -0.001
+2  Name            !A04
+2  xyz,sigma,A[km] !131.081939   32.884808  -0.001
+3  Name            !A01
+3  xyz,sigma,A[km] !131.083367   32.882725  -0.001
+4  Name            !A03
+4  xyz,sigma,A[km] !131.086847   32.881981  -0.001
+ixyflg 0:no,1:surfv!0
+# of sources       !2
+Source Name        !S1
+source start point !131.086490   32.877356   -0.001
+source end   point !131.090840   32.877658   -0.001
+Source Name        !S2
+source start point !131.0784333  32.8908028  -0.001
+source end   point !131.0814639  32.8912333  -0.001
+Elcetric current[A]! 1.0
+sigma_air    [S/m] !1.e-8
+condflag 0:homo,1: !0
+nvolume            !1
+cond               !0.01
+```
+The mesh control file Fwd_test/mesh_flat/aso.ctl has the same structure. In mesh generation, `mesh file`, `2d triangle z file`, `local line file`, `output folder` and the frequencies are read but not used. Observatories and sources in the mesh control file determine where the mesh is refined, so they should include all observatories and sources used in the forward calculation (additional points, e.g., points below the crater, can be added only for refinement, as in Joint_test/mesh_joint/aso.ctl). Note that the outputs of mesh generation are written in the current folder with the names given by `header2d` and `header3d`, and `lineinfo.dat` and `faceinfo.dat` (mkface.exe, required for MT) are also written there.
+
+#### 7.1.4 Water level control file
+When `water level` is 1, the water level control file given in the next line is read in mesh generation. Its format is (the first 20 columns of each line are a label):
+```
+header line
+# of water levels  |1
+lake center lon    |131.0848
+lake center lat    |32.8849
+water level [km]   |1.0
+```
+The last line is repeated for the number of water levels. Comment lines (`##`) cannot be used in this file, and the lake center is converted by UTM (`iflag_map = 2` is required).
+
+### 7.2 Source definition (single dipole / multiple dipoles) <a id="Source_definition"></a>
+Each source is specified by the line `Source Name` followed by the source geometry. Two input styles are available and can be mixed among sources.
+
+**(a) Single dipole (conventional format).** Two lines give the start and end points of one electric dipole.
+```
+Source Name        !S1
+source start point !131.086490   32.877356   -0.001
+source end   point !131.090840   32.877658   -0.001
+```
+
+**(b) Multiple dipoles given by a source point file.** Write `File:` followed by the path of the source point file (relative to the directory where the program is executed) in the line after `Source Name`.
+```
+Source Name        !S1
+1st source file    !File:S1.dat
+```
+The source point file has the following format:
+```
+20                                 <- 1st line: number of points npoint (>= 2)
+131.086490  32.877356  -0.001      <- 2nd- lines: coordinates of each point
+131.087423  32.876926  -0.001
+...
+131.086490  32.877356  -0.001
+```
+- Points are connected in order, and dipole *j* is defined from point *j* to point *j*+1, i.e., `npoint` points give `npoint - 1` dipoles connected in series (a polyline wire). The same electric current `Elcetric current[A]` flows through all dipoles.
+- The coordinate format of each point follows the `lonlat(1),xyz (2)` flag of the observatory block: `lon lat alt` (alt [km] relative to the ground surface) for 1, and `x y z` [km] for 2. Lon/lat are converted with the projection given by `iflag_map` (ECP or UTM).
+- If the last point coincides with the first point (within 1 mm), the source is regarded as a **closed loop**.
+- The `File:` keyword is case-sensitive and must be at the head of the value (leading spaces are allowed). In the source point file, write coordinates only (one point per line, no labels).
+- In mesh generation, refinement points (`dlen_source`, `sigma_src`, `A_src`) are placed along every dipole; the duplicated points at the junctions of consecutive dipoles (and at the start point of a closed loop) are automatically removed.
+- Both input styles are available in the ACTIVE forward code (ebfem_bxyz.exe), the mesh generation codes (src/src_mesh) and the joint inversion code (ebfem_inv_joint.exe, used in Joint_test/inv_act/, inv_joint/, etc.). In the inversion, `<source name>_site.dat` in the output folder lists all vertices of the source (start points of all dipoles and the end point of the last dipole). The other MPI codes (src/src_inv_ap, src/solver_mpi, etc.) are not yet updated for this format.
+
+Example: Fwd_test/active_loop/ (active.ctl, S1.dat, S2.dat); see 3.5 for how to run it.
+
+## 8 Mesh generation tutorial <a id="Mesh_generation_tutorial"></a>
+The mesh generation for FEM modelling is one of toughest works for forward/inversion preparation. Here, simple tutorial help the users to utilize the mesh generation codes in ActFEM forward/inversion. Please start the tutorial in the folder, ActFEMv1.0/mesh_demo_Aso/.
+
+The format of the mesh control file is described in [7.1](#Control_files).
+
+In ActFEM/mesh_demo_Aso/, users can two different 3-D mesh files using meshgen.sh and meshgen_add.sh, where the only difference is the adopted control file, aso.ctl and aso_add.ctl. In ActFEM/mesh_demo_Aso/, you can just perform the following
+```bash
+$ ./meshgen.sh
+```
+or
+```bash
+$ ./meshgen_add.sh
+```
+Note that all the output file names by meshgen.sh and meshgen_add.sh are the same. Please conduct
+```bash
+$ ./clean.sh
+```
+in ActFEM/mesh_demo_Aso/, if you want to delete all the output files generated by meshgen.sh or meshgen_add.sh. The difference between the two scripts, i.e. the difference in two control files, is the number of receiver sites, where, only in aso_add.ctl, receiver B02 is added, which results in the total number of receivers of 8 in aso_add.ctl rather than 7 in aso.ctl. The difference is shown in the following figure:
+
+<img src="./images/v1.4_image31.png" width="50%"> <img src="./images/v1.4_image32.png" width="46%">
+
+Figure. Receivers set for mesh refinement in aso.ctl (Left), and in aso_add.ctl (Right). B02 is added in aso_add.ctl.
+
+When you succeeded in running meshgen.sh or meshgen_add.sh and generating 3-D mesh for ActFEM forward/inversion simulation, you can get the following files:
+
+<img src="./images/v1.4_image33.png" width="30%">
+
+See meshgen.sh to check when each output files are generated. The final output 3-D tetrahedral mesh is nakadake3d.msh. You can check the detail of the generated 3-D tetrahedral mesh by gmsh GUI (Graphical User Interface). “Tools > Visibility > Selection of Volume 2 > Apply“ shows you the ground surface of the generated 3-D mesh.
+
+![](./images/v1.4_image34.png)
+
+Then please check the following two pictures of ground surface of generated 3-D meshes. You can find the refined region corresponding to B02 in the 3-D mesh generated by meshgen_add.sh (i.e. aso_add.ctl). As the modification from aso.ctl to aso_add.ctl, the users can modify the resulting 3-D mesh.
+
+<img src="./images/v1.4_image35.png" width="40%"> <img src="./images/v1.4_image36.png" width="45%">
+
+Figure. Nakadake3d.msh generated by meshgen.sh (Left) and that generated by meshgen_add.sh (Right).
+
+## 9 Generation of resistivity model for forward/inversion <a id="Generation_of_resistivity_model"></a>
+For forward/inversion using ActFEM, users should prepare resistivity model for a given 3-D tetrahedral mesh. Here, simple tutorial help the users to build a resistivity model for a 3-D mesh generated in the previous section. Then please conduct meshgen.sh or meshgen_add.sh in ActFEMv1.0/mesh_demo_Aso/ before trying the tutorials here. (See [Section 8](#Mesh_generation_tutorial) for details.)
+
+To try tutorials here, first move to the folder ActFEMv1.0/mesh_demo_rec2tet/, where the resistivity model is constructed based on ActFEMv1.0/mesh_demo_Aso/nakadake3d.msh. In ActFEMv1.0/mesh_demo_rec2tet/, run
+```bash
+$ ./condmesh.sh
+```
+If you succeeded in running condmesh.sh, you can obtain the following files:
+
+<img src="./images/v1.4_image37.png" width="35%">
+
+cond_init.ctl is not an output file but the control file for running condmesh.sh. cond_init.msh is the file you can use in the forward / inversion in ActFEM. Generated cond_init.msh is the file used in the initial model in Minami et al. (2018, EPS) based on Kanda et al. (2018, JpGU). Note that you cannot view the cond_init.msh simply by `gmsh cond_init.msh`, because cond_init.msh doesn’t include the 3-D mesh information. init.msh is the file combining the mesh_demo_rec2tet/cond_init.msh and mesh_demo_Aso/nakadake3d.msh. The structure difference between cond_init.msh and init.msh are as follows:
+
+![](./images/v1.4_image38.png)
+
+Figure. Structure of nakadake3d.msh, cond_init.msh, and init.msh
+
+Then you can see the generated resistivity model by
+```bash
+$ gmsh init.msh
+```
+and set some viewer parameters as shown in the picture below.
+
+![](./images/v1.4_image39.png)
+
+Figure. View of init.msh by gmsh GUI. If users want to inverse the color scale, namely if you want to make high resistivity in cold color, click Map tab in Option Panel, and press “i”.
+
+In the script condmesh.sh, ActFEMv1.0/src/src_mesh/gridmdl2mesh.exe is used to generate cond_init.msh. The schematic for what condmesh.sh does is in the following figure. Then please change cond_init.ctl for modification of output resistivity file.
+
+![](./images/v1.4_image40.png)
+
+Figure. Outline of condmesh.sh
+
+## 10 Version notes <a id="Version_notes"></a>
+
+#### Version 1.5
+Nov 25, 2026: The manual is largely revised. The description of the control files for mesh generation and forward modelling (7.1) is updated to the current format (items, conditions, programs using each item, and an example), and the water level control file is described.
+
+#### Version 1.4
+Nov 23, 2026: Polyline (multi-dipole) sources are now available for ACTIVE forward modelling, mesh generation and the joint inversion (ebfem_inv_joint.exe). Each source can be given either by start/end points (single dipole, conventional format) or by a source point file with `File:` (multiple dipoles connected in series, including closed loops) (see [7.2](#Source_definition)). A test for loop sources (Fwd_test/active_loop/) and its comparison script with the analytical solution (compana_loop.py) are added (see 3.5).
+
+May 30, 2026: Tipper inversion is now available jointly with ACTIVE (CSEM) and MT impedance inversions.
+
+#### Version 1.0
+Latest date for update is Sep 30, 2021. Forward and inversion simulation can be available.
+
+## 11 References <a id="References"></a>
+Minami, T., Utsugi, M., Utada, H., Kagiyama, T., & Inoue, H. (2018). Temporal variation in the resistivity structure of the first Nakadake crater, Aso volcano, Japan, during the magmatic eruptions from November 2014 to May 2015, as inferred by the ACTIVE electromagnetic monitoring system. *Earth, Planets and Space*, *70*(1), 1-10.
+
+## Appendix A: Derivation of the discretized form of governing equation <a id="AppendixA"></a>
+Given the governing equation,
+
+$$\nabla \times \nabla \times \mathbf{A} + i\omega\mu\sigma\mathbf{A} = \mu\mathbf{i}_{s},$$
+
+in the finite element method with the Galerkin method, we numerically solve
+
+$$\int_{\Omega}{\mathbf{w} \cdot \left( \nabla \times \nabla \times \mathbf{A} + i\omega\mu\sigma\mathbf{A} - \mu\mathbf{i}_{s} \right)dV} = 0,\  \cdot \cdot \cdot \cdot (1)$$
+
+where $w$ is arbitrary test function, where the edge-basis function is adopted for $\mathbf{w}$ in the Galerkin method, and $\Omega$ is the computational domain.
+
+By using the relationship $\nabla \cdot \left( \mathbf{A} \times \mathbf{B} \right) = \mathbf{B} \cdot \left( \nabla \times \mathbf{A} \right) - \mathbf{A} \cdot (\nabla \times \mathbf{B})$, the first term in the left hand side of Eq. (1) is reduced to
+
+$$\int_{\Omega}{\mathbf{w} \cdot (\nabla \times \nabla \times A)dV} = \int_{\Omega}{\left\{ \nabla \cdot \left( (\nabla \times A) \times w \right) + (\nabla \times w) \cdot (\nabla \times A) \right\} dV}$$
+
+$$= \int_{\Omega}{\left\{ \nabla \cdot \left( \left( \nabla \times \mathbf{A} \right) \times w \right) + (\nabla \times w) \cdot (\nabla \times A) \right\} dV}$$
+
+$$= \int_{\partial\Omega}{\left( \left( \nabla \times \mathbf{A} \right) \times \mathbf{w} \right) \cdot \mathbf{n}dS} + \int_{\Omega}{\left\{ \left( \nabla \times \mathbf{w} \right) \cdot \left( \nabla \times \mathbf{A} \right) \right\} dV}$$
+
+$$= \int_{\partial\Omega}{\left( \mathbf{B} \times \mathbf{w} \right) \cdot \mathbf{n}dS} + \int_{\Omega}{\left\{ \left( \nabla \times \mathbf{w} \right) \cdot \left( \nabla \times \mathbf{A} \right) \right\} dV} \cdot \cdot \cdot (2)$$
+
+Where $\mathbf{B} = \nabla \times \mathbf{A}$ represents the magnetic field and $\partial\Omega$ indicates the boundary surface of the computational domain, and $\mathbf{n}$ is a outward unit vector normal to the surface $\partial\Omega$. Taking into account that at $\partial\Omega$, we can take
+
+$$\mathbf{n} \cdot (B \times w) = w \cdot \left( \mathbf{n} \times \mathbf{B} \right) = 0,$$
+
+where $\nabla \cdot \left( \mathbf{n} \times \mathbf{B} \right) = B \cdot \left( \nabla \times \mathbf{n} \right) - n \cdot (\nabla \times B) = - n \cdot \left( \mu\mathbf{j} \right) = 0$ indicates there are no electric current penetrating the boundary surface. Then, Eq. (2) reduces to
+
+$$\int_{\Omega}{\mathbf{w} \cdot \left( \nabla \times \nabla \times \mathbf{A} \right)dV = \int_{\Omega}{\left\{ \left( \nabla \times \mathbf{w} \right) \cdot \left( \nabla \times \mathbf{A} \right) \right\} dV}} \cdot \cdot \cdot (3)$$
+
+Substituting Eq. (3) into Eq. (1), we obtain
+
+$$\int_{\Omega}{\left\{ \left( \nabla \times \mathbf{w} \right) \cdot \left( \nabla \times \mathbf{A} \right) \right\} dV} + \int_{\Omega}{i\omega\mu\sigma\mathbf{w} \cdot \mathbf{A}dV} = \mu\int_{\Omega}{\mathbf{w} \cdot \mathbf{i}_{s}dV}. \cdot \cdot \cdot (4)$$
+
+In the finite element method, we divide the numerical domain into finite number of the tetrahedrons and calculate the volume integral for each tetrahedral element. In the remaining, we think only an volume integral for e-th element, $\Omega_{e}$, then Eq. (4) is rewritten for e-th element as
+
+$$\int_{\Omega_{e}}{\left\{ \left( \nabla \times \mathbf{w}_{i} \right) \cdot \left( \nabla \times \mathbf{A}_{e} \right) \right\} dV} + \int_{\Omega_{e}}{i\omega\mu\sigma\mathbf{w}_{i} \cdot \mathbf{A}_{e}dV} = \mu\int_{\Omega_{e}}{\mathbf{w}_{i} \cdot \mathbf{i}_{s_{e}}dV} \cdot \cdot \cdot (5)$$
+
+where $w_{i}\ (i = 1, \cdot \cdot \cdot ,6)$ is the edge-basis function for each edge of the e-th tetrahedron. We represent the vector potential in the e-th element as
+
+$$\mathbf{A}_{e}=\sum_{j = 1}^{6}{\mathbf{w}_{j}{\lbrack Al\rbrack}_{j}} \cdot \cdot \cdot \cdot (6)$$
+
+where
+
+$$\mathbf{w}_{j} = \mathbf{w}_{kl} = \lambda_{k}\nabla\lambda_{l} - \lambda_{l}\nabla\lambda_{k}.$$
+
+$\lambda_{k}$ is the nodal basis function. The relationship between j and k,l are shown in the following figure and table.
+
+<img src="./images/v1.4_image41.png" width="55%">
+
+Table A1.
+
+| i, j (edge id) | k   | l   | m   | n   |
+|:--------------:|:---:|:---:|:---:|:---:|
+| 1              | 1   | 2   | 3   | 4   |
+| 2              | 2   | 3   | 1   | 4   |
+| 3              | 1   | 3   | 4   | 2   |
+| 4              | 1   | 4   | 2   | 3   |
+| 5              | 2   | 4   | 3   | 1   |
+| 6              | 3   | 4   | 1   | 2   |
+
+Using Eq. (6), Eq. (5) can be reduced to
+
+$$\sum_{j = 1}^{6}{\int_{\Omega_{e}}{\left\{ \left( \nabla \times \mathbf{w}_{i} \right) \cdot \left( \nabla \times \mathbf{w}_{j} \right) \right\} dV}\lbrack Al\rbrack_{j}} + \sum_{j = 1}^{6}{\int_{\Omega_{e}}{i\omega\mu\sigma\mathbf{w}_{i} \cdot \mathbf{w}_{j}dV}\lbrack Al\rbrack_{j}} = \mu\int_{\Omega_{e}}{\mathbf{w}_{i} \cdot \mathbf{i}_{s_{e}}dV},\  \cdot \cdot \cdot (7)$$
+
+which is rewritten in the matrix form as,
+
+$$\left\{ \left\lbrack M_{e} \right\rbrack + i\omega\mu\sigma_{e}\left\lbrack N_{e} \right\rbrack \right\}\left\lbrack \mathbf{Al}_{e} \right\rbrack = \mathbf{s}_{e} \cdot \cdot \cdot (8)$$
+
+$$\left\lbrack \mathbf{Al}_{e} \right\rbrack = \left\lbrack {Al}_{1}\ {Al}_{2}\ {Al}_{3}\ {Al}_{4}\ {Al}_{5}\ {Al}_{6} \right\rbrack^{T} \cdot \cdot \cdot (9)$$
+
+$$\left\lbrack M_{e} \right\rbrack_{ij} = \int_{\Omega_{e}}{\left\{ \left( \nabla \times \mathbf{w}_{i} \right) \cdot \left( \nabla \times \mathbf{w}_{j} \right) \right\} dV} = \frac{1}{3v}\mathbf{x}_{mn} \cdot \frac{1}{3v}\mathbf{x}_{m^{'}n^{'}} \times v = \frac{1}{9v}\mathbf{x}_{mn} \cdot \mathbf{x}_{m^{'}n^{'}} \cdot \cdot \cdot (10)$$
+
+$$\left\lbrack N_{e} \right\rbrack_{ij} = \int_{\Omega_{e}}{\mathbf{w}_{i} \cdot \mathbf{w}_{j}dV} = \int_{\Omega_{e}}{\left( \lambda_{k}\nabla\lambda_{l} - \lambda_{l}\nabla\lambda_{k} \right) \cdot \left( \lambda_{k^{'}}\nabla\lambda_{l^{'}} - \lambda_{l^{'}}\nabla\lambda_{k^{'}} \right)dV}$$
+
+$$= \int_{\Omega_{e}}{\left( \lambda_{k}\lambda_{k^{'}}\nabla\lambda_{l} \cdot \nabla\lambda_{l^{'}} - \lambda_{k}\lambda_{l^{'}}\nabla\lambda_{l} \cdot \nabla\lambda_{k^{'}} - \lambda_{l}\lambda_{k^{'}}\nabla\lambda_{k} \cdot \nabla\lambda_{l^{'}} + \lambda_{l}\lambda_{l^{'}}\nabla\lambda_{k} \cdot \nabla\lambda_{k^{'}} \right)dV}$$
+
+$$= \nabla\lambda_{l} \cdot \nabla\lambda_{l^{'}}\int_{\Omega_{e}}{\lambda_{k}\lambda_{k^{'}}dV} - \nabla\lambda_{l} \cdot \nabla\lambda_{k^{'}}\int_{\Omega_{e}}{\lambda_{k}\lambda_{l^{'}}dV}$$
+
+$$- \nabla\lambda_{k} \cdot \nabla\lambda_{l^{'}}\int_{\Omega_{e}}{\lambda_{l}\lambda_{k^{'}}dV} + \nabla\lambda_{k} \cdot \nabla\lambda_{k^{'}}\int_{\Omega_{e}}{\lambda_{l}\lambda_{l^{'}}dV} \cdot \cdot \cdot (11)$$
+
+$$s_{i}^{e} = \mu\int_{\Omega_{e}}{\mathbf{w}_{i} \cdot \mathbf{i}_{s_{e}}dV} = \mu I_{s}\left( \frac{\mathbf{w}_{i}^{e}\left( r_{p1} \right) + \mathbf{w}_{i}^{e}\left( r_{p2} \right)}{2} \right) \cdot \overrightarrow{p_{1}p_{2}}\ \ (12)$$
+
+$$= \frac{\mu I_{s}\left( \lambda_{k}\left( p_{1} \right)\nabla\lambda_{l} - \lambda_{l}\left( p_{1} \right)\nabla\lambda_{k} + \lambda_{k}\left( p_{2} \right)\nabla\lambda_{l} - \lambda_{l}\left( p_{2} \right)\nabla\lambda_{k} \right)}{2} \cdot \overrightarrow{p_{1}p_{2}}$$
+
+$$= \frac{\mu I_{s}\left( (\lambda_{k}\left( p_{1} \right) + \lambda_{k}\left( p_{2} \right))\nabla\lambda_{l} - \left( \lambda_{l}\left( p_{1} \right) + \lambda_{l}\left( p_{2} \right) \right)\nabla\lambda_{k} \right)}{2} \cdot \overrightarrow{p_{1}p_{2}}$$
+
+In derivation of Eq. (12), the straight electric current defined by a Heaviside function penetrates the tetrahedron as shown below.
+
+<img src="./images/v1.4_image42.png" width="70%">
+
+In the derivation of Eq. (9), we used the relationship of
+
+$$\nabla \times \mathbf{w}_{j} = 2\nabla\lambda_{k} \times \nabla\lambda_{l} = \frac{1}{3v}\mathbf{x}_{mn}\  \cdot \cdot \cdot (13),$$
+
+Correspondence between (k,l) and (m,n) are listed in Table A1.
+
+In the calculation of Eq. (11), we can use the relationships:
+
+$$\nabla\lambda_{k} = \frac{1}{6v}\mathbf{x}_{ln} \times \mathbf{x}_{mn} \cdot \cdot \cdot (14)$$
+
+$$\int_{\Omega_{e}}{\lambda_{k}\lambda_{l}dV} = \left\{ \begin{matrix}
+6v\frac{1!1!}{(1 + 1 + 3)!} = \frac{v}{20}\ (k \neq l) \\
+6v\frac{2!}{(2 + 3)!} = \frac{v}{10}\ \ \ \ \ \ \ \ (k = l)
+\end{matrix} \right.\  \cdot \cdot \cdot (15)$$
+
+Note the theorem for integral of nodal basis function for a tetrahedron:
+
+$$\int_{\Omega_{e}}{\lambda_{1}^{k}\lambda_{2}^{l}\lambda_{3}^{m}\lambda_{4}^{n}dV} = 6v\frac{k!l!m!n!}{(k + l + m + n + 3)!}\ \  \cdot \cdot \cdot (16)$$
+
+## Appendix B: Scaling of the governing equation for ActFEM calculation <a id="AppendixB"></a>
+In solving discretized form combining Eq. (7) and (12),
+
+$$\sum_{j = 1}^{6}{\int_{\Omega_{e}}{\left\{ \left( \nabla \times \mathbf{w}_{i} \right) \cdot \left( \nabla \times \mathbf{w}_{j} \right) \right\} dV}\lbrack Al\rbrack_{j}} + \sum_{j = 1}^{6}{\int_{\Omega_{e}}{i\omega\mu\sigma\mathbf{w}_{i} \cdot \mathbf{w}_{j}dV}\lbrack Al\rbrack_{j}} = \mu I_{s}\left( \frac{\mathbf{w}_{i}^{e}\left( r_{p1} \right) + \mathbf{w}_{i}^{e}\left( r_{p2} \right)}{2} \right) \cdot \overrightarrow{p_{1}p_{2}}\  \cdot \cdot \cdot (17)$$
+
+a scaling is implemented in ActFEM. Scaling length $L$, set to be 1000m in ActFEM, is used. Consider to rewrite Eq. (17) by using
+
+$$\nabla = \frac{1}{L}\nabla^{'},\quad \mathbf{w} = \frac{1}{L}\mathbf{w}^{'},\quad dV = L^{3}dV^{'},\quad \overrightarrow{p_{1}p_{2}} = L\overrightarrow{p_{1}p_{2}'},\quad Al\left\lbrack s \cdot V/m \cdot m \right\rbrack = \int \mathbf{A} \cdot d\mathbf{l} = \frac{1}{L}Al^{'},$$
+
+where $Al^{'}$ is in $\left\lbrack s \cdot mV/km \cdot km \right\rbrack$, and $\mathbf{E} = i\omega\mathbf{A}$. These replacements correspond to the fact that **$\mathbf{w}$ and $\nabla$ are constructed as $\mathbf{w}'$ and $\nabla'$ with the coordinate system in the unit of km.**
+
+$$\sum_{j = 1}^{6}{\int_{\Omega_{e}}{\left\{ \left( \frac{1}{L}\nabla' \times \frac{1}{L}\mathbf{w}_{i}^{'} \right) \cdot \left( \frac{1}{L}\nabla^{'} \times \frac{1}{L}\mathbf{w}_{j}^{'} \right) \right\} L^{3}dV^{'}}\frac{1}{L}\ \left\lbrack Al^{'} \right\rbrack_{j}} + \sum_{j = 1}^{6}{\int_{\Omega_{e}}{i\omega\mu\sigma\frac{1}{L}\mathbf{w}_{i}^{'} \cdot \frac{1}{L}{\mathbf{w}^{'}}_{j}L^{3}dV'}\frac{1}{L}\left\lbrack Al^{'} \right\rbrack_{j}} = \mu I_{s}\frac{1}{L}\left( \frac{w'\left( r_{p1} \right) + w'\left( r_{p2} \right)}{2} \right) \cdot L\overrightarrow{p_{1}p_{2}'}$$
+
+$$\Longleftrightarrow\sum_{j = 1}^{6}{\int_{\Omega_{e}}{\left\{ \left( \nabla^{'} \times \mathbf{w}_{i}^{'} \right) \cdot \left( \nabla^{'} \times \mathbf{w}_{j}^{'} \right) \right\} dV^{'}}\left\lbrack Al^{'} \right\rbrack_{j}} + \sum_{j = 1}^{6}{\int_{\Omega_{e}}{L^{2}i\omega\mu\sigma\mathbf{w}_{i}^{'} \cdot {\mathbf{w}^{'}}_{j}dV^{'}}\left\lbrack Al^{'} \right\rbrack_{j}} = \mu I_{s}L^{2}\left( \frac{w'\left( r_{p1} \right) + w'\left( r_{p2} \right)}{2} \right) \cdot \overrightarrow{p_{1}p_{2}'}$$
+
+Note here that the source current $I_{s}$ is not scaled, namely in the unit of [A].

@@ -23,12 +23,38 @@ tminami@port.kobe-u.ac.jp
 1. [Required environment](#Required_environment)
 2. [Coordinate system](#Coordinate_system)
 3. [Run samples for forward modeling](#Run_the_sample)
+   - [3.1 Step 1: Mesh generation (no topography)](#sec3_1)
+   - [3.2 Step 2: Prepare analytical solution for ACTIVE](#sec3_2)
+   - [3.3 Step 3: Active forward modelling](#sec3_3)
+   - [3.4 Step 4: Compare the active forward results with analytical solution](#sec3_4)
+   - [3.5 Step 5: Active forward modelling with polyline (multi-dipole) sources](#sec3_5)
+   - [3.6 Step 6: MT forward calculation (without MPI) with homogeneous resistivity](#sec3_6)
+   - [3.7 Step 7: Check the results of MT forward calculation accuracy](#sec3_7)
+   - [3.8 Step 8: MT forward calculation (without MPI) with lateral inhomogeneous structure](#sec3_8)
+   - [3.9 Step 9: MT forward simulation with MPI + OpenMP](#sec3_9)
 4. [Run samples for inversions](#Run_samples_for_inversions)
+   - [4.1 Step 1: Prepare mesh](#sec4_1)
+   - [4.2 Step 2: Prepare true resistivity structure](#sec4_2)
+   - [4.3 Step 3: Generation of ACTIVE sample data for inversion](#sec4_3)
+   - [4.4 Step 4: Generation of MT sample data for inversion](#sec4_4)
+   - [4.5 Step 5: Run sample inversions!!](#sec4_5)
 5. [Source folder tree](#Source_folder_tree)
 6. [Governing equation and discretization](#Governing_equation_and_discretization)
 7. [File formats](#File_formats)
+   - [7.1 Control files for mesh generation and forward modelling](#Control_files)
+      - [7.1.1 General rules](#sec7_1_1)
+      - [7.1.2 Items](#sec7_1_2)
+      - [7.1.3 Example](#sec7_1_3)
+      - [7.1.4 Water level control file](#sec7_1_4)
+   - [7.2 Source definition (single dipole / multiple dipoles)](#Source_definition)
 8. [Mesh generation tutorial](#Mesh_generation_tutorial)
+   - [8.1 Mesh folders](#sec8_1)
+   - [8.2 Run meshgen.sh](#sec8_2)
+   - [8.3 How to adjust the mesh](#sec8_3)
 9. [Generation of resistivity model for forward/inversion](#Generation_of_resistivity_model)
+   - [9.1 Resistivity file (cond.msh)](#sec9_1)
+   - [9.2 Generation by change_model2cond.exe](#sec9_2)
+   - [9.3 View the resistivity model](#sec9_3)
 10. [Version notes](#Version_notes)
 11. [References](#References)
 
@@ -66,7 +92,7 @@ In ActFEM, the following coordinate system is used:
 ## 3 Run samples for forward modeling <a id="Run_the_sample"></a>
 There is a forward sample folder, ActFEM/Fwd_test. Users can check how ActFEM calculates forward simulations: Active and MT.
 
-### 3.1 Step 1: Mesh generation (no topography)
+### 3.1 Step 1: Mesh generation (no topography) <a id="sec3_1"></a>
 ```bash
 $ cd ActFEM/Fwd_test/mesh_flat
 $ chmod +x meshgen.sh
@@ -85,7 +111,7 @@ $ gmsh nakadake3d.msh
 
 Figure. Tools > Options > Mesh > check 3D element faces shows the center panel. “Tools > Visibility > select Volume 2 > apply” shows only land elements, where you can check high resolution area for site locations.
 
-### 3.2 Step 2: Prepare analytical solution for ACTIVE
+### 3.2 Step 2: Prepare analytical solution for ACTIVE <a id="sec3_2"></a>
 For evaluatng forward calucualtions, you can prepare analytical solution before forward modelling.
 ```bash
 $ cd ActFEM/Fwd_test/active_ana/
@@ -96,7 +122,7 @@ As default, run.sh run with ifx to compile source programs in src/ana. If run.sh
 
 <img src="./images/v1.4_image5.png" width="52%">
 
-### 3.3 Step 3: Active forward modelling
+### 3.3 Step 3: Active forward modelling <a id="sec3_3"></a>
 After generating mesh, you can run forward modelling for ACTIVE and MT.
 ```bash
 $ cd ActFEM/Fwd_test/active
@@ -107,7 +133,7 @@ If the active forward modelling finishes successfully, you can see:
 
 <img src="./images/v1.4_image6.png" width="43%">
 
-### 3.4 Step 4: Compare the active forward results with analytical solution
+### 3.4 Step 4: Compare the active forward results with analytical solution <a id="sec3_4"></a>
 After you finish active modeling, you can check the accuracy of forward simulation with analytical solution in Fwd_test/active_ana/result.
 
 In Fwd_test/active/
@@ -121,8 +147,8 @@ If the following panels appear, both active modelling and analytical solution ca
 
 Figure. The symbols are the calculated ACTIVE response in Fwd_test/active/, while the lines are the analytical solutions calculated in Fwd_test/active_ana/. (Top: amplitude [nT/A]; Bottom: phase [deg])
 
-### 3.5 Step 5: Active forward modelling with polyline (multi-dipole) sources
-ActFEM can treat a source wire consisting of multiple dipoles connected in series (e.g., a loop or a bent cable), where the vertices of the wire are given by a source point file (see [7.2](#Source_definition)). In Fwd_test/active_loop/, two closed-loop sources are prepared: S1 (19 dipoles given by S1.dat) and S2 (13 dipoles given by S2.dat). The mesh of Step 1 (Fwd_test/mesh_flat/) is used.
+### 3.5 Step 5: Active forward modelling with polyline (multi-dipole) sources <a id="sec3_5"></a>
+ActFEM can treat a source wire consisting of multiple dipoles connected in series (e.g., a loop or a bent cable), where the vertices of the wire are given by a source point file (see [7.2](#Source_definition)). In Fwd_test/active_loop/, two closed-loop sources are prepared: S1 (19 dipoles given by S1.dat) and S2 (13 dipoles given by S2.dat). The mesh of [Step 1](#sec3_1) (Fwd_test/mesh_flat/) is used.
 ```bash
 $ cd ActFEM/Fwd_test/active_loop
 $ chmod +x run.sh
@@ -139,7 +165,7 @@ In result/fwd.log, you can confirm that the dipoles are read from the source poi
 ```
 and `A0*_S1.dat` and `A0*_S2.dat` are generated in result/.
 
-Then, the results can be compared with the analytical solution. Because the analytical code (src/ana) treats only single-dipole sources, compana_loop.py gives each dipole as an independent source to active_ana.exe and sums the complex Bz over the dipoles of each source (superposition). active_ana.exe should be built beforehand (Step 2).
+Then, the results can be compared with the analytical solution. Because the analytical code (src/ana) treats only single-dipole sources, compana_loop.py gives each dipole as an independent source to active_ana.exe and sums the complex Bz over the dipoles of each source (superposition). active_ana.exe should be built beforehand ([Step 2](#sec3_2)).
 ```bash
 $ python3 compana_loop.py
 ```
@@ -153,7 +179,7 @@ A03  S1       1  9.4048e+00  1.0659e+01  1.133  -179.99  -179.99  -0.00
 ```
 Note that site A03 is located only ~18 m from the wire of S1, where Bz varies steeply and the FEM accuracy depends strongly on the mesh around the wire (Fwd_test/mesh_flat/ is refined along the straight sources in aso.ctl, not along the loops). To refine the mesh along the polyline sources, give the same `File:` lines in the source block of the mesh control file (aso.ctl); refinement points are then placed along every dipole (see [7.2](#Source_definition)). Note also that file names in control files are read as `character(50)`, so keep the paths short.
 
-### 3.6 Step 6: MT forward calculation (without MPI) with homogeneous resistivity
+### 3.6 Step 6: MT forward calculation (without MPI) with homogeneous resistivity <a id="sec3_6"></a>
 For MT calculations, there are serial (openMP) mode and Hybrid (openMP + MPI) mode. First, you can check serial model.
 ```bash
 $ cd ActFEM/Fwd_test/MTfwd_test
@@ -164,7 +190,7 @@ If the calculation is successful, you can see the output:
 
 <img src="./images/v1.4_image8.png" width="63%">
 
-### 3.7 Step 7: Check the results of MT forward calculation accuracy
+### 3.7 Step 7: Check the results of MT forward calculation accuracy <a id="sec3_7"></a>
 After finishing the calculations, please see how MT simulation finished.
 ```bash
 $ chmod +x plot_rho.sh
@@ -175,7 +201,7 @@ $ ./plot_rho.sh
 
 As seen in the panels, MT simulation with ActFEM succeeded in generating 100 Ohm.m apparent resistivity and 45 degrees phase over the frequency ranging from 1 to 100 Hz with less than 1% numerical error.
 
-### 3.8 Step 8: MT forward calculation (without MPI) with lateral inhomogeneous structure
+### 3.8 Step 8: MT forward calculation (without MPI) with lateral inhomogeneous structure <a id="sec3_8"></a>
 MT forward calculation can calculate tipper as well. You can check how it works with laterally inhomogeneous structure. First it is need to generate the inhomogeneous structure. In ActFEM/Fwd_test/MTfwd_test/
 ```bash
 $ chmod +x change_model2cond.sh
@@ -210,7 +236,7 @@ $ ./plot_tip.sh
 
 As seen in the panel, the real part of induction vector points west due to lower resistivity on the western side.
 
-### 3.9 Step 9: MT forward simulation with MPI + OpenMP
+### 3.9 Step 9: MT forward simulation with MPI + OpenMP <a id="sec3_9"></a>
 Only MT forward simulation is now parallelized with MPI. You can do the same calculation as Fwd_test/MTfwd_test in Fwd_test/MTfwd_test_mpi/ with MPI.
 ```bash
 $ cd Fwd_test/MTfwd_test_mpi/
@@ -226,7 +252,7 @@ Here you can see ip=1 (node#1) calculates freq=3.0Hz, while ip=3 (node#3) does f
 ## 4 Run samples for inversions <a id="Run_samples_for_inversions"></a>
 In ActFEM, there 6 inversion samples: two ACTIVE, two MT, and two ACTIVE+MT joint inversion samples. To run inversions, prepare sample ACTIVE and MT data sets.
 
-### 4.1 Step 1: Prepare mesh
+### 4.1 Step 1: Prepare mesh <a id="sec4_1"></a>
 Sample inversions are performed with real Aso topography. Let’s generate mesh first.
 ```bash
 $ cd ActFEM/Joint_test/mesh_joint
@@ -242,7 +268,7 @@ $ gmth nakadake3d.msh
 
 Figure. Generated tetrahedral mesh for Nakadake first crater of Aso volcano, Central Kyushu, Japan.
 
-### 4.2 Step 2: Prepare true resistivity structure
+### 4.2 Step 2: Prepare true resistivity structure <a id="sec4_2"></a>
 For inversion tutorials, we should assume some goal resistivity structure. ActFEM prepares the following goal resistivity structure in ActFEM/Joint_test/structure.
 ```bash
 $ cd ActFEM/Joint_test/structure
@@ -260,7 +286,7 @@ $ ./view_slice.sh
 
 As seen in the panels, the anomaly is rectangular body extending just below the crater bottom.
 
-### 4.3 Step 3: Generation of ACTIVE sample data for inversion
+### 4.3 Step 3: Generation of ACTIVE sample data for inversion <a id="sec4_3"></a>
 Now that we have true model, let’s generate sample inversion data by forward modelling. Firstly, active data is prepared as follows:
 ```bash
 $ cd ActFEM/Joint_test/fwd_active/
@@ -276,7 +302,7 @@ As results, `A0*_S?_amp.dat` and `A0*_S?_pha.dat` are generated in Joint_test/fw
 
 Note that active.ctl in Joint_test/inv_act/, inv_joint/, inv_act_icomb-1/ and inv_joint_icomb-1/ are symbolic links to Joint_test/fwd_active/active.ctl, so the same sources are used in the inversions. Each source can be given by start/end points or by a source point file with `File:` (see [7.2](#Source_definition)).
 
-### 4.4 Step 4: Generation of MT sample data for inversion
+### 4.4 Step 4: Generation of MT sample data for inversion <a id="sec4_4"></a>
 Secondly, MT data is prepared in ActFEM/Joint_test/fwd_3DMT/
 ```bash
 $ cd ActFEM/Joint_test/fwd_3DMT/
@@ -290,7 +316,7 @@ $ ./generr.sh
 ```
 Then there are error files like **mt_err/MT1_MT_imp.err**, etc.
 
-### 4.5 Step 5: Run sample inversions!!
+### 4.5 Step 5: Run sample inversions!! <a id="sec4_5"></a>
 Above, preparation for all the inversions are complete. The procedures for running inversion samples are the same. Run **run.sh**, and see the results by **plot_rms.sh** and **view_slice.sh**. For example, in Joint_test/inv_act/
 ```bash
 $ cd ActFEM/Joint_test/inv_act/
@@ -380,21 +406,21 @@ Mesh generation (meshgen1.exe, meshgen2.exe, mkline.exe and mkface.exe in src/sr
 - Mesh generation: Fwd_test/mesh_flat/aso.ctl, Joint_test/mesh_joint/aso.ctl
 - Forward modelling: Fwd_test/active/active.ctl, Fwd_test/active_loop/active.ctl, Joint_test/fwd_active/active.ctl
 
-#### 7.1.1 General rules
+#### 7.1.1 General rules <a id="sec7_1_1"></a>
 - Lines starting with `##` (at columns 1-2) are comment lines and are skipped.
 - In the other lines, **columns 1-20 are a label** and are ignored. The value is read **from column 21**. By convention, `!` is written at column 20 to separate the label and the value:
   ```
   ##-----10!-------20!
   iflag_map          !2
   ```
-- Labels are free text; the items are read in the fixed order shown in 7.1.2. Do not add or remove lines, except for the lines that depend on flags (e.g., `UTM zone` only for `iflag_map = 2`) or on the number of items (topography files, frequencies, observatories, sources).
+- Labels are free text; the items are read in the fixed order shown in [7.1.2](#sec7_1_2). Do not add or remove lines, except for the lines that depend on flags (e.g., `UTM zone` only for `iflag_map = 2`) or on the number of items (topography files, frequencies, observatories, sources).
 - Do not insert blank lines.
 - File names and folder names are read as `character(50)`. Keep each path within 50 characters (relative paths are recommended).
 - Lengths and coordinates are in [km]. x is eastward, y is northward and z is upward (see [2](#Coordinate_system)). When lon/lat input is used, it is converted to x, y with the origin given by `lonlatorigin`.
 - The altitude (third value) of observatories and source points is relative to the ground surface (e.g., -0.001 means 1 m below the surface). It is converted to the absolute z by the 2-D surface mesh in forward modelling and inversions.
 - Mesh generation does not read the items after `Electric current [A]` (conductivity), while forward modelling reads all items. Mesh parameters (`west bound` - `A_src`) must also be written in the forward control file, but they are not used in the forward calculation (except for `west bound` - `north bound` when `ixyflg = 1`).
 
-#### 7.1.2 Items
+#### 7.1.2 Items <a id="sec7_1_2"></a>
 The items are read in the following order. "Used by" shows the programs which use the item (M: mesh generation, F: forward modelling).
 
 | # | Label (example) | Condition | Description | Used by |
@@ -410,7 +436,7 @@ The items are read in the following order. "Used by" shows the programs which us
 | 9 | `2d triangle z file` | | 2-D surface mesh with topography (`<header2d>z.msh`). Used to convert the altitude of observatories and sources. | F |
 | 10 | `local line file` | | Edge information file (`lineinfo.dat` generated by mkline.exe). | F |
 | 11 | `angle` | | Rotation angle [deg] (N deg E) of the x axis, which originally points east. Usually 0.0. | M, F |
-| 12 | `water level` | | 0: no water level control, 1: water level control file is given in the next line (see 7.1.4). | M |
+| 12 | `water level` | | 0: no water level control, 1: water level control file is given in the next line (see [7.1.4](#sec7_1_4)). | M |
 | 13 | `water level file` | water level = 1 | Water level control file. | M |
 | 14 | `output folder` | | Output folder for the forward results (end with `/`, e.g., `./result/`). Not used in mesh generation (any string, e.g., `-`). | F |
 | 15 | `header2d` | | Header of the 2-D mesh files generated by mesh generation (`<header2d>.geo`, `.pos`, `.msh`, `<header2d>z.msh`, etc.). | M |
@@ -448,7 +474,7 @@ The items are read in the following order. "Used by" shows the programs which us
 
 Mesh refinement: in the inner area, the element size at a horizontal distance r from an observatory (or a refinement point of a source) is given by sizein - (sizein - A) exp(-r² / 2σ²) for r ≤ 3σ, where A and σ are A_obs and sigma_obs (A_src and sigma_src for sources). The smallest value among all observatories and refinement points is used.
 
-#### 7.1.3 Example
+#### 7.1.3 Example <a id="sec7_1_3"></a>
 Fwd_test/active/active.ctl (forward modelling):
 ```
 ## lines starting with "##" work as lines for comments ! 2020.09.28
@@ -515,9 +541,9 @@ condflag 0:homo,1: !0
 nvolume            !1
 cond               !0.01
 ```
-The mesh control file Fwd_test/mesh_flat/aso.ctl has the same structure. In mesh generation, `mesh file`, `2d triangle z file`, `local line file`, `output folder` and the frequencies are read but not used. Observatories and sources in the mesh control file determine where the mesh is refined, so they should include all observatories and sources used in the forward calculation (additional points, e.g., points below the crater, can be added only for refinement, as in Joint_test/mesh_joint/aso.ctl). Note that the outputs of mesh generation are written in the current folder with the names given by `header2d` and `header3d`, and `lineinfo.dat` and `faceinfo.dat` (mkface.exe, required for MT) are also written there.
+The mesh control file Fwd_test/mesh_flat/aso.ctl has the same structure. In mesh generation, `mesh file`, `2d triangle z file`, `local line file`, `output folder` and the frequencies are read but not used. Observatories and sources in the mesh control file determine where the mesh is refined, so they should include all observatories and sources used in the forward calculation (additional points, e.g., points below the crater, can be added only for refinement, as in Joint_test/mesh_joint/aso.ctl). Note that the outputs of mesh generation are written in the current folder with the names given by `header2d` and `header3d`, and `lineinfo.dat` (mkline.exe) and `faceinfo.dat` (mkface.exe) are also written there. Note that `faceinfo.dat` is not read in the current version: the inversion code reads the path of `face info file` in its control file, but generates the face information internally.
 
-#### 7.1.4 Water level control file
+#### 7.1.4 Water level control file <a id="sec7_1_4"></a>
 When `water level` is 1, the water level control file given in the next line is read in mesh generation. Its format is (the first 20 columns of each line are a label):
 ```
 header line
@@ -558,85 +584,178 @@ The source point file has the following format:
 - In mesh generation, refinement points (`dlen_source`, `sigma_src`, `A_src`) are placed along every dipole; the duplicated points at the junctions of consecutive dipoles (and at the start point of a closed loop) are automatically removed.
 - Both input styles are available in the ACTIVE forward code (ebfem_bxyz.exe), the mesh generation codes (src/src_mesh) and the joint inversion code (ebfem_inv_joint.exe, used in Joint_test/inv_act/, inv_joint/, etc.). In the inversion, `<source name>_site.dat` in the output folder lists all vertices of the source (start points of all dipoles and the end point of the last dipole). The other MPI codes (src/src_inv_ap, src/solver_mpi, etc.) are not yet updated for this format.
 
-Example: Fwd_test/active_loop/ (active.ctl, S1.dat, S2.dat); see 3.5 for how to run it.
+Example: Fwd_test/active_loop/ (active.ctl, S1.dat, S2.dat); see [3.5](#sec3_5) for how to run it.
 
 ## 8 Mesh generation tutorial <a id="Mesh_generation_tutorial"></a>
-The mesh generation for FEM modelling is one of toughest works for forward/inversion preparation. Here, simple tutorial help the users to utilize the mesh generation codes in ActFEM forward/inversion. Please start the tutorial in the folder, ActFEMv1.0/mesh_demo_Aso/.
+The mesh generation for FEM modelling is one of the toughest works for forward/inversion preparation. This section explains how 3-D tetrahedral meshes are generated in ActFEM and how to adjust them. The format of the mesh control file is described in [7.1](#Control_files).
 
-The format of the mesh control file is described in [7.1](#Control_files).
+### 8.1 Mesh folders <a id="sec8_1"></a>
+The following mesh folders are prepared. Each folder has a control file (aso.ctl) and a script (meshgen.sh).
 
-In ActFEM/mesh_demo_Aso/, users can two different 3-D mesh files using meshgen.sh and meshgen_add.sh, where the only difference is the adopted control file, aso.ctl and aso_add.ctl. In ActFEM/mesh_demo_Aso/, you can just perform the following
+| Folder | Topography | Used by | Size of the mesh |
+|---|---|---|---|
+| Fwd_test/mesh_flat/ | Flat (topo/topo_aso_flat.dat) | Forward samples in Fwd_test/ ([section 3](#Run_the_sample)) | 93,381 nodes, 562,852 tetrahedra |
+| Joint_test/mesh_joint/ | Aso topography (topo/aso_map.data and topo/topo127_134_29_36.xyz) | Inversion samples in Joint_test/ ([section 4](#Run_samples_for_inversions)) | 112,898 nodes, 692,839 tetrahedra |
+| Joint_test/mesh_light/ | Same as mesh_joint | Light samples (Joint_test/fwd_3DMT_light/, inv_tip_light/) | 71,594 nodes, 434,529 tetrahedra |
+
+mesh_light uses the same observatories and sources as mesh_joint, but with a smaller calculation domain and larger elements (`lenout` 5.0 km instead of 8.0 km, `sizein` 0.11 km instead of 0.1 km, `sizebo` 2.0 km instead of 3.0 km, `A_obs` 0.01 km instead of 0.008 km, `dlen_source` 0.5 km instead of 0.3 km, and `A_src` 0.01 km instead of 0.006 km).
+
+### 8.2 Run meshgen.sh <a id="sec8_2"></a>
+In this tutorial, Joint_test/mesh_joint/ is used. Run
 ```bash
-$ ./meshgen.sh
+$ cd ActFEM/Joint_test/mesh_joint
+$ chmod +x meshgen.sh
+$ ./meshgen.sh > log.txt
 ```
-or
+meshgen.sh first compiles the programs in src/src_mesh with gfortran (Makefile_gfort), and then runs the following steps. All the outputs are written in the current folder; `nakadake2d` and `nakadake3d` are the headers given by `header2d` and `header3d` in aso.ctl.
+
+| Step | Command | Main outputs |
+|---|---|---|
+| 1 | `meshgen1.exe` (reads aso.ctl) | nakadake2d.geo, nakadake2d.pos (2-D geometry and background mesh for element size) |
+| 2 | `gmsh -2 nakadake2d.geo -bgm nakadake2d.pos -format msh2` | nakadake2d.msh (2-D triangle mesh of the surface) |
+| 3 | `meshgen2.exe` (reads aso.ctl) | nakadake2dz.msh, nakadake2d_lonlatz.msh (surface mesh with topography), nakadake3d.geo, nakadake3d.pos |
+| 4 | `gmsh -3 nakadake3d.geo -bgm nakadake3d.pos -format msh2` | nakadake3d.msh (3-D tetrahedral mesh), nakadake3d.log |
+| 5 | `mkline.exe` (reads aso.ctl) | lineinfo.dat (edge information) |
+| 6 | `mkface.exe` (reads aso.ctl) | faceinfo.dat (face information) |
+
+In Fwd_test/mesh_flat/meshgen.sh, step 4 is run without the background mesh (`-bgm`), and step 6 is not run. The whole procedure takes about 30 seconds for mesh_joint (20 seconds for mesh_light).
+
+If meshgen.sh finishes successfully, log.txt shows the summary of the generated meshes. For the 2-D mesh (step 3):
+```
+ # of nodes         (node) :     13683
+ # of elements      (nele) :     27368
+ # of Point       elements :         4
+ # of Line        elements :        72
+ # of Triangle    elements :     27292
+ # of Tetrahedron elements :         0
+```
+and for the 3-D mesh (steps 5 and 6):
+```
+ # of nodes         (node) :    112898
+ # of elements      (nele) :    692848
+ # of Point       elements :         0
+ # of Line        elements :         9
+ # of Triangle    elements :         0
+ # of Tetrahedron elements :    692839
+ ...
+ nline=      806917
+ ### MKLINE END ###
+ ...
+ nface=     1386859
+ ### MKFACE END ###
+```
+The final 3-D mesh is nakadake3d.msh, and the files used in the forward calculation are nakadake3d.msh, nakadake2dz.msh and lineinfo.dat (`mesh file`, `2d triangle z file` and `local line file` in the forward control file). In meshgen.sh, the random seed of gmsh is fixed by `-string "Mesh.RandomSeed=1;"`, so running meshgen.sh again with the same aso.ctl gives the same nakadake3d.msh. To remove all the outputs, run `./clean.sh`.
+
+The generated mesh can be checked with the gmsh viewer:
 ```bash
-$ ./meshgen_add.sh
+$ gmsh nakadake3d.msh
 ```
-Note that all the output file names by meshgen.sh and meshgen_add.sh are the same. Please conduct
-```bash
-$ ./clean.sh
-```
-in ActFEM/mesh_demo_Aso/, if you want to delete all the output files generated by meshgen.sh or meshgen_add.sh. The difference between the two scripts, i.e. the difference in two control files, is the number of receiver sites, where, only in aso_add.ctl, receiver B02 is added, which results in the total number of receivers of 8 in aso_add.ctl rather than 7 in aso.ctl. The difference is shown in the following figure:
+"Tools > Options > Mesh > 3D element faces" shows the faces of the tetrahedra, and "Tools > Visibility > select Volume 2 > Apply" shows only the land elements, where you can check the refined areas around the observatories and sources.
 
-<img src="./images/v1.4_image31.png" width="50%"> <img src="./images/v1.4_image32.png" width="46%">
+Note that the conductivity files in Joint_test/structure/ (cond_G3.msh and cond_homo.msh) are tied to Joint_test/mesh_joint/nakadake3d.msh. If you change mesh_joint/aso.ctl and regenerate the mesh, regenerate the conductivity files as well (see [4.2](#sec4_2)).
 
-Figure. Receivers set for mesh refinement in aso.ctl (Left), and in aso_add.ctl (Right). B02 is added in aso_add.ctl.
+### 8.3 How to adjust the mesh <a id="sec8_3"></a>
+The mesh is adjusted by editing the control file (aso.ctl). The main parameters are as follows (see [7.1.2](#sec7_1_2) for details).
+- **Calculation domain**: `west bound` - `north bound` give the inner (focus) area, `upz in` and `downz in` give its vertical range, and `lenout`, `zmax` and `zmin` give the outer boundary.
+- **Element size**: `sizein` (inner area) and `sizebo` (outer boundary). Smaller values give more elements.
+- **Refinement around observatories**: the element size becomes `A_obs` at each observatory and approaches `sizein` within a radius of about 3 × `sigma_obs`. All observatories used in the forward calculation and the inversion should be included in the mesh control file.
+- **Refinement points only for the mesh**: points which are not used as observatories can be added in the observatory list only for refinement. For example, Joint_test/mesh_joint/aso.ctl contains DUM and DM1 (100 m and 400 m below the origin), DM2 and DM3 (100 m below the ground surface to the west of the origin), and MT1 - MT4 (MT sites), in addition to the ACTIVE sites A01 - A04. The number of observatories (`# of observatory`) must be changed accordingly.
+- **Refinement along sources**: refinement points are placed along every dipole of each source with the interval `dlen_source`, and the element size becomes `A_src` there with the radius `sigma_src`. Polyline sources given by `File:` (see [7.2](#Source_definition)) are also refined along every dipole.
 
-When you succeeded in running meshgen.sh or meshgen_add.sh and generating 3-D mesh for ActFEM forward/inversion simulation, you can get the following files:
-
-<img src="./images/v1.4_image33.png" width="30%">
-
-See meshgen.sh to check when each output files are generated. The final output 3-D tetrahedral mesh is nakadake3d.msh. You can check the detail of the generated 3-D tetrahedral mesh by gmsh GUI (Graphical User Interface). “Tools > Visibility > Selection of Volume 2 > Apply“ shows you the ground surface of the generated 3-D mesh.
-
-![](./images/v1.4_image34.png)
-
-Then please check the following two pictures of ground surface of generated 3-D meshes. You can find the refined region corresponding to B02 in the 3-D mesh generated by meshgen_add.sh (i.e. aso_add.ctl). As the modification from aso.ctl to aso_add.ctl, the users can modify the resulting 3-D mesh.
-
-<img src="./images/v1.4_image35.png" width="40%"> <img src="./images/v1.4_image36.png" width="45%">
-
-Figure. Nakadake3d.msh generated by meshgen.sh (Left) and that generated by meshgen_add.sh (Right).
+After editing aso.ctl, run meshgen.sh again and compare the numbers of nodes and elements in log.txt. The difference between mesh_joint and mesh_light ([8.1](#sec8_1)) is an example of how the element size parameters change the size of the mesh.
 
 ## 9 Generation of resistivity model for forward/inversion <a id="Generation_of_resistivity_model"></a>
-For forward/inversion using ActFEM, users should prepare resistivity model for a given 3-D tetrahedral mesh. Here, simple tutorial help the users to build a resistivity model for a 3-D mesh generated in the previous section. Then please conduct meshgen.sh or meshgen_add.sh in ActFEMv1.0/mesh_demo_Aso/ before trying the tutorials here. (See [Section 8](#Mesh_generation_tutorial) for details.)
+For forward/inversion using ActFEM, users should prepare a resistivity model for a given 3-D tetrahedral mesh. This section explains the format of the resistivity (conductivity) file and how to generate it with change_model2cond.exe (src/src_post). The examples are in Joint_test/structure/ (for Joint_test/mesh_joint/) and Joint_test/structure_light/ (for Joint_test/mesh_light/).
 
-To try tutorials here, first move to the folder ActFEMv1.0/mesh_demo_rec2tet/, where the resistivity model is constructed based on ActFEMv1.0/mesh_demo_Aso/nakadake3d.msh. In ActFEMv1.0/mesh_demo_rec2tet/, run
-```bash
-$ ./condmesh.sh
+### 9.1 Resistivity file (cond.msh) <a id="sec9_1"></a>
+The resistivity model is given by the file specified by `condfile` with `condflag = 1` in the forward control file (see [7.1](#Control_files)), and by `ref cond file` and `init cond file` in the inversion control file. The file is in the gmsh ElementData format, and gives the resistivity [Ohm.m] of every tetrahedron in the land region:
 ```
-If you succeeded in running condmesh.sh, you can obtain the following files:
-
-<img src="./images/v1.4_image37.png" width="35%">
-
-cond_init.ctl is not an output file but the control file for running condmesh.sh. cond_init.msh is the file you can use in the forward / inversion in ActFEM. Generated cond_init.msh is the file used in the initial model in Minami et al. (2018, EPS) based on Kanda et al. (2018, JpGU). Note that you cannot view the cond_init.msh simply by `gmsh cond_init.msh`, because cond_init.msh doesn’t include the 3-D mesh information. init.msh is the file combining the mesh_demo_rec2tet/cond_init.msh and mesh_demo_Aso/nakadake3d.msh. The structure difference between cond_init.msh and init.msh are as follows:
-
-![](./images/v1.4_image38.png)
-
-Figure. Structure of nakadake3d.msh, cond_init.msh, and init.msh
-
-Then you can see the generated resistivity model by
-```bash
-$ gmsh init.msh
+$MeshFormat
+2.2 0 8
+$EndMeshFormat
+$ElementData
+1
+"A rho model view"
+1
+0.0
+3
+0
+1
+    405664                              <- number of land elements
+      287185   300.00000000000000       <- element id, resistivity [Ohm.m]
+      287186   300.00000000000000
+...
+$EndElementData
 ```
-and set some viewer parameters as shown in the picture below.
+The first 11 lines are a header. The element ids correspond to the element numbers in the 3-D mesh file, so **a resistivity file is tied to the 3-D mesh** used to generate it. If the mesh is regenerated with a different control file, the resistivity file must also be regenerated. Because the resistivity file does not include the mesh, it cannot be viewed by gmsh alone; it can be viewed by merging it with the mesh, e.g., `gmsh nakadake3d.msh cond_G3.msh`.
 
-![](./images/v1.4_image39.png)
+### 9.2 Generation by change_model2cond.exe <a id="sec9_2"></a>
+change_model2cond.exe starts from a base model (a homogeneous model, an existing resistivity file, or an inversion result) and changes the resistivity of the elements whose centers are inside the given cuboids. In Joint_test/structure/,
+```bash
+$ cd ActFEM/Joint_test/structure
+$ ./cond_homo.sh
+$ ./cond_G3.sh
+```
+generate cond_homo.msh (homogeneous 300 Ohm.m) and cond_G3.msh (true model for the inversion samples in [section 4](#Run_samples_for_inversions); see [4.2](#sec4_2)). Each script writes a control file, compiles src/src_post with gfortran (Makefile_gfort), and runs `change_model2cond.exe < control file`.
 
-Figure. View of init.msh by gmsh GUI. If users want to inverse the color scale, namely if you want to make high resistivity in cold color, click Map tab in Option Panel, and press “i”.
+The control file of change_model2cond.exe is as follows. As in [7.1](#Control_files), the first 20 columns of each line are a label, and the value is read from column 21. The first line is a header, and comment lines (`##`) cannot be used in this file.
 
-In the script condmesh.sh, ActFEMv1.0/src/src_mesh/gridmdl2mesh.exe is used to generate cond_init.msh. The schematic for what condmesh.sh does is in the following figure. Then please change cond_init.ctl for modification of output resistivity file.
+| # | Label (example) | Condition | Description |
+|---|---|---|---|
+| 1 | `!------10!-------20!` | | Header line (skipped). |
+| 2 | `input 3d mshfile` | | 3-D mesh file (e.g., ../mesh_joint/nakadake3d.msh). |
+| 3 | `0homo,1cond,2model` | | Base model. 0: homogeneous, 1: existing resistivity file, 2: inversion result. |
+| 4 | `homo resistivity` | base = 0 | Resistivity [Ohm.m] of the homogeneous model. |
+| 4 | `input cond` | base = 1 | Resistivity file (cond.msh type). |
+| 4-5 | `model connect file`, `input model` | base = 2 | model_connect.dat and modelNN.dat in the output folder of the inversion. |
+| 6 | `output cond` | | Output resistivity file. |
+| 7 | `0:elevation,1:depth` | | z range of the cuboids. 0: elevation [km], 1: depth from the ground surface [km] (negative values, e.g., -0.3 and -0.1). |
+| 8 | `2d topo file` | z range = 1 | 2-D surface mesh with topography (e.g., ../mesh_joint/nakadake2dz.msh). |
+| 9 | `# of cuboid` | | Number of cuboids, ncuboid (0 for no change). |
+| 10-13 | `xminmax [km]`, `yminmax [km]`, `zminmax [km]`, `rho [Ohm.m]` | repeated ncuboid times | Range of x, y and z [km] (two values each) and the resistivity [Ohm.m] of the cuboid. |
 
-![](./images/v1.4_image40.png)
+The cuboids are applied in the given order, so a later cuboid overwrites earlier ones where they overlap. For example, cond_G3.sh uses the following control file, where the 10 Ohm.m cuboid C22 is given first and the 1 Ohm.m cuboids C20 and C21 are given after it:
+```
+!------10!-------20!----
+input 3d mshfile   !../mesh_joint/nakadake3d.msh
+0homo,1cond,2model !0
+homo resistivity   !100.0
+output cond        !./cond_G3.msh
+0:elevation,1:depth!0
+# of cuboid        !4
+C22 xminmax [km]   !-0.150         0.1500
+C22 yminmax [km]   !-0.1500        0.1500
+C22 zminmax [km]   ! 0.5000        1.05
+C22 rho    [Ohm.m] !10.0
+C20 xminmax [km]   !-0.0500         0.0500
+C20 yminmax [km]   !-0.05000        0.0500
+C20 zminmax [km]   ! 0.500         1.05
+C20 rho    [Ohm.m] !1.0
+C21 xminmax [km]   !-0.200          0.0500
+C21 yminmax [km]   !-0.0500         0.0500
+C21 zminmax [km]   ! 0.9500         1.05
+C21 rho    [Ohm.m] !1.0
+C21 xminmax [km]   !-0.2000         -0.100
+C21 yminmax [km]   !-0.0500         0.050
+C21 zminmax [km]   ! 0.9500         1.15
+C21 rho    [Ohm.m] !1.0
+```
+Other examples of control files (an existing resistivity file or an inversion result as the base model, and cuboids given by depth from the surface) are written in cond_G3.sh as test1.ctl - test5.ctl, which are not used in the script (the paths of the mesh files in them should be changed before use). With base = 2, an inversion result (modelNN.dat) can be converted to a resistivity file, which can be used, e.g., as the initial model of another inversion. In Joint_test/structure_light/, cond_homo.sh and cond_lateral.sh generate the models for mesh_light in the same way.
 
-Figure. Outline of condmesh.sh
+### 9.3 View the resistivity model <a id="sec9_3"></a>
+The generated resistivity model can be checked by vertical and horizontal slices:
+```bash
+$ ./view_slice.sh
+```
+view_slice.sh runs slice.exe (src/src_post) to cut the slices out of the resistivity file and draws them with GMT (see the explanation at the beginning of view_slice.sh for the parameters of slices). By default, it draws the W-E (y = 0) and S-N (x = 0) vertical slices and the horizontal slice at z = 1.0 km for cond_G3.msh (see the figure in [4.2](#sec4_2)). To view another model, change `ID` and `condfile` in view_slice.sh.
 
 ## 10 Version notes <a id="Version_notes"></a>
 
 #### Version 1.5
-Nov 25, 2026: The manual is largely revised. The description of the control files for mesh generation and forward modelling (7.1) is updated to the current format (items, conditions, programs using each item, and an example), and the water level control file is described.
+Nov 25, 2026: The manual is largely revised. The description of the control files for mesh generation and forward modelling ([7.1](#Control_files)) is updated to the current format (items, conditions, programs using each item, and an example), and the water level control file is described. The mesh generation tutorial ([8](#Mesh_generation_tutorial)) is rewritten for the current mesh folders (Fwd_test/mesh_flat/, Joint_test/mesh_joint/ and Joint_test/mesh_light/), and the generation of resistivity models ([9](#Generation_of_resistivity_model)) is rewritten for the current procedure with change_model2cond.exe. Anchors are added to all sections and subsections, the references to sections in the text are linked, and the contents list the subsections.
 
 #### Version 1.4
-Nov 23, 2026: Polyline (multi-dipole) sources are now available for ACTIVE forward modelling, mesh generation and the joint inversion (ebfem_inv_joint.exe). Each source can be given either by start/end points (single dipole, conventional format) or by a source point file with `File:` (multiple dipoles connected in series, including closed loops) (see [7.2](#Source_definition)). A test for loop sources (Fwd_test/active_loop/) and its comparison script with the analytical solution (compana_loop.py) are added (see 3.5).
+Nov 23, 2026: Polyline (multi-dipole) sources are now available for ACTIVE forward modelling, mesh generation and the joint inversion (ebfem_inv_joint.exe). Each source can be given either by start/end points (single dipole, conventional format) or by a source point file with `File:` (multiple dipoles connected in series, including closed loops) (see [7.2](#Source_definition)). A test for loop sources (Fwd_test/active_loop/) and its comparison script with the analytical solution (compana_loop.py) are added (see [3.5](#sec3_5)).
 
 May 30, 2026: Tipper inversion is now available jointly with ACTIVE (CSEM) and MT impedance inversions.
 

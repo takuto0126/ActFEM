@@ -326,6 +326,36 @@ $ ./run.sh
 ```
 In run.sh, you should edit the number of OpenMP threads and MPI processes corresponding to your environment.
 
+The inversion demos in Joint_test/ are as follows. All of them use ebfem_inv_joint.exe (src/src_inv_joint), the homogeneous model Joint_test/structure/cond_homo.msh as the initial and reference models, the smoothest-model regularization (`Roughness type` = 1) and the cooling strategy for the trade-off parameter (`1:L,2:Cl,3:Mi,4:Gr` = 2). The first input of the executable (`ijoint`) selects the data: 1 for ACTIVE, 2 for MT (impedance and/or tipper) and 3 for ACTIVE + MT.
+
+| Folder | ijoint | Data | Model parameterization (`icombine`) | Note |
+|---|---|---|---|---|
+| inv_act | 1 | ACTIVE Bz amplitude and phase (sources S1, S2; sites A01 - A04) | 0: normal | |
+| inv_act_icomb-1 | 1 | Same as inv_act | -1: inner / outer mode | |
+| inv_mt | 2 | MT impedance (MT1 - MT5) | 0: normal | |
+| inv_mt_icomb-1 | 2 | Same as inv_mt | -1: inner / outer mode | |
+| inv_joint | 3 | ACTIVE (as inv_act) + MT impedance (as inv_mt) | 1: outside blocks are integrated into one | |
+| inv_joint_icomb-1 | 3 | Same as inv_joint | -1: inner / outer mode | |
+| inv_mt_tip | 2 | MT impedance + tipper (MT1 - MT9) | 0: normal | |
+| inv_tip | 2 | Tipper only (`imp: 0, 1:amp,pha` = -1) | 0: normal | Run by run_tip.sh (see readme.txt); results are not shown below |
+| inv_tip_light | 2 | Tipper only, with Joint_test/mesh_light/ and structure_light/ (data in fwd_3DMT_light/) | 0: normal | Light version (2 MPI processes); results are not shown below |
+
+The MT sites used in the inversion are selected in the inversion control file by the site index after `!`, which refers to the sites in mt.ctl (see [4.4](#sec4_4)); mt.ctl may contain more sites than those used in the inversion. The same applies to the ACTIVE sites in active.ctl. Each folder contains the following files.
+
+| File | Description |
+|---|---|
+| run.sh | Builds src/src_inv_joint and runs the inversion with mpiexec (edit the numbers of MPI processes and OpenMP threads for your environment) |
+| run_ism.sh | Same as run.sh for the ISM server (uses Makefile_ISM) |
+| inv_act.ctl, inv_mt.ctl, joint.ctl, inv_mt_tip.ctl, inv_tip.ctl | Inversion control file (initial / reference models, regularization, data files and their site indices, model blocks) |
+| active.ctl | ACTIVE forward control file (symbolic link to ../fwd_active/active.ctl) |
+| mt.ctl | MT forward control file (symbolic link to ../fwd_3DMT/mt.ctl, or ../fwd_3DMT_light/mt.ctl for inv_tip_light) |
+| result_inv/ | Output folder (RMS history, models modelNN.dat and model_connect.dat, responses at each iteration, log inv.log) |
+| plot_rms.sh | Plots the RMS history |
+| plot_fit_active.sh, plot_fit_MT.sh | Compare the observed and calculated responses |
+| plot_rho_pha.sh | Plots MT apparent resistivity and phase of result_fwd/A01_MT.dat (an old script for MT forward results, not for the inversion outputs) |
+| view_slice.sh | Draws slices of the obtained resistivity model (slice.exe and GMT) |
+| clean.sh | Removes the outputs |
+
 In the following, only the results are shown for obtained inversions results:
 
 #### Results of Joint_test/inv_act

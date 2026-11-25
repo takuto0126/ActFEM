@@ -326,6 +326,36 @@ $ ./run.sh
 ```
 run.sh 内の OpenMP スレッド数と MPI プロセス数は、お使いの環境に合わせて編集してください。
 
+Joint_test/ のインバージョンデモは次のとおりです。どのデモも ebfem_inv_joint.exe（src/src_inv_joint）を使い、初期モデルと参照モデルには一様モデル Joint_test/structure/cond_homo.msh を、正則化には最も滑らかなモデル（`Roughness type` = 1）を、トレードオフパラメータの決め方には冷却法（`1:L,2:Cl,3:Mi,4:Gr` = 2）を使います。実行ファイルへの最初の入力（`ijoint`）で使うデータを選びます。1 は ACTIVE、2 は MT（インピーダンスとティッパーの一方または両方）、3 は ACTIVE + MT です。
+
+| フォルダ | ijoint | データ | モデルのパラメータ化（`icombine`） | 備考 |
+|---|---|---|---|---|
+| inv_act | 1 | ACTIVE の Bz 振幅・位相（送信源 S1、S2、観測点 A01〜A04） | 0：通常 | |
+| inv_act_icomb-1 | 1 | inv_act と同じ | -1：内側／外側モード | |
+| inv_mt | 2 | MT インピーダンス（MT1〜MT5） | 0：通常 | |
+| inv_mt_icomb-1 | 2 | inv_mt と同じ | -1：内側／外側モード | |
+| inv_joint | 3 | ACTIVE（inv_act と同じ）+ MT インピーダンス（inv_mt と同じ） | 1：外側のブロックを1つにまとめる | |
+| inv_joint_icomb-1 | 3 | inv_joint と同じ | -1：内側／外側モード | |
+| inv_mt_tip | 2 | MT インピーダンス + ティッパー（MT1〜MT9） | 0：通常 | |
+| inv_tip | 2 | ティッパーのみ（`imp: 0, 1:amp,pha` = -1） | 0：通常 | run_tip.sh で実行（readme.txt 参照）。以下に結果は示していません |
+| inv_tip_light | 2 | ティッパーのみ。Joint_test/mesh_light/ と structure_light/ を使用（データは fwd_3DMT_light/） | 0：通常 | 軽量版（MPI 2 プロセス）。以下に結果は示していません |
+
+インバージョンで使う MT 観測点は、インバージョンの制御ファイルで `!` の後に書く観測点番号で選びます。この番号は mt.ctl の観測点の番号です（[4.4](#sec4_4) 参照）。mt.ctl には、インバージョンで使う観測点より多くの観測点を含めておけます。active.ctl の ACTIVE の観測点も同様です。各フォルダには次のファイルがあります。
+
+| ファイル | 説明 |
+|---|---|
+| run.sh | src/src_inv_joint をビルドし、mpiexec でインバージョンを実行する（MPI プロセス数と OpenMP スレッド数は環境に合わせて編集） |
+| run_ism.sh | ISM サーバー用の run.sh（Makefile_ISM を使用） |
+| inv_act.ctl、inv_mt.ctl、joint.ctl、inv_mt_tip.ctl、inv_tip.ctl | インバージョンの制御ファイル（初期・参照モデル、正則化、データファイルと観測点番号、モデルのブロック） |
+| active.ctl | ACTIVE 順計算の制御ファイル（../fwd_active/active.ctl へのシンボリックリンク） |
+| mt.ctl | MT 順計算の制御ファイル（../fwd_3DMT/mt.ctl へのシンボリックリンク。inv_tip_light では ../fwd_3DMT_light/mt.ctl） |
+| result_inv/ | 出力フォルダ（RMS の履歴、モデル modelNN.dat と model_connect.dat、各反復の応答、ログ inv.log） |
+| plot_rms.sh | RMS の履歴を描く |
+| plot_fit_active.sh、plot_fit_MT.sh | 観測値と計算値を比べる |
+| plot_rho_pha.sh | result_fwd/A01_MT.dat の MT 見かけ比抵抗と位相を描く（MT 順計算結果用の古いスクリプトで、インバージョンの出力用ではない） |
+| view_slice.sh | 得られた比抵抗モデルの断面を描く（slice.exe と GMT） |
+| clean.sh | 出力を削除する |
+
 以下では、得られたインバージョン結果のみを示します。
 
 #### Joint_test/inv_act の結果

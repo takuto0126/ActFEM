@@ -16,10 +16,10 @@ type param_forward
  character(50) :: header2d
  character(50) :: header3d
  ! frequency info
- integer(4)    :: nfreq ! # of frequency for this
+ integer(4)    :: nfreq = 0 ! # of frequency for this (default 0 2026.11.25 CC)
  real(8),allocatable,dimension(:)   :: freq ! frequencies
  ! observatory info
- integer(4)    :: nobs  ! # of observatories
+ integer(4)    :: nobs  = 0 ! # of observatories (default 0 2026.11.25 CC)
  integer(4)    :: iflag_map  !type of map projection 1:ECP, 2: [UTM]
  character(3)  :: UTM ! UTM zone
  integer(4)    :: lonlatflag ! 1 only lon lat  2 xy are already given
@@ -37,7 +37,7 @@ type param_forward
  real(8)       :: dlen_source ! [km]  2017.10.12
  real(8)       :: sigma_src ! [km]
  real(8)       :: A_src     ! [km]
- integer(4)    :: nobsr
+ integer(4)    :: nobsr = 0 ! (default 0 2026.11.25 CC)
  real(8),      allocatable,dimension(:,:) :: xyz_r
  real(8),      allocatable,dimension(:)   :: A_r,sigma_r
  real(8)                                  :: xbound(4),ybound(4),zbound(4)
@@ -64,7 +64,7 @@ end type
 type param_source
  integer(4) :: lonlatflag !# 1:lonlat [deg], 2: xy [km]
  integer(4) :: iflag_map  !0:ECP, 1:UTM   2025.06.10
- integer(4) :: nsource    ! # of sources  added on 2017.07.11
+ integer(4) :: nsource = 0 ! # of sources  added on 2017.07.11 (default 0 2026.11.25 CC)
  character(50),allocatable,dimension(:) :: sourcename ! 2017.07.11
  type(dipoles),allocatable,dimension(:) :: dipoles !(nsources) 2026.07.08
  real(8)                            :: I ! source current through wire [A]

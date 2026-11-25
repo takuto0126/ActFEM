@@ -293,7 +293,8 @@ subroutine sharefparam(g_param,ip)
  call MPI_BCAST(g_param%nfreq,          1, MPI_INTEGER4,0,MPI_COMM_WORLD,errno)
  nfreq = g_param%nfreq
  if ( ip .ne. 0 ) allocate(g_param%freq(nfreq))
- call MPI_BCAST(g_param%freq(1),     nfreq, MPI_REAL8,0,MPI_COMM_WORLD,errno)
+ !call MPI_BCAST(g_param%freq(1),     nfreq, MPI_REAL8,0,MPI_COMM_WORLD,errno) ! commented out 2026.11.25 CC
+ if ( nfreq .gt. 0 ) call MPI_BCAST(g_param%freq, nfreq, MPI_REAL8,0,MPI_COMM_WORLD,errno) ! skip when ACTIVE is not used 2026.11.25 CC
 
  call MPI_BCAST(g_param%nobs,          1, MPI_INTEGER4,0,MPI_COMM_WORLD,errno)
  call MPI_BCAST(g_param%lonlatflag,    1, MPI_INTEGER4,0,MPI_COMM_WORLD,errno)

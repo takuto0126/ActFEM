@@ -1,10 +1,23 @@
 # Coded on Oct. 12, 2021 Takuto Minami
 
-FC=ifx# for EIC
+#FC=ifx# for EIC  # commented out 2026.11.25 CC
+# use ifx if ifx is available, otherwise ifort (ifort) 2026.11.25 CC
+ifneq ($(shell command -v ifx 2>/dev/null),)
+FC = ifx
+else ifneq ($(shell command -v ifort 2>/dev/null),)
+FC = ifort
+else
+$(error Neither ifx nor ifort is found. Run "source /opt/intel/oneapi/setvars.sh" first)
+endif
 #OPT=-i-dynamic
-VPATH = ../common ../solver  ../src_2D/ ../src_inv/
-OPT0= -O3 -xAVX -mkl=parallel
+VPATH = ../common ../solver  ../src_2D/  # ../src_inv is removed 2026.11.25 CC
+#OPT0= -O3 -xAVX -mkl=parallel  # commented out 2026.11.25 CC
+# -xAVX is used only with ifort / mpiifort 2026.11.25 CC
+ifneq ($(findstring ifort,$(FC)),)
+OPT0= -O -xAVX -check bounds -traceback -g -qmkl=parallel
+else
 OPT0= -O -check bounds -traceback -g -qmkl=parallel
+endif
 
 #OPT0= -O3 -xCORE-AVX2 -mkl=parallel -lmpi
 
@@ -24,7 +37,7 @@ $(target1) : $(objs1)
 	$(FC) -c $< -o $@
 
 clean:
-	rm -f *.o    ../solver/*.o    ../src_2D/*.o   ../src_inv/*.o
-	rm -f *.mod  ../solver/*.mod  ../src_2D/*.mod ../src_inv/*.mod
-	rm -f *.exe  ../solver/*.exe  ../src_2D/*.exe ../src_inv/*.exe
+	rm -f *.o    ../solver/*.o    ../src_2D/*.o  # ../src_inv is removed 2026.11.25 CC
+	rm -f *.mod  ../solver/*.mod  ../src_2D/*.mod  # ../src_inv is removed 2026.11.25 CC
+	rm -f *.exe  ../solver/*.exe  ../src_2D/*.exe  # ../src_inv is removed 2026.11.25 CC
 

@@ -1,8 +1,21 @@
-FC=ifort    # for EIC
+#FC=ifort    # for EIC  # commented out 2026.11.25 CC
+# use ifx if ifx is available, otherwise ifort (ifort) 2026.11.25 CC
+ifneq ($(shell command -v ifx 2>/dev/null),)
+FC = ifx
+else ifneq ($(shell command -v ifort 2>/dev/null),)
+FC = ifort
+else
+$(error Neither ifx nor ifort is found. Run "source /opt/intel/oneapi/setvars.sh" first)
+endif
 #OPT=-i-dynamic
-VPATH = ../common ../solver  ../src_inv/ ../common_mpi
+VPATH = ../common ../solver ../common_mpi  # ../src_inv is removed 2026.11.25 CC
 #OPT0= -O3 -xAVX -mkl=parallel
+# -xAVX is used only with ifort / mpiifort 2026.11.25 CC
+ifneq ($(findstring ifort,$(FC)),)
+OPT0= -O3 -xAVX -check bounds -traceback -g -qmkl=parallel -qopenmp
+else
 OPT0= -O3 -check bounds -traceback -g -qmkl=parallel -qopenmp
+endif
 
 #OPT0= -O3 -xCORE-AVX2 -mkl=parallel -lmpi
 

@@ -621,20 +621,32 @@ type(real_crs_matrix),intent(out) :: crsout
 character(1),optional,intent(in)  :: T
 integer,     optional,intent(in)  :: iflag_mkl ! 0:normal, 1:mkl library 2022.01.27
 type(real_ccs_matrix) :: ccsmat1,ccsmat2
+type(real_crs_matrix) :: crsmat1t ! transpose of crsmat1 for T without mkl 2026.11.25 CC
 !===== below are for mkl_dcsrmulcsr ! 2017.09.06
 real(8),   allocatable,dimension(:) :: a,b,c
 integer(4),allocatable,dimension(:) :: ia,ib,ic ! 2017.09.06
 integer(4),allocatable,dimension(:) :: ja,jb,jc ! 2017.09.06
-integer(4)   :: iflag = 0 ! 0 for normal, 1 for when mkl library available
+integer(4)   :: iflag     ! 0 for normal, 1 for when mkl library available (no initialization to avoid implicit save 2026.11.25 CC)
 character(1) :: trans
 integer(4)   :: sort,request,m1,n1,k1,m2,n2,k2,m3,n3,nzmax,info
 !================================================
-if (present(iflag_mkl) .and. iflag_mkl .eq. 1 ) iflag = 1 ! 2022.01.27
+!if (present(iflag_mkl) .and. iflag_mkl .eq. 1 ) iflag = 1 ! 2022.01.27, commented out 2026.11.25 CC
+iflag = 0                                ! reset every call 2026.11.25 CC
+if ( present(iflag_mkl) ) then           ! 2026.11.25 CC (Fortran .and. is not short-circuit)
+ if ( iflag_mkl .eq. 1 ) iflag = 1      ! 2026.11.25 CC
+end if                                   ! 2026.11.25 CC
 
 if ( iflag .eq. 0 ) then    ! 2017.09.06
  call conv_crs2ccs(crsmat2,ccsmat1)
 ! write(*,*) "conv_crs2ccs end!"
- call mulreal_crs_ccs_ccs(crsmat1,ccsmat1,ccsmat2)
+ trans="n"                                       ! 2026.11.25 CC
+ if ( present(T) ) trans = T                     ! 2026.11.25 CC
+ if ( trans .eq. "T" .or. trans .eq. "t" ) then  ! 2026.11.25 CC crsout = crsmat1^T * crsmat2
+  call trans_crs2crs(crsmat1,crsmat1t)            ! 2026.11.25 CC
+  call mulreal_crs_ccs_ccs(crsmat1t,ccsmat1,ccsmat2) ! 2026.11.25 CC
+ else                                            ! 2026.11.25 CC
+  call mulreal_crs_ccs_ccs(crsmat1,ccsmat1,ccsmat2)
+ end if                                          ! 2026.11.25 CC
 ! write(*,*) "mulreal_crs_ccs_ccs end!"
  call conv_ccs2crs(ccsmat2,crsout)
 ! write(*,*) "conv_ccs2crs end!"

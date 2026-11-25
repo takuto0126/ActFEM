@@ -1,12 +1,25 @@
 # Coded on 2017.05.30 by T. MINAMI
 # compile in EIC with MPI and PARDISO
 
-FC=mpiifort
+#FC=mpiifort  # commented out 2026.11.25 CC
+# use mpiifx if ifx is available, otherwise mpiifort (ifort) 2026.11.25 CC
+ifneq ($(shell command -v ifx 2>/dev/null),)
+FC = mpiifx
+else ifneq ($(shell command -v ifort 2>/dev/null),)
+FC = mpiifort
+else
+$(error Neither ifx nor ifort is found. Run "source /opt/intel/oneapi/setvars.sh" first)
+endif
 MPIFC=mpif90
 #OPT=-i-dynamic
 VPATH = ../common ../solver ../common_mpi
 #OPT0= -O3 -xAVX -mkl=parallel -lmpi
-OPT0= -O -fpe0 -check bounds -traceback -g  -mkl=parallel -lmpi
+# -xAVX is used only with ifort / mpiifort 2026.11.25 CC
+ifneq ($(findstring ifort,$(FC)),)
+OPT0= -O -xAVX -fpe0 -check bounds -traceback -g -qmkl=parallel -lmpi
+else
+OPT0= -O -fpe0 -check bounds -traceback -g -qmkl=parallel -lmpi
+endif
 
 #2016.03.03 solver with many modules
 

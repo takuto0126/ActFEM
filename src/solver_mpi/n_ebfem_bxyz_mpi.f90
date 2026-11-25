@@ -626,7 +626,8 @@ real(8),   allocatable,dimension(:)   :: znew
 real(8)    :: a3(3)
 integer(4) :: iele,n1,n2,n3,j,k,ntri
 integer(4) :: nsr                                ! 2017.07.11
-real(8),allocatable,dimension(:,:)    :: xs1,xs2 ! 2017.07.18
+integer(4) :: i_d                                ! dipole id in each source 2026.11.25 CC
+real(8)    :: z0                                 ! z relative to the ground surface [km] 2026.11.25 CC
 real(8)    :: xyzminmax(6)                       ! 2017.07.18
 
 !#[0]## cal xyzminmax of h_mesh
@@ -634,7 +635,6 @@ real(8)    :: xyzminmax(6)                       ! 2017.07.18
 
 !#[1]## set
 nsr       = s_param%nsource     ! 2017.07.11
-allocate(xs1(3,nsr),xs2(3,nsr)) ! 2017.07.11
 allocate(xyz(3,h_mesh%node),n3k(h_mesh%ntri,3))
 allocate(xyzobs(3,g_param%nobs))
 allocate(znew(g_param%nobs))
@@ -643,8 +643,6 @@ xyz       = h_mesh%xyz    ! triangle mesh
 n3k       = h_mesh%n3
 ntri      = h_mesh%ntri
 xyzobs    = g_param%xyzobs
-xs1       = s_param%xs1
-xs2       = s_param%xs2
 xyzminmax = g_param%xyzminmax
 
 
@@ -665,30 +663,31 @@ do j=1,nobs
     write(*,*) j,"/nobs",xyzobs(3,j),"->",znew(j),"[km]"
 end do
 
-!#[3-2]## source z
+!#[3-2]## source z (all dipoles of each source) 2026.11.25 CC
  do k=1,nsr                                                               ! 2017.07.11
+  do i_d=1,s_param%dipoles(k)%ndipole                                     ! 2026.11.25 CC
 !#  start point
-    call findtriwithgrid(h_mesh,glist,xs1(1:2,k),iele,a3)                 ! 2017.07.11
+    call findtriwithgrid(h_mesh,glist,s_param%dipoles(k)%xs1(1:2,i_d),iele,a3) ! 2026.11.25 CC
     n1 = n3k(iele,1); n2 = n3k(iele,2) ; n3 = n3k(iele,3)
-    xs1(3,k) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + xs1(3,k) ! 2017.07.11
-    !
-    write(*,*) "k",k,"xs1(1:2,k)=",xs1(1:2,k)                             ! 2017.07.11
-    write(*,*) "z",s_param%xs1(3,k),"->",xs1(3,k),"[km]"                  ! 2017.07.11
-
+    z0 = s_param%dipoles(k)%xs1(3,i_d)                                    ! 2026.11.25 CC
+    s_param%dipoles(k)%xs1(3,i_d) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + z0 ! 2026.11.25 CC
+    write(*,*) "source",k,"dipole",i_d,"start xy=",s_param%dipoles(k)%xs1(1:2,i_d)  ! 2026.11.25 CC
+    write(*,*) "z",z0,"->",s_param%dipoles(k)%xs1(3,i_d),"[km]"                   ! 2026.11.25 CC
 !#  end point
-    call findtriwithgrid(h_mesh,glist,xs2(1:2,k),iele,a3)                 ! 2017.07.11
+    call findtriwithgrid(h_mesh,glist,s_param%dipoles(k)%xs2(1:2,i_d),iele,a3) ! 2026.11.25 CC
     n1 = n3k(iele,1); n2 = n3k(iele,2) ; n3 = n3k(iele,3)
-    xs2(3,k) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + xs2(3,k) ! 2017.07.11
-    !
-    write(*,*) "k",k,"xs2(1:2,k)=",xs2(1:2,k)                             ! 2017.07.11
-    write(*,*) "z",s_param%xs2(3,k),"->",xs2(3,k),"[km]"                  ! 2017.07.11
+    z0 = s_param%dipoles(k)%xs2(3,i_d)                                    ! 2026.11.25 CC
+    s_param%dipoles(k)%xs2(3,i_d) = a3(1)*xyz(3,n1)+a3(2)*xyz(3,n2)+a3(3)*xyz(3,n3) + z0 ! 2026.11.25 CC
+    write(*,*) "source",k,"dipole",i_d,"end   xy=",s_param%dipoles(k)%xs2(1:2,i_d)  ! 2026.11.25 CC
+    write(*,*) "z",z0,"->",s_param%dipoles(k)%xs2(3,i_d),"[km]"                   ! 2026.11.25 CC
+  end do                                                                  ! 2026.11.25 CC
  end do                                                                   ! 2017.07.11
 
 
 !#[4]## set znew to xyz_r
     g_param%xyzobs(3,1:nobs) = znew(1:nobs)
-    s_param%xs1(3,:) = xs1(3,:)   ! 2017.07.11
-    s_param%xs2(3,:) = xs2(3,:)   ! 2017.07.11
+!    s_param%xs1(3,:) = xs1(3,:)   ! 2017.07.11, commented out 2026.11.25 CC (updated in [3-2])
+!    s_param%xs2(3,:) = xs2(3,:)   ! 2017.07.11, commented out 2026.11.25 CC (updated in [3-2])
 
 
 write(*,*) "### PREPZSRCOBS END ###"

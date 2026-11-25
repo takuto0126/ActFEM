@@ -242,7 +242,8 @@ subroutine readparaJOINTINV(g_param_joint,g_modelpara,g_param,sparam,g_param_mt,
    character(50)                       :: a              ! 2017.06.06
    integer(4)                          :: input=10, nobs_s,i,j,nsr_inv ! 2017.08.31
    integer(4)                          :: icomp          ! 2018.10.04
-   integer(4)                          :: nobs_mt
+   integer(4)                          :: nobs_mt        ! # of MT sites for inversion (from inversion ctl) 2026.11.25 CC
+   integer(4)                          :: nobs_mt_fwd    ! # of MT sites in forward ctl (mt.ctl) 2026.11.25 CC
    integer(4)                          :: ikeep          ! 2021.10.12
    integer(4)                          :: ijoint  ! 1:ACTIVE, 2:MT, 3:ACTIVE + MT 2022.10.14
    integer(4)                          :: mt_imp_ap_flag ! -1: no imp, 0:imp, 1:amp, phase 2026.03.12 2026.03.12
@@ -529,10 +530,16 @@ subroutine readparaJOINTINV(g_param_joint,g_modelpara,g_param,sparam,g_param_mt,
    !##[nobs_mt]# independent of any MT data usage 2026.03.12
    write(*,*) "" ! 2021.12.27
    write(*,*) "< input # of mt observatories for inv >" ! 2021.12.27
-   read(input,12) g_param_joint%nobs_mt ! error floor
-   write(*,'(a,i5)') " nobs_mt      =",g_param_joint%nobs_mt ! 2021.12.22
-   nobs_mt = g_param_joint%nobs_mt
-   g_param_joint%obsmtinfo%nobs_mt = nobs_mt    ! 2021.12.27
+   read(input,12) nobs_mt                       ! # of MT sites for inversion 2026.11.25 CC
+   nobs_mt_fwd = g_param_mt%nobs                ! # of MT sites in mt.ctl 2026.11.25 CC
+   write(*,'(a,i5)') " nobs_mt (inversion) =",nobs_mt     ! 2026.11.25 CC
+   write(*,'(a,i5)') " nobs_mt (mt.ctl)    =",nobs_mt_fwd ! 2026.11.25 CC
+   if ( nobs_mt .gt. nobs_mt_fwd ) then         ! 2026.11.25 CC
+     write(*,*) "GEGEGE # of MT sites for inversion",nobs_mt," > # of MT sites in mt.ctl",nobs_mt_fwd ! 2026.11.25 CC
+     stop                                       ! 2026.11.25 CC
+   end if                                       ! 2026.11.25 CC
+   g_param_joint%nobs_mt           = nobs_mt_fwd ! data arrays are allocated for sites in mt.ctl 2026.11.25 CC
+   g_param_joint%obsmtinfo%nobs_mt = nobs_mt     ! # of MT sites for inversion 2021.12.27
    allocate(g_param_joint%obsmtinfo%impfile(   nobs_mt)) ! 2021.12.27
    allocate(g_param_joint%obsmtinfo%imperrfile(nobs_mt)) ! 2021.12.27
    allocate(g_param_joint%obsmtinfo%impindex(  nobs_mt)) ! 2021.12.27
@@ -550,6 +557,15 @@ subroutine readparaJOINTINV(g_param_joint,g_modelpara,g_param,sparam,g_param_mt,
        &              g_param_joint%obsmtinfo%imperrfile(i) 
        write(*,*) g_param_joint%obsmtinfo%imperrfile(i) 
      end do
+     !# index after "!" is the site index in mt.ctl 2026.11.25 CC
+     call checkobsindex("MT impedance",nobs_mt,g_param_joint%obsmtinfo%impindex,nobs_mt_fwd,g_param_mt%obsname) ! 2026.11.25 CC
+     do i=1,nobs_mt                                                                ! 2026.11.25 CC
+       if ( g_param_joint%obsmtinfo%errindex(i) .ne. g_param_joint%obsmtinfo%impindex(i) ) then ! 2026.11.25 CC
+         write(*,*) "GEGEGE index of impedance error file",g_param_joint%obsmtinfo%errindex(i),&  ! 2026.11.25 CC
+         &          " should be the same as that of impedance file",g_param_joint%obsmtinfo%impindex(i) ! 2026.11.25 CC
+         stop                                                                      ! 2026.11.25 CC
+       end if                                                                      ! 2026.11.25 CC
+     end do                                                                        ! 2026.11.25 CC
    end if ! 2026.03.12 
 
    !#[4]## read mt impedance data
@@ -616,6 +632,7 @@ subroutine readdata_tipper(g_param_joint,g_param_mt,g_data_mt,input) ! see below
  character(4)           :: realimag(2)
  real(8)                :: a(4),e(4),txamp,tyamp,freq
  integer(4)             :: nfreq_mt,nobs_mt,i,j,iavail(2),ii,l,i1,i2,k,ndat_tipper
+ integer(4)             :: nobs_inv ! # of MT sites for inversion 2026.11.25 CC
  integer(4),allocatable :: idata_tipper(:,:,:,:)
  real(8),   allocatable :: dvec_tipper(:),err_tipper(:)
  logical,   allocatable :: data_avail_tipper(:,:,:,:)
@@ -640,20 +657,25 @@ subroutine readdata_tipper(g_param_joint,g_param_mt,g_data_mt,input) ! see below
   allocate(      data(2,2,nobs_mt,nfreq_mt))
   allocate(       err(2,2,nobs_mt,nfreq_mt))
   data_avail_tipper=.false.
+  data=0.d0 ; err=0.d0 ! 2026.11.25 CC
 
  !#[2]## read tipper file names 
-   allocate(g_param_joint%tipfile(   nobs_mt)) ! 2023.10.04
-   allocate(g_param_joint%tipindex(  nobs_mt)) ! 2023.10.04   
-   do i=1,nobs_mt ! 2023.10.04
+   nobs_inv = g_param_joint%obsmtinfo%nobs_mt  ! # of MT sites for inversion 2026.11.25 CC
+   allocate(g_param_joint%tipfile(   nobs_inv)) ! 2023.10.04 nobs_mt -> nobs_inv 2026.11.25 CC
+   allocate(g_param_joint%tipindex(  nobs_inv)) ! 2023.10.04 nobs_mt -> nobs_inv 2026.11.25 CC
+   do i=1,nobs_inv ! 2023.10.04 nobs_mt -> nobs_inv 2026.11.25 CC
      read(input,'(20x,i5,a)') g_param_joint%tipindex(i),& ! 2023.10.04
      &                        g_param_joint%tipfile(i) ! 2023.10.04
      write(*,*) g_param_joint%tipfile(i)     ! 2023.10.04
    end do
+   !# index after "!" is the site index in mt.ctl 2026.11.25 CC
+   call checkobsindex("MT tipper",nobs_inv,g_param_joint%tipindex,nobs_mt,g_param_mt%obsname) ! 2026.11.25 CC
 
 
  !#[3]## read and gen data vector for tipper
-   do i=1,nobs_mt
-     open(1,file=trim(g_param_joint%tipfile(   i)),status='old')
+   do ii=1,nobs_inv                                  ! 2026.11.25 CC
+     i = g_param_joint%tipindex(ii)                  ! site index in mt.ctl 2026.11.25 CC
+     open(1,file=trim(g_param_joint%tipfile(  ii)),status='old') ! i -> ii 2026.11.25 CC
      do j=1,nfreq_mt
        read(1,*) freq,iavail(1:2),a(1:4),e(1:4)
        if ( iavail(1) ) data_avail_tipper(1:2,1,i,j)=.true. ! zxx available
@@ -707,6 +729,7 @@ subroutine readdata_tipper(g_param_joint,g_param_mt,g_data_mt,input) ! see below
  !#[5]## out tipper obsfiles with adopted errors 2023.10.04
    head       = g_param_joint%outputfolder     ! 2017.07.25
    do j=1,nobs_mt
+     if ( .not. any(data_avail_tipper(:,:,j,:)) ) cycle ! output only sites used in inversion 2026.11.25 CC
      site = g_param_mt%obsname(j)
      filename1 = trim(head)//trim(site)//"_tipIN.dat"     ! 2022.01.02
      open(1,file=filename1,status='replace')
@@ -759,6 +782,7 @@ subroutine readdata_mt(USEIMP,g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
  type(param_forward_mt),intent(in)     :: g_param_mt    ! 2022.12.12
  integer(4) :: nfreq_mt,nobs_mt,i,j,k,l
  integer(4) :: i1,i2   ! 2022.12.12
+ integer(4) :: nobs_inv,iinv ! # of MT sites for inversion, its loop index 2026.11.25 CC
  integer(4) :: iavail(4),ii,ndat_mt
  real(8)    :: freq,a(8),e(8),ra(4),rp(4),ea(4),ep(4),coef,omega! 2022.12.12
  real(8)    :: errorfloor_mt,assq     ! 2022.12.12
@@ -784,15 +808,18 @@ subroutine readdata_mt(USEIMP,g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
    allocate(      data(2,4,nobs_mt,nfreq_mt))
    allocate(       err(2,4,nobs_mt,nfreq_mt))
    data_avail=.false.
+   data=0.d0 ; err=0.d0 ! 2026.11.25 CC
+   nobs_inv = g_param_joint%obsmtinfo%nobs_mt ! # of MT sites for inversion 2026.11.25 CC
    if (.not. USEIMP ) goto 200 ! 2026.03.12
 
   !#[2]## read and gen data vector
   !#[2-1]## read mt impedance data 2022.12.12
    write(*,*) "nobs_mt",nobs_mt," nfreq_mt",nfreq_mt ! 2025.09.18
-   do i=1,nobs_mt ! nobs_mt should be set as including both only impedance and tipper sites
+   do iinv=1,nobs_inv ! sites for inversion 2026.11.25 CC
+     i = g_param_joint%obsmtinfo%impindex(iinv) ! site index in mt.ctl 2026.11.25 CC
 
-     open(1,file=trim(g_param_joint%obsmtinfo%impfile(   i)),status='old')
-     open(2,file=trim(g_param_joint%obsmtinfo%imperrfile(i)),status='old')
+     open(1,file=trim(g_param_joint%obsmtinfo%impfile(   iinv)),status='old') ! i -> iinv 2026.11.25 CC
+     open(2,file=trim(g_param_joint%obsmtinfo%imperrfile(iinv)),status='old') ! i -> iinv 2026.11.25 CC
      write(*,*)"mt obs",i, "nfreq_mt",nfreq_mt ! 2025.09.18
      do j=1,nfreq_mt
        read(1,*) freq,a(1:8)
@@ -867,6 +894,7 @@ subroutine readdata_mt(USEIMP,g_param_joint,g_param_mt,g_data_mt) ! 2022.12.12
  !#[2-3]## out obsfiles with adopted errors 2022.12.12
    head       = g_param_joint%outputfolder     ! 2017.07.25
    do j=1,nobs_mt
+     if ( .not. any(data_avail(:,:,j,:)) ) cycle ! output only sites used in inversion 2026.11.25 CC
      site = g_param_mt%obsname(j)
      filename1 = trim(head)//trim(site)//"_MTIN.dat"     ! 2022.01.02
      filename2 = trim(head)//trim(site)//"_MT_impIN.dat" ! 2022.01.02
@@ -975,6 +1003,18 @@ subroutine readdata_ap(g_param,sparam,g_param_joint,g_data_ap)
  ndatmax = 2 * 5 * nsr_inv * nobs * nfreq      ! 2018.10.04
  allocate( dat(ndatmax),err(ndatmax)       )   ! 2017.08.31
  data_avail(:,:,:,:,:)=.false.                 ! 2017.08.31
+ iflag = 0 ; dd = 0.d0 ; ee = 0.d0             ! sites not used in inversion have no data 2026.11.25 CC
+
+ !#[2-0]## check site index after "!" (site index in forward ctl) 2026.11.25 CC
+ do k=1,nsr_inv                                                          ! 2026.11.25 CC
+   do icomp=1,5                                                          ! 2026.11.25 CC
+     if ( iflag_comp(icomp) .eq. 0 ) cycle                               ! 2026.11.25 CC
+     do l=1,2                                                            ! 2026.11.25 CC
+       call checkobsindex("ACTIVE "//trim(sparam%sourcename(srcindex(k))),g_param_joint%obsinfo(k)%nobs_s,& ! 2026.11.25 CC
+       &    g_param_joint%obsinfo(k)%obsindex(l,icomp,:),nobs,g_param%obsname)  ! 2026.11.25 CC
+     end do                                                              ! 2026.11.25 CC
+   end do                                                                ! 2026.11.25 CC
+ end do                                                                  ! 2026.11.25 CC
 
  !#[2-1]## just read ! 2017.08.31
  do k=1,nsr_inv
@@ -1008,12 +1048,11 @@ subroutine readdata_ap(g_param,sparam,g_param_joint,g_data_ap)
  idata  = 0 ! 2018.06.26
  do j=1,nfreq ! 2017.08.31
    do k=1,nsr_inv
-     nobs_s = g_param_joint%obsinfo(k)%nobs_s
-     do i=1,nobs_s
+     ! loop over sites in forward ctl, the same order as GENDVEC_AP and Jacobian 2026.11.25 CC
+     do iobs=1,nobs                            ! 2026.11.25 CC
        do icomp = 1,5                          ! 2018.10.04
          if ( iflag_comp(icomp) .eq. 0 ) cycle  ! 2018.10.04
          do l=1,2 ! 1 for amp, 2 for phase      ! 2017.08.31
-           iobs = g_param_joint%obsinfo(k)%obsindex(l,icomp,i) ! 2018.10.04
            if ( iflag(l,icomp,j,iobs,k) .eq. 1 ) then   ! 2018.10.04
              data_avail(l,icomp,j,iobs,k) = .true.       ! 2018.10.04
              icount = icount + 1                   ! 2017.07.13
@@ -1056,15 +1095,13 @@ subroutine readdata_ap(g_param,sparam,g_param_joint,g_data_ap)
  icount = 0
  do j=1,nfreq ! 2018.10.08
    do k=1,nsr_inv
-     nobs_s = g_param_joint%obsinfo(k)%nobs_s
-     do i=1,nobs_s
+     do iobs=1,nobs                            ! same order as data vector 2026.11.25 CC
        do icomp = 1,5                          ! 2018.10.04
          if ( iflag_comp(icomp) .eq. 0 ) cycle  ! 2018.10.04
          do l=1,2 ! 1 for amp, 2 for phase ! 2017.08.31
-           iobs = g_param_joint%obsinfo(k)%obsindex(l,icomp,i) ! 2018.10.04
            if (data_avail(l,icomp,j,iobs,k)) then       ! 2018.10.04
              icount = icount + 1                   ! 2017.07.13 do i=1,ndat
-             write(*,10) icount,"obs#",i,trim(g_param%obsname(i)),comp(icomp),ap(l),"dat,err=",dat(icount),err(icount),"src", k,"freq",j
+             write(*,10) icount,"obs#",iobs,trim(g_param%obsname(iobs)),comp(icomp),ap(l),"dat,err=",dat(icount),err(icount),"src", k,"freq",j ! i -> iobs 2026.11.25 CC
            end if
          end do
        end do
@@ -1225,5 +1262,34 @@ subroutine initializedatavectipper(g_param_joint,h_data_mt)
   
   return
   end subroutine
+
+!#################################################### checkobsindex 2026.11.25 CC
+!# check the site indices given after "!" in inversion ctl:
+!# 1 <= index <= # of sites in forward ctl, no duplication, and show the correspondence
+subroutine checkobsindex(label,n,index,nfwd,obsname)
+ implicit none
+ character(*),  intent(in) :: label
+ integer(4),    intent(in) :: n, nfwd
+ integer(4),    intent(in) :: index(n)
+ character(50), intent(in) :: obsname(nfwd)
+ integer(4) :: i,j
+
+ write(*,'(a,a,a)') " < site correspondence for ",trim(label)," : inversion -> forward ctl >"
+ do i=1,n
+   if ( index(i) .lt. 1 .or. index(i) .gt. nfwd ) then
+     write(*,*) "GEGEGE ",trim(label),": site index",index(i)," should be in 1 -",nfwd
+     stop
+   end if
+   do j=1,i-1
+     if ( index(j) .eq. index(i) ) then
+       write(*,*) "GEGEGE ",trim(label),": site index",index(i)," is duplicated"
+       stop
+     end if
+   end do
+   write(*,'(i5,a,i5,2x,a)') i," ->",index(i),trim(obsname(index(i)))
+ end do
+
+ return
+end subroutine checkobsindex
 
 end module param_jointinv ! 2021.12.25

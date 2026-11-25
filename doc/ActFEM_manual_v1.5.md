@@ -326,6 +326,36 @@ $ ./run.sh
 ```
 In run.sh, you should edit the number of OpenMP threads and MPI processes corresponding to your environment.
 
+The inversion demos in Joint_test/ are as follows. All of them use ebfem_inv_joint.exe (src/src_inv_joint), the homogeneous model Joint_test/structure/cond_homo.msh as the initial and reference models, the smoothest-model regularization (`Roughness type` = 1) and the cooling strategy for the trade-off parameter (`1:L,2:Cl,3:Mi,4:Gr` = 2). The first input of the executable (`ijoint`) selects the data: 1 for ACTIVE, 2 for MT (impedance and/or tipper) and 3 for ACTIVE + MT.
+
+| Folder | ijoint | Data | Model parameterization (`icombine`) | Note |
+|---|---|---|---|---|
+| inv_act | 1 | ACTIVE Bz amplitude and phase (sources S1, S2; sites A01 - A04) | 0: normal | |
+| inv_act_icomb-1 | 1 | Same as inv_act | -1: inner / outer mode | |
+| inv_mt | 2 | MT impedance (MT1 - MT5) | 0: normal | |
+| inv_mt_icomb-1 | 2 | Same as inv_mt | -1: inner / outer mode | |
+| inv_joint | 3 | ACTIVE (as inv_act) + MT impedance (as inv_mt) | 1: outside blocks are integrated into one | |
+| inv_joint_icomb-1 | 3 | Same as inv_joint | -1: inner / outer mode | |
+| inv_mt_tip | 2 | MT impedance + tipper (MT1 - MT9) | 0: normal | |
+| inv_tip | 2 | Tipper only (`imp: 0, 1:amp,pha` = -1) | 0: normal | Run by run_tip.sh (see readme.txt); results are not shown below |
+| inv_tip_light | 2 | Tipper only, with Joint_test/mesh_light/ and structure_light/ (data in fwd_3DMT_light/) | 0: normal | Light version (2 MPI processes); results are not shown below |
+
+The MT sites used in the inversion are selected in the inversion control file by the site index after `!`, which refers to the sites in mt.ctl (see [4.4](#sec4_4)); mt.ctl may contain more sites than those used in the inversion. The same applies to the ACTIVE sites in active.ctl. Each folder contains the following files.
+
+| File | Description |
+|---|---|
+| run.sh | Builds src/src_inv_joint and runs the inversion with mpiexec (edit the numbers of MPI processes and OpenMP threads for your environment) |
+| run_ism.sh | Same as run.sh for the ISM server (uses Makefile_ISM) |
+| inv_act.ctl, inv_mt.ctl, joint.ctl, inv_mt_tip.ctl, inv_tip.ctl | Inversion control file (initial / reference models, regularization, data files and their site indices, model blocks) |
+| active.ctl | ACTIVE forward control file (symbolic link to ../fwd_active/active.ctl) |
+| mt.ctl | MT forward control file (symbolic link to ../fwd_3DMT/mt.ctl, or ../fwd_3DMT_light/mt.ctl for inv_tip_light) |
+| result_inv/ | Output folder (RMS history, models modelNN.dat and model_connect.dat, responses at each iteration, log inv.log) |
+| plot_rms.sh | Plots the RMS history |
+| plot_fit_active.sh, plot_fit_MT.sh | Compare the observed and calculated responses |
+| plot_rho_pha.sh | Plots MT apparent resistivity and phase of result_fwd/A01_MT.dat (an old script for MT forward results, not for the inversion outputs) |
+| view_slice.sh | Draws slices of the obtained resistivity model (slice.exe and GMT) |
+| clean.sh | Removes the outputs |
+
 In the following, only the results are shown for obtained inversions results:
 
 #### Results of Joint_test/inv_act
@@ -382,13 +412,21 @@ mt impedanceのerrorfloorは0.1、tipperのerrorfloorは0.1に設定し、αはp
 
 ## 5 Source folder tree <a id="Source_folder_tree"></a>
 
-| Folder               | Description                      | Test folder         |
-|----------------------|----------------------------------|---------------------|
-| src/solver/          | Serial ACTIVE forward solver     | Fwd_test/active     |
-| src/solver_mpi/      | MPI ACTIVE forward solver        | Fwd_test/active_mpi |
-| src/src_3DMT/        | Sequential 3-D MT solver         |                     |
-| src/src_3DMT_mpi/    | MPI 3-D MT solver                |                     |
-| src/src_inv_joint/   | ACTIVE/MT/Joint inversion code   |                     |
+| Folder | Description | Test folders |
+|---|---|---|
+| src/common/ | Common modules (parameters, mesh, matrix, model parameterization, etc.) used by all programs | |
+| src/common_mpi/ | Modules for MPI communication | |
+| src/solver/ | Serial (OpenMP) ACTIVE forward solver (ebfem_bxyz.exe) | Fwd_test/active, Fwd_test/active_loop, Joint_test/fwd_active |
+| src/src_2D/ | 2-D TM mode solver (used as boundary conditions for MT) | |
+| src/src_3DMT/ | Serial (OpenMP) 3-D MT forward solver (n_ebfem_3DMT.exe) | Fwd_test/MTfwd_test, Joint_test/fwd_3DMT |
+| src/src_3DMT_mpi/ | MPI 3-D MT forward solver (n_ebfem_3DMT.exe) | Fwd_test/MTfwd_test_mpi, Joint_test/fwd_3DMT |
+| src/src_inv_joint/ | ACTIVE, MT, tipper and joint inversion code (ebfem_inv_joint.exe) | Joint_test/inv_* |
+| src/src_mesh/ | Mesh generation (meshgen1.exe, meshgen2.exe, mkline.exe, mkface.exe) | Fwd_test/mesh_flat, Joint_test/mesh_joint, Joint_test/mesh_light |
+| src/src_post/ | Post processing (change_model2cond.exe, slice.exe, etc.) | Joint_test/structure, Joint_test/inv_*/view_slice.sh |
+| src/ana/ | Analytical solution for ACTIVE (active_ana.exe) | Fwd_test/active_ana |
+| src/solver_mpi/ | MPI ACTIVE forward solver (not updated for the current version and cannot be compiled) | |
+
+All the inversion codes are integrated into src/src_inv_joint/. The former inversion codes (src/src_inv/, src/src_inv_ap/, src/src_inv_mpi/ and src/src_inv_mdm/) were removed in version 1.5; the files of src/src_inv/ still used by other programs (m_modelpart.f90 and solvebeta.f90) were moved to src/common/.
 
 ## 6 Governing equation and discretization <a id="Governing_equation_and_discretization"></a>
 See Minami et al. (2018) for details about forward and inversion modelling in ActFEM. The induction equation in terms of the vector magnetic potential $\mathbf{A}$,
@@ -584,7 +622,7 @@ The source point file has the following format:
 - If the last point coincides with the first point (within 1 mm), the source is regarded as a **closed loop**.
 - The `File:` keyword is case-sensitive and must be at the head of the value (leading spaces are allowed). In the source point file, write coordinates only (one point per line, no labels).
 - In mesh generation, refinement points (`dlen_source`, `sigma_src`, `A_src`) are placed along every dipole; the duplicated points at the junctions of consecutive dipoles (and at the start point of a closed loop) are automatically removed.
-- Both input styles are available in the ACTIVE forward code (ebfem_bxyz.exe), the mesh generation codes (src/src_mesh) and the joint inversion code (ebfem_inv_joint.exe, used in Joint_test/inv_act/, inv_joint/, etc.). In the inversion, `<source name>_site.dat` in the output folder lists all vertices of the source (start points of all dipoles and the end point of the last dipole). The other MPI codes (src/src_inv_ap, src/solver_mpi, etc.) are not yet updated for this format.
+- Both input styles are available in the ACTIVE forward code (ebfem_bxyz.exe), the mesh generation codes (src/src_mesh) and the joint inversion code (ebfem_inv_joint.exe, used in Joint_test/inv_act/, inv_joint/, etc.). In the inversion, `<source name>_site.dat` in the output folder lists all vertices of the source (start points of all dipoles and the end point of the last dipole). src/solver_mpi/ is not updated for this format.
 
 Example: Fwd_test/active_loop/ (active.ctl, S1.dat, S2.dat); see [3.5](#sec3_5) for how to run it.
 
@@ -754,7 +792,7 @@ view_slice.sh runs slice.exe (src/src_post) to cut the slices out of the resisti
 ## 10 Version notes <a id="Version_notes"></a>
 
 #### Version 1.5
-Nov 25, 2026: The manual is largely revised. The description of the control files for mesh generation and forward modelling ([7.1](#Control_files)) is updated to the current format (items, conditions, programs using each item, and an example), and the water level control file is described. The mesh generation tutorial ([8](#Mesh_generation_tutorial)) is rewritten for the current mesh folders (Fwd_test/mesh_flat/, Joint_test/mesh_joint/ and Joint_test/mesh_light/), and the generation of resistivity models ([9](#Generation_of_resistivity_model)) is rewritten for the current procedure with change_model2cond.exe. Anchors are added to all sections and subsections, the references to sections in the text are linked, and the contents list the subsections.
+Nov 25, 2026: The manual is largely revised. The description of the control files for mesh generation and forward modelling ([7.1](#Control_files)) is updated to the current format (items, conditions, programs using each item, and an example), and the water level control file is described. The mesh generation tutorial ([8](#Mesh_generation_tutorial)) is rewritten for the current mesh folders (Fwd_test/mesh_flat/, Joint_test/mesh_joint/ and Joint_test/mesh_light/), and the generation of resistivity models ([9](#Generation_of_resistivity_model)) is rewritten for the current procedure with change_model2cond.exe. The inversion codes are integrated into src/src_inv_joint/ and the source folder tree ([5](#Source_folder_tree)) is updated. Anchors are added to all sections and subsections, the references to sections in the text are linked, and the contents list the subsections.
 
 #### Version 1.4
 Nov 23, 2026: Polyline (multi-dipole) sources are now available for ACTIVE forward modelling, mesh generation and the joint inversion (ebfem_inv_joint.exe). Each source can be given either by start/end points (single dipole, conventional format) or by a source point file with `File:` (multiple dipoles connected in series, including closed loops) (see [7.2](#Source_definition)). A test for loop sources (Fwd_test/active_loop/) and its comparison script with the analytical solution (compana_loop.py) are added (see [3.5](#sec3_5)).

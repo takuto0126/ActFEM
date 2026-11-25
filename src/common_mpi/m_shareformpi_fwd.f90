@@ -345,6 +345,7 @@ implicit none
 type(param_source),intent(inout) :: sparam
 integer(4),intent(in) :: ip
 integer(4) :: errno,nsource
+integer(4) :: i,nd ! for ndipole 2026.11.25 CC
 
  call MPI_BCAST(sparam%lonlatflag, 1, MPI_INTEGER4,0,MPI_COMM_WORLD,errno)
  call MPI_BCAST(sparam%nsource,    1, MPI_INTEGER4,0,MPI_COMM_WORLD,errno)!2017.07.11
@@ -352,16 +353,23 @@ integer(4) :: errno,nsource
 
  if ( ip .ne. 0) then      ! 2017.07.11
   allocate(sparam%sourcename(nsource) ) ! 2017.07.11
-  allocate(sparam%xs1(3,nsource)      ) ! 2017.07.11
-  allocate(sparam%xs2(3,nsource)      ) ! 2017.07.11
-  allocate(sparam%lonlats1(2,nsource) ) ! 2017.07.11
-  allocate(sparam%lonlats2(2,nsource) ) ! 2017.07.11
+  allocate(sparam%dipoles(nsource)    ) ! 2026.11.25 CC
  end if
+ call MPI_BCAST(sparam%sourcename, 50*nsource, MPI_CHARACTER,0,MPI_COMM_WORLD,errno) ! 2026.11.25 CC
 
- call MPI_BCAST(sparam%xs1,        3*nsource, MPI_REAL8,   0,MPI_COMM_WORLD,errno)! 2017.07.11
- call MPI_BCAST(sparam%xs2,        3*nsource, MPI_REAL8,   0,MPI_COMM_WORLD,errno)! 2017.07.11
- call MPI_BCAST(sparam%lonlats1,   2*nsource, MPI_REAL8,   0,MPI_COMM_WORLD,errno)! 2017.07.11
- call MPI_BCAST(sparam%lonlats2,   2*nsource, MPI_REAL8,   0,MPI_COMM_WORLD,errno)! 2017.07.11
+ !# dipoles for each source 2026.11.25 CC
+ do i=1,nsource
+  call MPI_BCAST(sparam%dipoles(i)%ndipole, 1, MPI_INTEGER4,0,MPI_COMM_WORLD,errno) ! 2026.11.25 CC
+  nd = sparam%dipoles(i)%ndipole
+  if ( ip .ne. 0 ) then
+   allocate(sparam%dipoles(i)%xs1(3,nd),     sparam%dipoles(i)%xs2(3,nd)     ) ! 2026.11.25 CC
+   allocate(sparam%dipoles(i)%lonlats1(2,nd),sparam%dipoles(i)%lonlats2(2,nd)) ! 2026.11.25 CC
+  end if
+  call MPI_BCAST(sparam%dipoles(i)%xs1,      3*nd, MPI_REAL8,0,MPI_COMM_WORLD,errno) ! 2026.11.25 CC
+  call MPI_BCAST(sparam%dipoles(i)%xs2,      3*nd, MPI_REAL8,0,MPI_COMM_WORLD,errno) ! 2026.11.25 CC
+  call MPI_BCAST(sparam%dipoles(i)%lonlats1, 2*nd, MPI_REAL8,0,MPI_COMM_WORLD,errno) ! 2026.11.25 CC
+  call MPI_BCAST(sparam%dipoles(i)%lonlats2, 2*nd, MPI_REAL8,0,MPI_COMM_WORLD,errno) ! 2026.11.25 CC
+ end do
  call MPI_BCAST(sparam%I,          1,         MPI_REAL8,   0,MPI_COMM_WORLD,errno)
 
 return

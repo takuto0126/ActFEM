@@ -305,18 +305,19 @@ As results, `A0*_S?_amp.dat` and `A0*_S?_pha.dat` are generated in Joint_test/fw
 Note that active.ctl in Joint_test/inv_act/, inv_joint/, inv_act_icomb-1/ and inv_joint_icomb-1/ are symbolic links to Joint_test/fwd_active/active.ctl, so the same sources are used in the inversions. Each source can be given by start/end points or by a source point file with `File:` (see [7.2](#Source_definition)).
 
 ### 4.4 Step 4: Generation of MT sample data for inversion <a id="sec4_4"></a>
-Secondly, MT data is prepared in ActFEM/Joint_test/fwd_3DMT/
+Secondly, MT data is prepared in ActFEM/Joint_test/fwd_3DMT/. run.sh builds the MPI version of the MT forward code (src/src_3DMT_mpi) and runs it for the structure Joint_test/structure/cond_G3.msh at the nine MT sites (MT1 - MT9) given in mt.ctl.
 ```bash
 $ cd ActFEM/Joint_test/fwd_3DMT/
 $ chmod +x run.sh
 $ ./run.sh
 ```
-The implementation generates **result/MT1_MT.dat** etc. The data with error are prepared by
+The responses are written in result/: **MT1_MT.dat** (apparent resistivity and phase), **MT1_MT_imp.dat** (impedance) and **MT1_TIP.dat** (tipper), etc. Then, the data with errors are prepared by
 ```bash
-$ chmod +x generr.sh
-$ ./generr.sh
+$ chmod +x generr_imp.sh generr_tip.sh
+$ ./generr_imp.sh
+$ ./generr_tip.sh
 ```
-Then there are error files like **mt_err/MT1_MT_imp.err**, etc.
+generr_imp.sh writes the impedance error files **mt_err/MT1_MT_imp_err.dat**, etc. (error ratio 0.01), and generr_tip.sh writes the tipper data with errors **mt_err/MT1_TIP_err.dat**, etc. (error ratio 0.005). In the inversion control files, the sites used in the inversion are selected from MT1 - MT9 by the site index after `!` (see [4.5](#sec4_5)).
 
 ### 4.5 Step 5: Run sample inversions!! <a id="sec4_5"></a>
 Above, preparation for all the inversions are complete. The procedures for running inversion samples are the same. Run **run.sh**, and see the results by **plot_rms.sh** and **view_slice.sh**. For example, in Joint_test/inv_act/
@@ -336,7 +337,7 @@ The inversion demos in Joint_test/ are as follows. All of them use ebfem_inv_joi
 | inv_mt_icomb-1 | 2 | Same as inv_mt | -1: inner / outer mode | |
 | inv_joint | 3 | ACTIVE (as inv_act) + MT impedance (as inv_mt) | 1: outside blocks are integrated into one | |
 | inv_joint_icomb-1 | 3 | Same as inv_joint | -1: inner / outer mode | |
-| inv_mt_tip | 2 | MT impedance + tipper (MT1 - MT9) | 0: normal | |
+| inv_mt_tip | 2 | MT impedance + tipper (MT1 - MT9) | 0: normal | Error floors: 0.1 for impedance and 0.1 for tipper |
 | inv_tip | 2 | Tipper only (`imp: 0, 1:amp,pha` = -1) | 0: normal | Run by run_tip.sh (see readme.txt); results are not shown below |
 | inv_tip_light | 2 | Tipper only, with Joint_test/mesh_light/ and structure_light/ (data in fwd_3DMT_light/) | 0: normal | Light version (2 MPI processes); results are not shown below |
 
@@ -360,55 +361,61 @@ In the following, only the results are shown for obtained inversions results:
 
 #### Results of Joint_test/inv_act
 ```bash
-$ plot_rms.sh
+$ ./plot_rms.sh
 $ ./view_slice.sh 06
 ```
 Here 06 means to show model06 which is converged model.
 
-<img src="./images/v1.4_image17.png" width="28%"> <img src="./images/v1.4_image18.png" width="66%">
+<img src="./images/v1.5_inv_act_rms.png" width="28%"> <img src="./images/v1.5_inv_act_model06.png" width="66%">
 
 #### Results of Joint_test/inv_mt/
 ```bash
 $ ./plot_rms.sh
-$ ./view_slice.sh 09
+$ ./view_slice.sh 06
 ```
 
-<img src="./images/v1.4_image19.png" width="31%"> <img src="./images/v1.4_image20.png" width="63%">
+<img src="./images/v1.5_inv_mt_rms.png" width="31%"> <img src="./images/v1.5_inv_mt_model06.png" width="63%">
 
 #### Result of Joint_test/inv_joint/
 ```bash
 $ ./plot_rms.sh
-$ ./view_slice.sh 08
+$ ./view_slice.sh 06
 ```
 
-<img src="./images/v1.4_image21.png" width="30%"> <img src="./images/v1.4_image22.png" width="64%">
+<img src="./images/v1.5_inv_joint_rms.png" width="30%"> <img src="./images/v1.5_inv_joint_model06.png" width="64%">
 
 > **The following results are icombine = -1., which allows inversion to use inner outer model parametrization. The details are shown in the next section.**
 
 #### Results of Joint_test/inv_act_icomb-1
 ```bash
-$ plot_rms.sh
+$ ./plot_rms.sh
 $ ./view_slice.sh 06
 ```
 
-<img src="./images/v1.4_image23.png" width="28%"> <img src="./images/v1.4_image24.png" width="66%">
+<img src="./images/v1.5_inv_act_icomb_1_rms.png" width="28%"> <img src="./images/v1.5_inv_act_icomb_1_model06.png" width="66%">
 
 #### Results of Joint_test/inv_mt_icomb-1
 ```bash
-$ plot_rms.sh
-$ ./view_slice.sh 10
+$ ./plot_rms.sh
+$ ./view_slice.sh 06
 ```
 
-<img src="./images/v1.4_image25.png" width="31%"> <img src="./images/v1.4_image26.png" width="63%">
+<img src="./images/v1.5_inv_mt_icomb_1_rms.png" width="31%"> <img src="./images/v1.5_inv_mt_icomb_1_model06.png" width="63%">
 
 #### Results of Joint_test/inv_joint_icomb-1
+```bash
+$ ./plot_rms.sh
+$ ./view_slice.sh 05
+```
 
-<img src="./images/v1.4_image27.png" width="29%"> <img src="./images/v1.4_image28.png" width="66%">
+<img src="./images/v1.5_inv_joint_icomb_1_rms.png" width="29%"> <img src="./images/v1.5_inv_joint_icomb_1_model05.png" width="66%">
 
 #### Results of Joint_test/inv_mt_tip
-mt impedanceのerrorfloorは0.1、tipperのerrorfloorは0.1に設定し、αはpower -0.3で減少させた。-0.3が大きいと、構造の変動が大きくなり収束しない。
+MT impedance and tipper at the nine sites (MT1 - MT9) are inverted jointly. The error floors are 0.1 for both impedance (`MT errfloor SSQ*`) and tipper (`errorfloor`), and the trade-off parameter starts from 100 and is multiplied by 10^-1 (`factor(10^factor)` = -1.0) when a normalized misfit decreases by less than 10% from the previous iteration while it is still above the target (`final rms`). Both normalized RMS misfits fall below 1 at the fifth iteration (MT: 4.13 -> 0.49, tipper: 5.34 -> 0.76). With a smaller error floor for tipper (e.g., 0.01), the tipper misfit increases and the inversion stops.
 
-<img src="./images/v1.4_image29.png" width="33%"> <img src="./images/v1.4_image30.png" width="62%">
+<img src="./images/v1.5_inv_mt_tip_rms.png" width="33%"> <img src="./images/v1.5_inv_mt_tip_model05.png" width="62%">
+
+Figure. Left: normalized RMS misfits of MT impedance (red) and tipper (green), the trade-off parameter (black) and the model roughness (red) drawn by plot_rms.sh. Right: vertical (W-E and S-N) and horizontal (z = 0.75 km) slices of the final model (model05) drawn by `./view_slice.sh 05`; green circles are the MT sites.
 
 ## 5 Source folder tree <a id="Source_folder_tree"></a>
 

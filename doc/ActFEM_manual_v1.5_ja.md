@@ -305,18 +305,19 @@ $ ./generr.sh
 なお、Joint_test/inv_act/、inv_joint/、inv_act_icomb-1/、inv_joint_icomb-1/ の active.ctl は Joint_test/fwd_active/active.ctl へのシンボリックリンクで、インバージョンでも同じ送信源が使われます。各送信源は、始点・終点、または `File:` による送信源点ファイルで指定できます（[7.2](#Source_definition) 参照）。
 
 ### 4.4 Step 4: インバージョン用 MT サンプルデータの作成 <a id="sec4_4"></a>
-次に、ActFEM/Joint_test/fwd_3DMT/ で MT データを用意します。
+次に、ActFEM/Joint_test/fwd_3DMT/ で MT データを用意します。run.sh は MT 順計算コードの MPI 版（src/src_3DMT_mpi）をビルドし、mt.ctl に書かれた9つの MT 観測点（MT1〜MT9）で、構造 Joint_test/structure/cond_G3.msh に対する応答を計算します。
 ```bash
 $ cd ActFEM/Joint_test/fwd_3DMT/
 $ chmod +x run.sh
 $ ./run.sh
 ```
-これにより **result/MT1_MT.dat** などが生成されます。誤差付きデータは次のコマンドで作成します。
+応答は result/ に書き出されます。**MT1_MT.dat**（見かけ比抵抗と位相）、**MT1_MT_imp.dat**（インピーダンス）、**MT1_TIP.dat**（ティッパー）などです。続いて、誤差付きデータを次のコマンドで作成します。
 ```bash
-$ chmod +x generr.sh
-$ ./generr.sh
+$ chmod +x generr_imp.sh generr_tip.sh
+$ ./generr_imp.sh
+$ ./generr_tip.sh
 ```
-すると **mt_err/MT1_MT_imp.err** などの誤差ファイルが作成されます。
+generr_imp.sh はインピーダンスの誤差ファイル **mt_err/MT1_MT_imp_err.dat** など（誤差の比率 0.01）を、generr_tip.sh は誤差付きのティッパーデータ **mt_err/MT1_TIP_err.dat** など（誤差の比率 0.005）を作成します。インバージョンの制御ファイルでは、MT1〜MT9 のうち使う観測点を `!` の後の観測点番号で選びます（[4.5](#sec4_5) 参照）。
 
 ### 4.5 Step 5: サンプルインバージョンの実行 <a id="sec4_5"></a>
 以上で、すべてのインバージョンの準備が整いました。どのサンプルも手順は同じで、**run.sh** を実行し、**plot_rms.sh** と **view_slice.sh** で結果を確認します。たとえば Joint_test/inv_act/ では次のようにします。
@@ -336,7 +337,7 @@ Joint_test/ のインバージョンデモは次のとおりです。どのデ�
 | inv_mt_icomb-1 | 2 | inv_mt と同じ | -1：内側／外側モード | |
 | inv_joint | 3 | ACTIVE（inv_act と同じ）+ MT インピーダンス（inv_mt と同じ） | 1：外側のブロックを1つにまとめる | |
 | inv_joint_icomb-1 | 3 | inv_joint と同じ | -1：内側／外側モード | |
-| inv_mt_tip | 2 | MT インピーダンス + ティッパー（MT1〜MT9） | 0：通常 | |
+| inv_mt_tip | 2 | MT インピーダンス + ティッパー（MT1〜MT9） | 0：通常 | 誤差の下限：インピーダンス 0.1、ティッパー 0.1 |
 | inv_tip | 2 | ティッパーのみ（`imp: 0, 1:amp,pha` = -1） | 0：通常 | run_tip.sh で実行（readme.txt 参照）。以下に結果は示していません |
 | inv_tip_light | 2 | ティッパーのみ。Joint_test/mesh_light/ と structure_light/ を使用（データは fwd_3DMT_light/） | 0：通常 | 軽量版（MPI 2 プロセス）。以下に結果は示していません |
 
@@ -360,55 +361,61 @@ Joint_test/ のインバージョンデモは次のとおりです。どのデ�
 
 #### Joint_test/inv_act の結果
 ```bash
-$ plot_rms.sh
+$ ./plot_rms.sh
 $ ./view_slice.sh 06
 ```
 ここで 06 は、収束したモデル model06 を表示することを意味します。
 
-<img src="./images/v1.4_image17.png" width="28%"> <img src="./images/v1.4_image18.png" width="66%">
+<img src="./images/v1.5_inv_act_rms.png" width="28%"> <img src="./images/v1.5_inv_act_model06.png" width="66%">
 
 #### Joint_test/inv_mt/ の結果
 ```bash
 $ ./plot_rms.sh
-$ ./view_slice.sh 09
+$ ./view_slice.sh 06
 ```
 
-<img src="./images/v1.4_image19.png" width="31%"> <img src="./images/v1.4_image20.png" width="63%">
+<img src="./images/v1.5_inv_mt_rms.png" width="31%"> <img src="./images/v1.5_inv_mt_model06.png" width="63%">
 
 #### Joint_test/inv_joint/ の結果
 ```bash
 $ ./plot_rms.sh
-$ ./view_slice.sh 08
+$ ./view_slice.sh 06
 ```
 
-<img src="./images/v1.4_image21.png" width="30%"> <img src="./images/v1.4_image22.png" width="64%">
+<img src="./images/v1.5_inv_joint_rms.png" width="30%"> <img src="./images/v1.5_inv_joint_model06.png" width="64%">
 
 > **以下は icombine = -1 の結果です。この設定では、インバージョンで内側・外側のモデルパラメータ化を使用できます。詳細は次節で説明します。**
 
 #### Joint_test/inv_act_icomb-1 の結果
 ```bash
-$ plot_rms.sh
+$ ./plot_rms.sh
 $ ./view_slice.sh 06
 ```
 
-<img src="./images/v1.4_image23.png" width="28%"> <img src="./images/v1.4_image24.png" width="66%">
+<img src="./images/v1.5_inv_act_icomb_1_rms.png" width="28%"> <img src="./images/v1.5_inv_act_icomb_1_model06.png" width="66%">
 
 #### Joint_test/inv_mt_icomb-1 の結果
 ```bash
-$ plot_rms.sh
-$ ./view_slice.sh 10
+$ ./plot_rms.sh
+$ ./view_slice.sh 06
 ```
 
-<img src="./images/v1.4_image25.png" width="31%"> <img src="./images/v1.4_image26.png" width="63%">
+<img src="./images/v1.5_inv_mt_icomb_1_rms.png" width="31%"> <img src="./images/v1.5_inv_mt_icomb_1_model06.png" width="63%">
 
 #### Joint_test/inv_joint_icomb-1 の結果
+```bash
+$ ./plot_rms.sh
+$ ./view_slice.sh 05
+```
 
-<img src="./images/v1.4_image27.png" width="29%"> <img src="./images/v1.4_image28.png" width="66%">
+<img src="./images/v1.5_inv_joint_icomb_1_rms.png" width="29%"> <img src="./images/v1.5_inv_joint_icomb_1_model05.png" width="66%">
 
 #### Joint_test/inv_mt_tip の結果
-mt impedanceのerrorfloorは0.1、tipperのerrorfloorは0.1に設定し、αはpower -0.3で減少させた。-0.3が大きいと、構造の変動が大きくなり収束しない。
+9つの観測点（MT1〜MT9）の MT インピーダンスとティッパーを同時にインバージョンします。誤差の下限はインピーダンス（`MT errfloor SSQ*`）、ティッパー（`errorfloor`）ともに 0.1 で、トレードオフパラメータは 100 から始め、正規化ミスフィットが目標値（`final rms`）より大きいまま前回からの減少が 10% 未満になると、10^-1 倍（`factor(10^factor)` = -1.0）します。5回目の反復で、どちらの正規化 RMS ミスフィットも 1 を下回ります（MT：4.13 → 0.49、ティッパー：5.34 → 0.76）。ティッパーの誤差の下限を小さくする（例：0.01）と、ティッパーのミスフィットが増加してインバージョンが止まります。
 
-<img src="./images/v1.4_image29.png" width="33%"> <img src="./images/v1.4_image30.png" width="62%">
+<img src="./images/v1.5_inv_mt_tip_rms.png" width="33%"> <img src="./images/v1.5_inv_mt_tip_model05.png" width="62%">
+
+図. 左：plot_rms.sh で描いた MT インピーダンス（赤）とティッパー（緑）の正規化 RMS ミスフィット、トレードオフパラメータ（黒）、モデルの粗さ（赤）。右：`./view_slice.sh 05` で描いた最終モデル（model05）の鉛直断面（東西・南北）と水平断面（z = 0.75 km）。緑の丸は MT 観測点。
 
 ## 5 ソースフォルダ構成 <a id="Source_folder_tree"></a>
 

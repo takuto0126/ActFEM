@@ -1,11 +1,24 @@
 # Coded on Oct. 12, 2021 Takuto Minami
 
-FC=mpiifort
+#FC=mpiifort  # commented out 2026.11.25 CC
+# use mpiifx if ifx is available, otherwise mpiifort (ifort) 2026.11.25 CC
+ifneq ($(shell command -v ifx 2>/dev/null),)
+FC = mpiifx
+else ifneq ($(shell command -v ifort 2>/dev/null),)
+FC = mpiifort
+else
+$(error Neither ifx nor ifort is found. Run "source /opt/intel/oneapi/setvars.sh" first)
+endif
 #FC=mpiifx
 #OPT=-i-dynamic
 VPATH = ../common ../common_mpi/ ../solver  ../src_2D/ ../src_3DMT/
-OPT0= -O3 -xAVX -mkl=parallel
+#OPT0= -O3 -xAVX -mkl=parallel  # commented out 2026.11.25 CC
+# -xAVX is used only with ifort / mpiifort 2026.11.25 CC
+ifneq ($(findstring ifort,$(FC)),)
+OPT0= -O -xAVX -check bounds -traceback -g -qmkl=parallel
+else
 OPT0= -O -check bounds -traceback -g -qmkl=parallel
+endif
 
 #OPT0= -O3 -xCORE-AVX2 -mkl=parallel -lmpi
 

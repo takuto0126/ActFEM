@@ -1,12 +1,25 @@
 # slice.exe is added on 2017.12.20
 # Coded on August 15, 2015 by T. MINAMI
 
-FC=ifx
+#FC=ifx  # commented out 2026.11.25 CC
+# use ifx if ifx is available, otherwise ifort (ifort) 2026.11.25 CC
+ifneq ($(shell command -v ifx 2>/dev/null),)
+FC = ifx
+else ifneq ($(shell command -v ifort 2>/dev/null),)
+FC = ifort
+else
+$(error Neither ifx nor ifort is found. Run "source /opt/intel/oneapi/setvars.sh" first)
+endif
 MPIFC=mpif90
 #OPT=-i-dynamic
 VPATH = ../common ../solver ../src_mesh  # ../src_inv is removed 2026.11.25 CC
 #OPT0= -O3 -xAVX -mkl=parallel
+# -xAVX is used only with ifort / mpiifort 2026.11.25 CC
+ifneq ($(findstring ifort,$(FC)),)
+OPT0= -O -xAVX -fpe0 -check bounds -traceback -g -qmkl=parallel
+else
 OPT0= -O -fpe0 -check bounds -traceback -g -qmkl=parallel
+endif
 
 #2016.03.03 solver with many modules
 

@@ -531,6 +531,7 @@ character(50)                        :: condfile
 type(param_cond)                     :: h_cond
 !   0: normal, 1:g_cond%rho=g_model%logrho_model
 integer(4),intent(in),optional       :: iflag
+logical                              :: ilogrho ! .true. when iflag = 1 2026.11.25 CC
 
 !#[1]## check and deallocate
 if (allocated(g_cond%rho) ) call deallocatecond(g_cond) ! see m_param.f90
@@ -546,6 +547,11 @@ logrho_model     = g_model%logrho_model   ! logrho is input for g_cond
 sigma_air        = g_cond%sigma_air       ! added on 2017.05.18
 condfile         = g_cond%condfile        ! added on 2017.05.18
 
+ilogrho = .false.                       ! 2026.11.25 CC
+if ( present(iflag) ) then              ! 2026.11.25 CC (Fortran .and. is not short-circuit)
+ if ( iflag .eq. 1 ) ilogrho = .true.  ! 2026.11.25 CC
+end if                                  ! 2026.11.25 CC
+
 !#[3]## gen new g_cond
 allocate(h_cond%index(nphys2),h_cond%rho(nphys2),h_cond%sigma(nphys2))
 h_cond%nphys1    = nphys1
@@ -558,7 +564,8 @@ h_cond%sigma_air = sigma_air ! 2017.05.18
 !write(*,*) size(logrho_model) ! commented out on 2025.07.31
 do i=1,nphys2
 ! write(*,*) "i",i,ele2model(i),ele2model(i),logrho_model(ele2model(i))
- if (present(iflag) .and. iflag .eq. 1 ) then         ! 2018.11.08
+! if (present(iflag) .and. iflag .eq. 1 ) then         ! 2018.11.08, commented out 2026.11.25 CC
+ if ( ilogrho ) then                                  ! 2026.11.25 CC
   rho = logrho_model(ele2model(i)) ! 2018.11.08
   h_cond%rho(i)   = rho            ! 2018.11.08
   h_cond%sigma(i) = 0.d0           ! 2018.11.08

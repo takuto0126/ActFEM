@@ -7,7 +7,15 @@
 #OPT=-i-dynamic
 #FC=gfortran
 #OPT= -O -fpe0 -check bounds -traceback -g  -mkl=parallel
-FC=ifx
+#FC=ifx  # commented out 2026.11.25 CC
+# use ifx if ifx is available, otherwise ifort (ifort) 2026.11.25 CC
+ifneq ($(shell command -v ifx 2>/dev/null),)
+FC = ifx
+else ifneq ($(shell command -v ifort 2>/dev/null),)
+FC = ifort
+else
+$(error Neither ifx nor ifort is found. Run "source /opt/intel/oneapi/setvars.sh" first)
+endif
 OPT= -O
 OPT= -fpe0 -O -check bounds -traceback -g -qmkl=parallel
 VPATH = ../common

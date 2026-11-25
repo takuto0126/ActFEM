@@ -1,7 +1,15 @@
 # Coded on Dec 25, 2015 by T. MINAMI
 
 #FC=mpiifort    # for poseidon
-FC=mpiifx
+#FC=mpiifx  # commented out 2026.11.25 CC
+# use mpiifx if ifx is available, otherwise mpiifort (ifort) 2026.11.25 CC
+ifneq ($(shell command -v ifx 2>/dev/null),)
+FC = mpiifx
+else ifneq ($(shell command -v ifort 2>/dev/null),)
+FC = mpiifort
+else
+$(error Neither ifx nor ifort is found. Run "source /opt/intel/oneapi/setvars.sh" first)
+endif
 VPATH= ../common ../solver ../common_mpi ../src_3DMT/ ../src_2D  # ../src_inv is removed 2026.11.25 CC
 
 # for poseidon/triton

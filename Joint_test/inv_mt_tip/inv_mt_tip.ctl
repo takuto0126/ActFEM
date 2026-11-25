@@ -56,9 +56,9 @@ MT3 impedance      !   3 ../fwd_3DMT/result/MT3_MT_imp.dat
 MT4 impedance      !   4 ../fwd_3DMT/result/MT4_MT_imp.dat
 MT5 impedance      !   5 ../fwd_3DMT/result/MT5_MT_imp.dat
 MT6 impedance      !   6 ../fwd_3DMT/result/MT6_MT_imp.dat
-MT8 impedance      !   7 ../fwd_3DMT/result/MT7_MT_imp.dat
-MT9 impedance      !   8 ../fwd_3DMT/result/MT8_MT_imp.dat
-MT5 impedance      !   9 ../fwd_3DMT/result/MT9_MT_imp.dat
+MT7 impedance      !   7 ../fwd_3DMT/result/MT7_MT_imp.dat
+MT8 impedance      !   8 ../fwd_3DMT/result/MT8_MT_imp.dat
+MT9 impedance      !   9 ../fwd_3DMT/result/MT9_MT_imp.dat
 MT1 impedance err  !   1 ../fwd_3DMT/mt_err/MT1_MT_imp_err.dat
 MT2 impedance err  !   2 ../fwd_3DMT/mt_err/MT2_MT_imp_err.dat
 MT3 impedance err  !   3 ../fwd_3DMT/mt_err/MT3_MT_imp_err.dat

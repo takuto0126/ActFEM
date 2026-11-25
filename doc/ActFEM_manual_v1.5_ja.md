@@ -47,6 +47,11 @@ tminami@port.kobe-u.ac.jp
       - [7.1.3 例](#sec7_1_3)
       - [7.1.4 水位制御ファイル](#sec7_1_4)
    - [7.2 送信源の指定（単一ダイポール／複数ダイポール）](#Source_definition)
+   - [7.3 インバージョンの制御ファイル](#Inversion_control)
+      - [7.3.1 共通の規則](#sec7_3_1)
+      - [7.3.2 項目一覧](#sec7_3_2)
+      - [7.3.3 データファイル](#sec7_3_3)
+      - [7.3.4 例](#sec7_3_4)
 8. [メッシュ生成チュートリアル](#Mesh_generation_tutorial)
    - [8.1 メッシュフォルダ](#sec8_1)
    - [8.2 meshgen.sh の実行](#sec8_2)
@@ -327,9 +332,9 @@ $ ./run.sh
 ```
 run.sh 内の OpenMP スレッド数と MPI プロセス数は、お使いの環境に合わせて編集してください。
 
-Joint_test/ のインバージョンデモは次のとおりです。どのデモも ebfem_inv_joint.exe（src/src_inv_joint）を使い、初期モデルと参照モデルには一様モデル Joint_test/structure/cond_homo.msh を、正則化には最も滑らかなモデル（`Roughness type` = 1）を、トレードオフパラメータの決め方には冷却法（`1:L,2:Cl,3:Mi,4:Gr` = 2）を使います。実行ファイルへの最初の入力（`ijoint`）で使うデータを選びます。1 は ACTIVE、2 は MT（インピーダンスとティッパーの一方または両方）、3 は ACTIVE + MT です。
+Joint_test/ のインバージョンデモは次のとおりです。どのデモも ebfem_inv_joint.exe（src/src_inv_joint）を使い、初期モデルと参照モデルには一様モデル Joint_test/structure/cond_homo.msh を、正則化には最も滑らかなモデル（[`Roughness type`](#flag_roughness) = 1）を、トレードオフパラメータの決め方には冷却法（[`1:L,2:Cl,3:Mi,4:Gr`](#flag_ialphaflag) = 2）を使います。実行ファイルへの最初の入力（[`ijoint`](#flag_ijoint)）で使うデータを選びます。1 は ACTIVE、2 は MT（インピーダンスとティッパーの一方または両方）、3 は ACTIVE + MT です。
 
-| フォルダ | ijoint | データ | モデルのパラメータ化（`icombine`） | 備考 |
+| フォルダ | [ijoint](#flag_ijoint) | データ | モデルのパラメータ化（[`icombine`](#flag_icombine)） | 備考 |
 |---|---|---|---|---|
 | inv_act | 1 | ACTIVE の Bz 振幅・位相（送信源 S1、S2、観測点 A01〜A04） | 0：通常 | |
 | inv_act_icomb-1 | 1 | inv_act と同じ | -1：内側／外側モード | |
@@ -338,7 +343,7 @@ Joint_test/ のインバージョンデモは次のとおりです。どのデ�
 | inv_joint | 3 | ACTIVE（inv_act と同じ）+ MT インピーダンス（inv_mt と同じ） | 1：外側のブロックを1つにまとめる | |
 | inv_joint_icomb-1 | 3 | inv_joint と同じ | -1：内側／外側モード | |
 | inv_mt_tip | 2 | MT インピーダンス + ティッパー（MT1〜MT9） | 0：通常 | 誤差の下限：インピーダンス 0.1、ティッパー 0.1 |
-| inv_tip | 2 | ティッパーのみ（`imp: 0, 1:amp,pha` = -1） | 0：通常 | run_tip.sh で実行（readme.txt 参照）。以下に結果は示していません |
+| inv_tip | 2 | ティッパーのみ（[`imp: 0, 1:amp,pha`](#flag_imp) = -1） | 0：通常 | run_tip.sh で実行（readme.txt 参照）。以下に結果は示していません |
 | inv_tip_light | 2 | ティッパーのみ。Joint_test/mesh_light/ と structure_light/ を使用（データは fwd_3DMT_light/） | 0：通常 | 軽量版（MPI 2 プロセス）。以下に結果は示していません |
 
 インバージョンで使う MT 観測点は、インバージョンの制御ファイルで `!` の後に書く観測点番号で選びます。この番号は mt.ctl の観測点の番号です（[4.4](#sec4_4) 参照）。mt.ctl には、インバージョンで使う観測点より多くの観測点を含めておけます。active.ctl の ACTIVE の観測点も同様です。各フォルダには次のファイルがあります。
@@ -384,7 +389,7 @@ $ ./view_slice.sh 06
 
 <img src="./images/v1.5_inv_joint_rms.png" width="30%"> <img src="./images/v1.5_inv_joint_model06.png" width="64%">
 
-> **以下は icombine = -1 の結果です。この設定では、インバージョンで内側・外側のモデルパラメータ化を使用できます。詳細は次節で説明します。**
+> **以下は [icombine](#flag_icombine) = -1 の結果です。この設定では、インバージョンで内側・外側のモデルパラメータ化を使用できます。詳細は 7.3 節の [`icombine`](#flag_icombine) を参照してください。**
 
 #### Joint_test/inv_act_icomb-1 の結果
 ```bash
@@ -411,7 +416,7 @@ $ ./view_slice.sh 05
 <img src="./images/v1.5_inv_joint_icomb_1_rms.png" width="29%"> <img src="./images/v1.5_inv_joint_icomb_1_model05.png" width="66%">
 
 #### Joint_test/inv_mt_tip の結果
-9つの観測点（MT1〜MT9）の MT インピーダンスとティッパーを同時にインバージョンします。誤差の下限はインピーダンス（`MT errfloor SSQ*`）、ティッパー（`errorfloor`）ともに 0.1 で、トレードオフパラメータは 100 から始め、正規化ミスフィットが目標値（`final rms`）より大きいまま前回からの減少が 10% 未満になると、10^-1 倍（`factor(10^factor)` = -1.0）します。5回目の反復で、どちらの正規化 RMS ミスフィットも 1 を下回ります（MT：4.13 → 0.49、ティッパー：5.34 → 0.76）。ティッパーの誤差の下限を小さくする（例：0.01）と、ティッパーのミスフィットが増加してインバージョンが止まります。
+9つの観測点（MT1〜MT9）の MT インピーダンスとティッパーを同時にインバージョンします。誤差の下限はインピーダンス（[`MT errfloor SSQ*`](#flag_errfloor_mt)）、ティッパー（[`errorfloor`](#flag_errfloor_tip)）ともに 0.1 で、トレードオフパラメータは 100 から始め、正規化ミスフィットが目標値（[`final rms`](#flag_final_rms)）より大きいまま前回からの減少が 10% 未満になると、10^-1 倍（[`factor(10^factor)`](#flag_factor) = -1.0）します。5回目の反復で、どちらの正規化 RMS ミスフィットも 1 を下回ります（MT：4.13 → 0.49、ティッパー：5.34 → 0.76）。ティッパーの誤差の下限を小さくする（例：0.01）と、ティッパーのミスフィットが増加してインバージョンが止まります。
 
 <img src="./images/v1.5_inv_mt_tip_rms.png" width="33%"> <img src="./images/v1.5_inv_mt_tip_model05.png" width="62%">
 
@@ -466,7 +471,7 @@ $$\nabla \times \nabla \times \mathbf{E} + i\omega\mu\widehat{\sigma}\mathbf{E} 
 - 空行を入れないでください。
 - ファイル名・フォルダ名は `character(50)` で読み込まれます。各パスは50文字以内にしてください（相対パスを推奨します）。
 - 長さと座標の単位は [km] です。x は東向き、y は北向き、z は上向きです（[2](#Coordinate_system) 参照）。経度緯度で入力した場合は、`lonlatorigin` を原点として x, y に変換されます。
-- **観測点と送信源の点の z（3番目の値）は、標高ではなく地表面からの相対高度 [km] です。** これは座標の入力形式（`lonlat(1),xyz (2)` が 1：経度 緯度 z、2：x y z）のどちらでも同じです。例えば -0.001 は地表面下 1 m、0.1 は地表面上 100 m を表します。各プログラムは、地形付きの2次元地表面メッシュからその位置の地表面の標高 z_surface(x, y) を補間し、z_surface(x, y) + z を絶対的な z として使います。担当するルーチンは、メッシュ生成（meshgen2.exe）では calzobsr（src/common/calzobsr.f90）、ACTIVE 順計算（src/solver/n_ebfem_bxyz.f90）とインバージョン（src/src_inv_joint/n_inv_joint.f90）では PREPZSRCOBS、MT 順計算とインバージョンでは PREPZOBSMT です。変換後の絶対的な z はログに表示されます（例：Joint_test/fwd_active/ の観測点 A02 では `z=    -0.00100 ->     1.28612 [km]`。地表面の標高は約 1.287 km）。itopofile = 0 のときは地表面が z = 0 なので、与えた z がそのまま絶対的な z になります。
+- **観測点と送信源の点の z（3番目の値）は、標高ではなく地表面からの相対高度 [km] です。** これは座標の入力形式（[`lonlat(1),xyz (2)`](#flag_lonlatflag) が 1：経度 緯度 z、2：x y z）のどちらでも同じです。例えば -0.001 は地表面下 1 m、0.1 は地表面上 100 m を表します。各プログラムは、地形付きの2次元地表面メッシュからその位置の地表面の標高 z_surface(x, y) を補間し、z_surface(x, y) + z を絶対的な z として使います。担当するルーチンは、メッシュ生成（meshgen2.exe）では calzobsr（src/common/calzobsr.f90）、ACTIVE 順計算（src/solver/n_ebfem_bxyz.f90）とインバージョン（src/src_inv_joint/n_inv_joint.f90）では PREPZSRCOBS、MT 順計算とインバージョンでは PREPZOBSMT です。変換後の絶対的な z はログに表示されます（例：Joint_test/fwd_active/ の観測点 A02 では `z=    -0.00100 ->     1.28612 [km]`。地表面の標高は約 1.287 km）。[itopofile](#flag_itopofile) = 0 のときは地表面が z = 0 なので、与えた z がそのまま絶対的な z になります。
 - メッシュ生成では `Electric current [A]` より後ろの項目（電気伝導度）は読み込まれません。順計算ではすべての項目が読み込まれます。メッシュ用パラメータ（`west bound`〜`A_src`）は順計算の制御ファイルにも書く必要がありますが、順計算では使われません（`ixyflg = 1` のときの `west bound`〜`north bound` を除く）。
 
 #### 7.1.2 項目一覧 <a id="sec7_1_2"></a>
@@ -474,25 +479,25 @@ $$\nabla \times \nabla \times \mathbf{E} + i\omega\mu\widehat{\sigma}\mathbf{E} 
 
 | # | ラベル（例） | 条件 | 説明 | 使用 |
 |---|---|---|---|---|
-| 1 | `itopofile` | | 0：地形ファイルなし（z = 0 の平坦な地表面。観測点と送信源の座標は xyz で与える）。1：地形ファイルを与える。 | M, F |
-| 2 | `iflag_map` | itopofile = 1 | 経度緯度の投影法。1：正距円筒図法（ECP）、2：UTM。 | M, F |
-| 3 | `UTM zone` | iflag_map = 2 | UTM ゾーン（例：`52S`）。 | M, F |
-| 4 | `lonlatorigin` | itopofile = 1 | x, y の原点の経度・緯度 [deg]。 | M, F |
-| 5 | `# of topo file` | itopofile = 1 | 地形ファイルの数 nfile。狭い領域のファイルから広い領域のファイルの順に与える。 | M |
-| 6 | `topofile` | itopofile = 1、#7 と組で nfile 回 | 地形ファイル（経度、緯度、標高）。 | M |
-| 7 | `lon lat shift` | itopofile = 1、#6 と組で nfile 回 | 地形ファイルの経度・緯度に加えるシフト量 [deg]。 | M |
+| 1 | `itopofile` <a id="flag_itopofile"></a> | | 0：地形ファイルなし（z = 0 の平坦な地表面。観測点と送信源の座標は xyz で与える）。1：地形ファイルを与える。 | M, F |
+| 2 | `iflag_map` <a id="flag_iflag_map"></a> | [itopofile](#flag_itopofile) = 1 | 経度緯度の投影法。1：正距円筒図法（ECP）、2：UTM。 | M, F |
+| 3 | `UTM zone` | [iflag_map](#flag_iflag_map) = 2 | UTM ゾーン（例：`52S`）。 | M, F |
+| 4 | `lonlatorigin` | [itopofile](#flag_itopofile) = 1 | x, y の原点の経度・緯度 [deg]。 | M, F |
+| 5 | `# of topo file` | [itopofile](#flag_itopofile) = 1 | 地形ファイルの数 nfile。狭い領域のファイルから広い領域のファイルの順に与える。 | M |
+| 6 | `topofile` | [itopofile](#flag_itopofile) = 1、#7 と組で nfile 回 | 地形ファイル（経度、緯度、標高）。 | M |
+| 7 | `lon lat shift` | [itopofile](#flag_itopofile) = 1、#6 と組で nfile 回 | 地形ファイルの経度・緯度に加えるシフト量 [deg]。 | M |
 | 8 | `mesh file` | | 順計算で使う3次元メッシュファイル（メッシュ生成で作られる `<header3d>.msh`）。 | F |
 | 9 | `2d triangle z file` | | 地形付きの2次元地表面メッシュ（`<header2d>z.msh`）。観測点と送信源の高度の変換に使う。 | F |
 | 10 | `local line file` | | 辺情報ファイル（mkline.exe で作られる `lineinfo.dat`）。 | F |
 | 11 | `angle` | | もともと東を向いている x 軸の回転角 [deg]（北から東回り）。通常は 0.0。 | M, F |
-| 12 | `water level` | | 0：水位の制御なし、1：次の行で水位制御ファイルを与える（[7.1.4](#sec7_1_4) 参照）。 | M |
+| 12 | `water level` <a id="flag_water_level"></a> | | 0：水位の制御なし、1：次の行で水位制御ファイルを与える（[7.1.4](#sec7_1_4) 参照）。 | M |
 | 13 | `water level file` | water level = 1 | 水位制御ファイル。 | M |
 | 14 | `output folder` | | 順計算結果の出力フォルダ（`/` で終える。例：`./result/`）。メッシュ生成では使わない（`-` など任意の文字列）。 | F |
 | 15 | `header2d` | | メッシュ生成で作る2次元メッシュファイルのヘッダ（`<header2d>.geo`、`.pos`、`.msh`、`<header2d>z.msh` など）。 | M |
 | 16 | `header3d` | | 3次元メッシュファイルのヘッダ（`<header3d>.geo`、`.pos`、`.msh`）。 | M |
 | 17 | `# of frequency` | | 周波数の数 nfreq。 | F |
 | 18 | `Frequency [Hz]` | nfreq 回 | 周波数 [Hz]。 | F |
-| 19-22 | `west bound`、`east bound`、`south bound`、`north bound` | | 内側の領域（細分化する領域）の西端・東端の x と、南端・北端の y [km]。 | M（ixyflg = 1 のとき F も） |
+| 19-22 | `west bound`、`east bound`、`south bound`、`north bound` | | 内側の領域（細分化する領域）の西端・東端の x と、南端・北端の y [km]。 | M（[ixyflg](#flag_ixyflg) = 1 のとき F も） |
 | 23 | `lenout [km]` | | 内側の領域から外側の境界までの水平距離 [km]。外側の境界は x = west bound − lenout と x = −(west bound − lenout)（y も同様）。 | M |
 | 24 | `upz in [km]` | | 内側の領域の上端の z [km]。 | M |
 | 25 | `downz in [km]` | | 内側の領域の下端の z [km]。 | M |
@@ -506,20 +511,20 @@ $$\nabla \times \nabla \times \mathbf{E} + i\omega\mu\widehat{\sigma}\mathbf{E} 
 | 33 | `sigma_src [km]` | | 送信源の各細分化点のまわりでメッシュを細分化する半径 [km]。 | M |
 | 34 | `A_src [km]` | | 送信源の各細分化点での要素サイズ [km]。 | M |
 | 35 | `# of observatory` | | 観測点の数 nobs。 | M, F |
-| 36 | `lonlat(1),xyz (2)` | | 観測点と送信源の座標形式。1：経度 緯度 z（itopofile = 1 が必要）、2：x y z [km]。どちらの場合も z は地表面からの相対高度 [km]（[7.1.1](#sec7_1_1) 参照）。 | M, F |
+| 36 | `lonlat(1),xyz (2)` <a id="flag_lonlatflag"></a> | | 観測点と送信源の座標形式。1：経度 緯度 z（[itopofile](#flag_itopofile) = 1 が必要）、2：x y z [km]。どちらの場合も z は地表面からの相対高度 [km]（[7.1.1](#sec7_1_1) 参照）。 | M, F |
 | 37 | `Name` | #38 と組で nobs 回 | 観測点名（出力ファイル名に使う）。 | M, F |
 | 38 | `xyz` | #37 と組で nobs 回 | 観測点の座標（#36 の形式。z は地表面からの相対高度）。 | M, F |
-| 39 | `ixyflg` | | 0：なし、1：内側の領域（west〜east、south〜north）の nx × ny 個の格子点でも場の値を計算する。 | F |
-| 40 | `xy file header` | ixyflg = 1 | 格子点の出力ファイルのヘッダ。 | F |
-| 41 | `nx ny` | ixyflg = 1 | x 方向と y 方向の格子点の数。 | F |
+| 39 | `ixyflg` <a id="flag_ixyflg"></a> | | 0：なし、1：内側の領域（west〜east、south〜north）の nx × ny 個の格子点でも場の値を計算する。 | F |
+| 40 | `xy file header` | [ixyflg](#flag_ixyflg) = 1 | 格子点の出力ファイルのヘッダ。 | F |
+| 41 | `nx ny` | [ixyflg](#flag_ixyflg) = 1 | x 方向と y 方向の格子点の数。 | F |
 | 42 | `# of sources` | | 送信源の数 nsource。 | M, F |
 | 43 | `Source Name` | nsource 回 | 送信源名（出力ファイル名に使う）。続けて送信源の形状を書く：始点と終点の2行、または `File:<送信源点ファイル>` の1行（[7.2](#Source_definition) 参照）。 | M, F |
 | 44 | `Electric current [A]` | | 送信ケーブルに流す電流 [A]（全送信源で共通）。 | F |
 | 45 | `sigma_air [S/m]` | 順計算のみ | 空気の電気伝導度 [S/m]。 | F |
-| 46 | `condflag` | 順計算のみ | 0：#47-48 で与える（領域分けした）一様大地、1：#49 で与える電気伝導度ファイル。 | F |
-| 47 | `nvolume` | condflag = 0 | 陸域の物理ボリュームの数 nvolume。 | F |
-| 48 | `cond` | condflag = 0、nvolume 回 | 各ボリュームの電気伝導度 [S/m]。 | F |
-| 49 | `condfile` | condflag = 1 | 電気伝導度ファイル（[9](#Generation_of_resistivity_model) 参照）。 | F |
+| 46 | `condflag` <a id="flag_condflag"></a> | 順計算のみ | 0：#47-48 で与える（領域分けした）一様大地、1：#49 で与える電気伝導度ファイル。 | F |
+| 47 | `nvolume` | [condflag](#flag_condflag) = 0 | 陸域の物理ボリュームの数 nvolume。 | F |
+| 48 | `cond` | [condflag](#flag_condflag) = 0、nvolume 回 | 各ボリュームの電気伝導度 [S/m]。 | F |
+| 49 | `condfile` | [condflag](#flag_condflag) = 1 | 電気伝導度ファイル（[9](#Generation_of_resistivity_model) 参照）。 | F |
 
 メッシュの細分化：内側の領域では、観測点（または送信源の細分化点）からの水平距離 r の位置の要素サイズを、r ≤ 3σ の範囲で sizein − (sizein − A) exp(−r² / 2σ²) とします。A と σ は、観測点では A_obs と sigma_obs、送信源では A_src と sigma_src です。全観測点・全細分化点のうち最も小さい値が使われます。
 
@@ -593,7 +598,7 @@ cond               !0.01
 メッシュ生成の制御ファイル Fwd_test/mesh_flat/aso.ctl も同じ構成です。メッシュ生成では、`mesh file`、`2d triangle z file`、`local line file`、`output folder`、周波数は読み込まれますが使われません。メッシュ制御ファイルの観測点と送信源は、メッシュを細分化する場所を決めます。そのため、順計算で使うすべての観測点と送信源を含めてください（Joint_test/mesh_joint/aso.ctl のように、火口の下の点など細分化のためだけの点を加えることもできます）。メッシュ生成の出力は、カレントフォルダに `header2d` と `header3d` で指定した名前で書き出されます。`lineinfo.dat`（mkline.exe）と `faceinfo.dat`（mkface.exe）も同じ場所に書き出されます。なお、現在のバージョンでは `faceinfo.dat` は読み込まれません。インバージョンコードは制御ファイルの `face info file` のパスを読み込みますが、面の情報は内部で作成しています。
 
 #### 7.1.4 水位制御ファイル <a id="sec7_1_4"></a>
-`water level` が 1 のとき、メッシュ生成では次の行で指定した水位制御ファイルが読み込まれます。形式は次のとおりです（各行の1〜20列目はラベル）。
+[`water level`](#flag_water_level) が 1 のとき、メッシュ生成では次の行で指定した水位制御ファイルが読み込まれます。形式は次のとおりです（各行の1〜20列目はラベル）。
 ```
 header line
 # of water levels  |1
@@ -627,13 +632,130 @@ Source Name        !S1
 131.086490  32.877356  -0.001
 ```
 - 点は記載順に結ばれ、ダイポール *j* は点 *j* から点 *j*+1 までとして定義されます。つまり `npoint` 個の点から、直列につながった `npoint - 1` 本のダイポール（折れ線状のケーブル）が作られます。全ダイポールに同じ電流 `Elcetric current[A]` が流れます。
-- 各点の座標形式は、観測点ブロックの `lonlat(1),xyz (2)` フラグに従います。1 のときは `経度 緯度 z`、2 のときは `x y z` [km] です。どちらの場合も z [km] は地表面からの相対高度です（[7.1.1](#sec7_1_1) 参照）。経度緯度は `iflag_map` で指定した投影法（ECP または UTM）で変換されます。
+- 各点の座標形式は、観測点ブロックの [`lonlat(1),xyz (2)`](#flag_lonlatflag) フラグに従います。1 のときは `経度 緯度 z`、2 のときは `x y z` [km] です。どちらの場合も z [km] は地表面からの相対高度です（[7.1.1](#sec7_1_1) 参照）。経度緯度は [`iflag_map`](#flag_iflag_map) で指定した投影法（ECP または UTM）で変換されます。
 - 最後の点が最初の点と一致する（1 mm 以内）場合、その送信源は**閉ループ**とみなされます。
 - `File:` は大文字小文字を区別し、値の先頭に書く必要があります（前の空白は可）。送信源点ファイルには、1行に1点ずつ座標だけを書いてください（ラベル不要）。
 - メッシュ生成では、各ダイポールに沿って細分化点（`dlen_source`, `sigma_src`, `A_src`）が配置されます。連続するダイポールのつなぎ目（および閉ループの始点）で重複する点は自動的に除かれます。
 - どちらの入力方法も、ACTIVE 順計算コード（ebfem_bxyz.exe）、メッシュ生成コード（src/src_mesh）、同時インバージョンコード（ebfem_inv_joint.exe。Joint_test/inv_act/、inv_joint/ などで使用）で使えます。インバージョンでは、出力フォルダの `<送信源名>_site.dat` に送信源の全頂点（全ダイポールの始点と最後のダイポールの終点）が出力されます。src/solver_mpi/ はこの形式に対応していません。
 
 例: Fwd_test/active_loop/（active.ctl, S1.dat, S2.dat）。実行手順は [3.5](#sec3_5) を参照。
+
+### 7.3 インバージョンの制御ファイル <a id="Inversion_control"></a>
+インバージョンコード ebfem_inv_joint.exe（src/src_inv_joint）は、標準入力から3つまたは4つの入力を読み込みます。`ijoint` <a id="flag_ijoint"></a>（1：ACTIVE、2：MT（インピーダンスとティッパーの一方または両方）、3：ACTIVE + MT）、順計算の制御ファイル（ACTIVE は active.ctl、MT は mt.ctl、ijoint = 3 では両方。[7.1](#Control_files) 参照）、インバージョンの制御ファイルです。例：
+```bash
+$ mpiexec -n 6 ebfem_inv_joint.exe <<EOF
+3
+active.ctl
+mt.ctl
+joint.ctl
+EOF
+```
+インバージョンの制御ファイルは、`READPARAJOINTINV`（src/src_inv_joint/m_param_jointinv.f90）と `readmodelpara`（src/common/m_modelpart.f90）で読み込まれます。例は Joint_test/inv_*/ の inv_act.ctl、inv_mt.ctl、joint.ctl、inv_mt_tip.ctl、inv_tip.ctl です（[4.5](#sec4_5) 参照）。
+
+#### 7.3.1 共通の規則 <a id="sec7_3_1"></a>
+- `##` で始まる行はコメント行です。
+- [7.1](#Control_files) と同じく、1〜20列目はラベルで、値は21列目から読み込まれます。項目は 7.3.2 に示す決まった順番で読み込まれます。整数は21〜30列目、実数は21〜35列目で読み込まれるので、値はこの範囲に収めてください。
+- データファイルの行では、観測点番号（21〜25列目）の後にファイル名を書きます（例：`MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat`）。観測点番号は順計算の制御ファイル（active.ctl または mt.ctl）の観測点の番号です。インバージョンで使う観測点は、その一部を任意の順番で選べます（[4.5](#sec4_5) 参照）。
+- モデルのブロック分け（項目25〜26）の行にはラベルがありません。各値を1行に1つずつ、1列目から書きます。
+- ACTIVE の項目（12〜15）は [ijoint](#flag_ijoint) = 1 または 3 のときだけ、MT の項目（16〜23）は [ijoint](#flag_ijoint) = 2 または 3 のときだけ読み込まれます。
+
+#### 7.3.2 項目一覧 <a id="sec7_3_2"></a>
+| # | ラベル（例） | 条件 | 説明 |
+|---|---|---|---|
+| 1 | `face info file` | | 面情報ファイル（faceinfo.dat）。読み込まれるが、現在のバージョンでは使われない。 |
+| 2 | `1:cond,2:model` <a id="flag_icondflag"></a> | | 参照モデルの種類（`icondflag_ref`）。0：一様、1：電気伝導度ファイル（cond.msh 形式。[9.1](#sec9_1) 参照）、2：インバージョン結果のモデル接続ファイルとモデルファイル。 |
+| 3 | `ref cond file` | | 参照モデル。0 のときは電気伝導度 [S/m]、1 のときは電気伝導度ファイル、2 のときは model_connect.dat と modelNN.dat の2行。 |
+| 4 | [`1:cond,2:model`](#flag_icondflag) | | 初期モデルの種類（`icondflag_ini`）。#2 と同じ。 |
+| 5 | `init cond file` | | 初期モデル。#3 と同じ。 |
+| 6 | `output folder` | | 出力フォルダ（`/` で終える。例：`./result_inv/`）。 |
+| 7 | `Roughness type` <a id="flag_roughness"></a> | | 正則化。1：最も滑らかなモデル、2：minimum support、3：minimum support gradient、4：minimum gradient support。 |
+| 8 | `beta` | Roughness type ≥ 2 | 粗さのパラメータ β。 |
+| 9 | `1:L,2:Cl,3:Mi,4:Gr` <a id="flag_ialphaflag"></a> | | トレードオフパラメータ α の決め方（`ialphaflag`）。1：L カーブ、2：与えた α からの冷却法、3：スペクトル半径の比から α を決める冷却法（Minami）、4：Grayver et al. (2013) の改良版。 |
+| 10-1 | `# of alpha`、`alpha` | [ialphaflag](#flag_ialphaflag) = 1 | α の数と、続けて α の値（1行に1つ）。 |
+| 10-2 | `alpha init` <a id="flag_alpha_init"></a> | [ialphaflag](#flag_ialphaflag) = 2 | α の初期値。 |
+| 10-3 | `factor(10^factor)` <a id="flag_factor"></a> | [ialphaflag](#flag_ialphaflag) = 2 | いずれかの正規化 RMS ミスフィットが [`final rms`](#flag_final_rms) より大きいまま前回からの減少が 10% 未満になると、α を 10^factor 倍する（factor < 0）。 |
+| 10-4 | `iflag_replace 0,1` <a id="flag_iflag_replace"></a> | [ialphaflag](#flag_ialphaflag) = 2 | 0：何もしない、1：RMS ミスフィットが前回より大きくなったら参照モデルを置き換える。 |
+| 10-5 | `gamma` | [ialphaflag](#flag_ialphaflag) = 3 または 4 | パラメータ γ（Grayver et al., 2013 参照）。 |
+| 11 | `iboundflag` <a id="flag_iboundflag"></a> | | モデルパラメータの上下限。0：なし（最も滑らかなモデルでは推奨）、1：上下限で切る、2：上下限を自動的に満たす変換したモデル変数を使う。 |
+| 11-1 | 上限、下限 | [iboundflag](#flag_iboundflag) = 1 | log10(比抵抗 [Ohm.m]) の上限と下限（2行）。 |
+| 11-2 | p、上限、下限、BMIdenomflag | [iboundflag](#flag_iboundflag) = 2 | パラメータ p、log10(比抵抗 [Ohm.m]) の上限と下限、BMI の分母（1：モデル、2：変換したモデル）（4行）。 |
+| 12 | `# of srces for inv` | ACTIVE | インバージョンで使う送信源の数 nsr_inv。 |
+| 13 | `Bx,By,Bz,Ex,Ey(5i2)` <a id="flag_iflag_comp"></a> | ACTIVE | Bx、By、Bz、Ex、Ey を使うかどうかの 0 または 1（書式 5i2。例：Bz だけなら `0 0 1 0 0`）。 |
+| 14 | `Act err floor [0-1]` <a id="flag_errfloor_act"></a> | ACTIVE | ACTIVE の振幅の誤差の下限（振幅に対する比）。位相の誤差の下限は asin(誤差の下限) [deg]。 |
+| 15 | `index of source(S1)`、`# of obesrvatories`、データファイル | ACTIVE、nsr_inv 回 | active.ctl の送信源番号、この送信源の観測点数 nobs_s、使う成分ごとに nobs_s 個の振幅ファイルと nobs_s 個の位相ファイル（それぞれ active.ctl の観測点番号付き）。 |
+| 16 | `imp: 0, 1:amp,pha` <a id="flag_imp"></a> | MT | インピーダンスを使うかどうか（`mt_imp_ap_flag`）。-1：使わない（ティッパーのみ）、0：インピーダンスを使う（1：振幅・位相は未対応）。 |
+| 17 | `unit:1Ohm,2mV/km/nT` <a id="flag_mt_unit"></a> | MT、imp = 0 | インピーダンスデータの単位。1：Ohm、2：mV/km/nT。 |
+| 18 | `MT errfloor SSQ*` <a id="flag_errfloor_mt"></a> | MT、imp = 0 | インピーダンスの誤差の下限（SSQ インピーダンス sqrt((Zxx² + Zxy² + Zyx² + Zyy²)/2) に対する比）。 |
+| 19 | `# of observatories` | MT | インバージョンで使う MT 観測点の数（mt.ctl の観測点数以下）。 |
+| 20 | インピーダンスファイル、インピーダンス誤差ファイル | MT、imp = 0 | インピーダンスファイル、続けてインピーダンス誤差ファイル（それぞれ mt.ctl の観測点番号付き。2つのリストの番号は同じにする）。 |
+| 21 | `iflag_tipper` <a id="flag_iflag_tipper"></a> | MT | 0：ティッパーを使わない、1：ティッパーを使う。 |
+| 22 | `errorfloor` <a id="flag_errfloor_tip"></a> | MT、[iflag_tipper](#flag_iflag_tipper) = 1 | ティッパーの誤差の下限（絶対値に対する比）。小さすぎる値（例：0.01）ではインバージョンが不安定になることがある（[4.5](#sec4_5) 参照）。 |
+| 23 | ティッパーファイル | MT、[iflag_tipper](#flag_iflag_tipper) = 1 | 誤差付きのティッパーファイル（それぞれ mt.ctl の観測点番号付き）。 |
+| 24 | `icombine` <a id="flag_icombine"></a> | | モデルのパラメータ化。0：通常（#25 のすべてのブロックがモデルパラメータ）、1：外側のブロック（#25 の最も外側のブロック）を1つのモデルパラメータにまとめる、2：外側のブロックを1つにまとめ、初期モデルの値に固定する、-1：内側／外側モード（#25 のブロックと、#26 の細かい内側のブロック）。 |
+| 25 | （ラベルなし） | | ブロック分け：nxdiv と続けて nxdiv 個のブロック境界の x 座標 [km]、続けて nydiv と y 座標、nzdiv と z 座標（標高 [km]）。1行に1つずつ書く。計算領域の端と合わせて (nxdiv+1)×(nydiv+1)×(nzdiv+1) 個のブロックができ、各ブロックがモデルパラメータになる。 |
+| 26 | （ラベルなし） | [icombine](#flag_icombine) = -1 | 内側のブロック：x [km] の始点、終点、間隔（3行）、y も同様、nzdiv_in と続けて nzdiv_in 個の z 座標 [km]。 |
+| 27 | `ioutlevel` <a id="flag_ioutlevel"></a> | | 0：通常の出力、1：ヤコビアンも出力する。 |
+| 28 | `final rms` <a id="flag_final_rms"></a> | | 収束とみなす正規化 RMS ミスフィット。 |
+
+<img src="./images/v1.5_icombine.png" width="95%">
+
+図. [`icombine`](#flag_icombine) ごとのモデルのパラメータ化の模式図（平面図）。線は #25 で与えるブロックの境界で、色1つが1つのモデルパラメータを表す。icombine = 1 と 2 では、最も外側のブロック（橙／灰色）を1つのモデルパラメータにまとめ、推定する（1）か初期モデルの値に固定する（2）。icombine = -1 では、内側の領域（青枠、#26）の中の要素は細かい内側のブロックに、それ以外の要素は #25 のブロックに属する。鉛直（z）方向も同様で、icombine = 1 と 2 では最上層と最下層のブロックも外側のブロックになる。
+
+#### 7.3.3 データファイル <a id="sec7_3_3"></a>
+データファイルは、Joint_test/fwd_active/ と Joint_test/fwd_3DMT/ のスクリプトで作成します（[4.3](#sec4_3)、[4.4](#sec4_4) 参照）。各行が1つの周波数に対応します（順計算の制御ファイルの周波数の順）。
+- ACTIVE の振幅・位相ファイル（例：A02_S1_amp.dat）：周波数 [Hz]、フラグ（1：使う）、値（振幅 [nT/A] または位相 [deg]）、誤差。
+- MT インピーダンスファイル（例：MT1_MT_imp.dat）：周波数 [Hz]、Zxx、Zxy、Zyx、Zyy の実部と虚部。
+- MT インピーダンス誤差ファイル（例：MT1_MT_imp_err.dat）：周波数 [Hz]、4つのフラグ（Zxx、Zxy、Zyx、Zyy。1：使う）、4成分の実部と虚部の誤差。
+- ティッパーファイル（例：MT1_TIP_err.dat）：周波数 [Hz]、2つのフラグ（Tx、Ty）、Tx と Ty の実部と虚部、それらの誤差。
+
+#### 7.3.4 例 <a id="sec7_3_4"></a>
+Joint_test/inv_joint/joint.ctl（ACTIVE + MT。コメント行とブロック分けの一部の行は省略）：
+```
+face info file     !../../mesh_joint/faceinfo.dat
+1:cond,2:model     !1
+ref  cond file     !../structure/cond_homo.msh
+1:cond,2:model     !1
+init cond file     !../structure/cond_homo.msh
+output folder      |./result_inv/
+Roughness type     |1
+1:L,2:Cl,3:Mi,4:Gr !2
+alpha init         !100.
+factor(10^factor)  !-1.0
+iflag_replace 0,1  |0
+ iboundflag =      !0
+# of srces for inv !2
+Bx,By,Bz,Ex,Ey(5i2)!0 0 1 0 0
+Act err floor [0-1]!0.01
+index of source(S1)!1
+# of obesrvatories !4
+A02 amp data       !   1 ../fwd_active/data/A02_S1_amp.dat
+A04 amp data       !   2 ../fwd_active/data/A04_S1_amp.dat
+A01 amp data       !   3 ../fwd_active/data/A01_S1_amp.dat
+A03 amp data       !   4 ../fwd_active/data/A03_S1_amp.dat
+A02 pha data       !   1 ../fwd_active/data/A02_S1_pha.dat
+A04 pha data       !   2 ../fwd_active/data/A04_S1_pha.dat
+A01 pha data       !   3 ../fwd_active/data/A01_S1_pha.dat
+A03 pha data       !   4 ../fwd_active/data/A03_S1_pha.dat
+index of source(S2)!2
+# of obesrvatories !4
+(... S2 も同様 ...)
+imp: 0, 1:amp,pha  !0
+unit:1Ohm,2mV/km/nT!2
+MT errfloor SSQ*   !0.01
+# of observatories |5
+MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat
+(... MT2〜MT5 ...)
+MT1 impedance err  !   1 ../fwd_3DMT/mt_err/MT1_MT_imp_err.dat
+(... MT2〜MT5 ...)
+iflag_tipper       !0
+icombine:0,1,2:fix !1
+19
+-1.5
+-1.2
+(... 19個の x 座標、続けて nydiv と y 座標、nzdiv と z 座標 ...)
+ioutlevel:0,1:Jacob|0
+final rms          |1.0
+```
 
 ## 8 メッシュ生成チュートリアル <a id="Mesh_generation_tutorial"></a>
 有限要素計算のためのメッシュ生成は、順計算・インバージョンの準備の中で最も手間のかかる作業の一つです。この節では、ActFEM で3次元四面体メッシュを作る手順と、メッシュの調整方法を説明します。メッシュ制御ファイルの形式は [7.1](#Control_files) を参照してください。
@@ -753,12 +875,12 @@ change_model2cond.exe の制御ファイルは次のとおりです。[7.1](#Con
 |---|---|---|---|
 | 1 | `!------10!-------20!` | | ヘッダ行（読み飛ばす）。 |
 | 2 | `input 3d mshfile` | | 3次元メッシュファイル（例：../mesh_joint/nakadake3d.msh）。 |
-| 3 | `0homo,1cond,2model` | | 元になるモデル。0：一様、1：既存の比抵抗ファイル、2：インバージョン結果。 |
+| 3 | `0homo,1cond,2model` <a id="flag_cm2c_base"></a> | | 元になるモデル。0：一様、1：既存の比抵抗ファイル、2：インバージョン結果。 |
 | 4 | `homo resistivity` | 元モデル = 0 | 一様モデルの比抵抗 [Ohm.m]。 |
 | 4 | `input cond` | 元モデル = 1 | 比抵抗ファイル（cond.msh 形式）。 |
 | 4-5 | `model connect file`、`input model` | 元モデル = 2 | インバージョンの出力フォルダにある model_connect.dat と modelNN.dat。 |
 | 6 | `output cond` | | 出力する比抵抗ファイル。 |
-| 7 | `0:elevation,1:depth` | | 直方体の z の範囲の与え方。0：標高 [km]、1：地表面からの深さ [km]（負の値。例：-0.3 と -0.1）。 |
+| 7 | `0:elevation,1:depth` <a id="flag_cm2c_z"></a> | | 直方体の z の範囲の与え方。0：標高 [km]、1：地表面からの深さ [km]（負の値。例：-0.3 と -0.1）。 |
 | 8 | `2d topo file` | z の範囲 = 1 | 地形付きの2次元地表面メッシュ（例：../mesh_joint/nakadake2dz.msh）。 |
 | 9 | `# of cuboid` | | 直方体の数 ncuboid（変更しない場合は 0）。 |
 | 10-13 | `xminmax [km]`、`yminmax [km]`、`zminmax [km]`、`rho [Ohm.m]` | ncuboid 回 | 直方体の x、y、z の範囲 [km]（各2つの値）と比抵抗 [Ohm.m]。 |
@@ -801,7 +923,7 @@ view_slice.sh は、slice.exe（src/src_post）で比抵抗ファイルから断
 ## 10 バージョン履歴 <a id="Version_notes"></a>
 
 #### Version 1.5
-2026年11月25日：マニュアルを大幅修正しました。メッシュ生成・順計算の制御ファイルの説明（[7.1](#Control_files)）を現在の形式に合わせて書き直し（項目、条件、各項目を使うプログラム、例）、水位制御ファイルの説明を追加しました。メッシュ生成チュートリアル（[8](#Mesh_generation_tutorial)）を、現在のメッシュフォルダ（Fwd_test/mesh_flat/、Joint_test/mesh_joint/、Joint_test/mesh_light/）に合わせて書き直し、比抵抗モデルの作成（[9](#Generation_of_resistivity_model)）を change_model2cond.exe による現在の手順に合わせて書き直しました。インバージョンコードを src/src_inv_joint/ に統合し、ソースフォルダ構成（[5](#Source_folder_tree)）を更新しました。すべての節・小節にアンカーを付け、本文中の節番号への参照をリンクにし、目次に小節を加えました。
+2026年11月25日：マニュアルを大幅修正しました。メッシュ生成・順計算の制御ファイルの説明（[7.1](#Control_files)）を現在の形式に合わせて書き直し（項目、条件、各項目を使うプログラム、例）、水位制御ファイルの説明を追加しました。メッシュ生成チュートリアル（[8](#Mesh_generation_tutorial)）を、現在のメッシュフォルダ（Fwd_test/mesh_flat/、Joint_test/mesh_joint/、Joint_test/mesh_light/）に合わせて書き直し、比抵抗モデルの作成（[9](#Generation_of_resistivity_model)）を change_model2cond.exe による現在の手順に合わせて書き直しました。インバージョンコードを src/src_inv_joint/ に統合し、ソースフォルダ構成（[5](#Source_folder_tree)）を更新しました。すべての節・小節にアンカーを付け、本文中の節番号への参照をリンクにし、目次に小節を加えました。インバージョンの制御ファイルの説明（[7.3](#Inversion_control)）を加え、本文中のフラグ（`icombine` など）から説明の箇所へのリンクを付けました。
 
 #### Version 1.4
 2026年11月23日：ACTIVE 順計算、メッシュ生成、同時インバージョン（ebfem_inv_joint.exe）で、折れ線（複数ダイポール）送信源が利用可能になりました。各送信源は、始点・終点（単一ダイポール、従来形式）または `File:` による送信源点ファイル（閉ループを含む、直列につながった複数ダイポール）で指定できます（[7.2](#Source_definition) 参照）。ループ送信源のテスト（Fwd_test/active_loop/）と、解析解との比較スクリプト（compana_loop.py）を追加しました（[3.5](#sec3_5) 参照）。

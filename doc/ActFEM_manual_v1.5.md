@@ -47,6 +47,11 @@ tminami@port.kobe-u.ac.jp
       - [7.1.3 Example](#sec7_1_3)
       - [7.1.4 Water level control file](#sec7_1_4)
    - [7.2 Source definition (single dipole / multiple dipoles)](#Source_definition)
+   - [7.3 Inversion control file](#Inversion_control)
+      - [7.3.1 General rules](#sec7_3_1)
+      - [7.3.2 Items](#sec7_3_2)
+      - [7.3.3 Data files](#sec7_3_3)
+      - [7.3.4 Example](#sec7_3_4)
 8. [Mesh generation tutorial](#Mesh_generation_tutorial)
    - [8.1 Mesh folders](#sec8_1)
    - [8.2 Run meshgen.sh](#sec8_2)
@@ -327,9 +332,9 @@ $ ./run.sh
 ```
 In run.sh, you should edit the number of OpenMP threads and MPI processes corresponding to your environment.
 
-The inversion demos in Joint_test/ are as follows. All of them use ebfem_inv_joint.exe (src/src_inv_joint), the homogeneous model Joint_test/structure/cond_homo.msh as the initial and reference models, the smoothest-model regularization (`Roughness type` = 1) and the cooling strategy for the trade-off parameter (`1:L,2:Cl,3:Mi,4:Gr` = 2). The first input of the executable (`ijoint`) selects the data: 1 for ACTIVE, 2 for MT (impedance and/or tipper) and 3 for ACTIVE + MT.
+The inversion demos in Joint_test/ are as follows. All of them use ebfem_inv_joint.exe (src/src_inv_joint), the homogeneous model Joint_test/structure/cond_homo.msh as the initial and reference models, the smoothest-model regularization ([`Roughness type`](#flag_roughness) = 1) and the cooling strategy for the trade-off parameter ([`1:L,2:Cl,3:Mi,4:Gr`](#flag_ialphaflag) = 2). The first input of the executable ([`ijoint`](#flag_ijoint)) selects the data: 1 for ACTIVE, 2 for MT (impedance and/or tipper) and 3 for ACTIVE + MT.
 
-| Folder | ijoint | Data | Model parameterization (`icombine`) | Note |
+| Folder | [ijoint](#flag_ijoint) | Data | Model parameterization ([`icombine`](#flag_icombine)) | Note |
 |---|---|---|---|---|
 | inv_act | 1 | ACTIVE Bz amplitude and phase (sources S1, S2; sites A01 - A04) | 0: normal | |
 | inv_act_icomb-1 | 1 | Same as inv_act | -1: inner / outer mode | |
@@ -338,7 +343,7 @@ The inversion demos in Joint_test/ are as follows. All of them use ebfem_inv_joi
 | inv_joint | 3 | ACTIVE (as inv_act) + MT impedance (as inv_mt) | 1: outside blocks are integrated into one | |
 | inv_joint_icomb-1 | 3 | Same as inv_joint | -1: inner / outer mode | |
 | inv_mt_tip | 2 | MT impedance + tipper (MT1 - MT9) | 0: normal | Error floors: 0.1 for impedance and 0.1 for tipper |
-| inv_tip | 2 | Tipper only (`imp: 0, 1:amp,pha` = -1) | 0: normal | Run by run_tip.sh (see readme.txt); results are not shown below |
+| inv_tip | 2 | Tipper only ([`imp: 0, 1:amp,pha`](#flag_imp) = -1) | 0: normal | Run by run_tip.sh (see readme.txt); results are not shown below |
 | inv_tip_light | 2 | Tipper only, with Joint_test/mesh_light/ and structure_light/ (data in fwd_3DMT_light/) | 0: normal | Light version (2 MPI processes); results are not shown below |
 
 The MT sites used in the inversion are selected in the inversion control file by the site index after `!`, which refers to the sites in mt.ctl (see [4.4](#sec4_4)); mt.ctl may contain more sites than those used in the inversion. The same applies to the ACTIVE sites in active.ctl. Each folder contains the following files.
@@ -384,7 +389,7 @@ $ ./view_slice.sh 06
 
 <img src="./images/v1.5_inv_joint_rms.png" width="30%"> <img src="./images/v1.5_inv_joint_model06.png" width="64%">
 
-> **The following results are icombine = -1., which allows inversion to use inner outer model parametrization. The details are shown in the next section.**
+> **The following results are [icombine](#flag_icombine) = -1., which allows inversion to use inner outer model parametrization. See [`icombine`](#flag_icombine) in 7.3 for details.**
 
 #### Results of Joint_test/inv_act_icomb-1
 ```bash
@@ -411,7 +416,7 @@ $ ./view_slice.sh 05
 <img src="./images/v1.5_inv_joint_icomb_1_rms.png" width="29%"> <img src="./images/v1.5_inv_joint_icomb_1_model05.png" width="66%">
 
 #### Results of Joint_test/inv_mt_tip
-MT impedance and tipper at the nine sites (MT1 - MT9) are inverted jointly. The error floors are 0.1 for both impedance (`MT errfloor SSQ*`) and tipper (`errorfloor`), and the trade-off parameter starts from 100 and is multiplied by 10^-1 (`factor(10^factor)` = -1.0) when a normalized misfit decreases by less than 10% from the previous iteration while it is still above the target (`final rms`). Both normalized RMS misfits fall below 1 at the fifth iteration (MT: 4.13 -> 0.49, tipper: 5.34 -> 0.76). With a smaller error floor for tipper (e.g., 0.01), the tipper misfit increases and the inversion stops.
+MT impedance and tipper at the nine sites (MT1 - MT9) are inverted jointly. The error floors are 0.1 for both impedance ([`MT errfloor SSQ*`](#flag_errfloor_mt)) and tipper ([`errorfloor`](#flag_errfloor_tip)), and the trade-off parameter starts from 100 and is multiplied by 10^-1 ([`factor(10^factor)`](#flag_factor) = -1.0) when a normalized misfit decreases by less than 10% from the previous iteration while it is still above the target ([`final rms`](#flag_final_rms)). Both normalized RMS misfits fall below 1 at the fifth iteration (MT: 4.13 -> 0.49, tipper: 5.34 -> 0.76). With a smaller error floor for tipper (e.g., 0.01), the tipper misfit increases and the inversion stops.
 
 <img src="./images/v1.5_inv_mt_tip_rms.png" width="33%"> <img src="./images/v1.5_inv_mt_tip_model05.png" width="62%">
 
@@ -464,7 +469,7 @@ Mesh generation (meshgen1.exe, meshgen2.exe, mkline.exe and mkface.exe in src/sr
 - Do not insert blank lines.
 - File names and folder names are read as `character(50)`. Keep each path within 50 characters (relative paths are recommended).
 - Lengths and coordinates are in [km]. x is eastward, y is northward and z is upward (see [2](#Coordinate_system)). When lon/lat input is used, it is converted to x, y with the origin given by `lonlatorigin`.
-- **The z (third value) of observatories and source points is the height [km] relative to the ground surface, not the elevation**, for both input formats (`lonlat(1),xyz (2)` = 1: lon lat z, = 2: x y z). For example, -0.001 means 1 m below the ground surface and 0.1 means 100 m above it. Each program interpolates the elevation of the ground surface z_surface(x, y) from the 2-D surface mesh with topography and uses z_surface(x, y) + z as the absolute z: calzobsr (src/common/calzobsr.f90) in mesh generation (meshgen2.exe), PREPZSRCOBS in ACTIVE forward modelling (src/solver/n_ebfem_bxyz.f90) and the inversion (src/src_inv_joint/n_inv_joint.f90), and PREPZOBSMT in MT forward modelling and the inversion. The converted absolute z is shown in the log (e.g., `z=    -0.00100 ->     1.28612 [km]` for site A02 in Joint_test/fwd_active/, whose ground surface is at about 1.287 km). When itopofile = 0, the ground surface is at z = 0, so the given z is equal to the absolute z.
+- **The z (third value) of observatories and source points is the height [km] relative to the ground surface, not the elevation**, for both input formats ([`lonlat(1),xyz (2)`](#flag_lonlatflag) = 1: lon lat z, = 2: x y z). For example, -0.001 means 1 m below the ground surface and 0.1 means 100 m above it. Each program interpolates the elevation of the ground surface z_surface(x, y) from the 2-D surface mesh with topography and uses z_surface(x, y) + z as the absolute z: calzobsr (src/common/calzobsr.f90) in mesh generation (meshgen2.exe), PREPZSRCOBS in ACTIVE forward modelling (src/solver/n_ebfem_bxyz.f90) and the inversion (src/src_inv_joint/n_inv_joint.f90), and PREPZOBSMT in MT forward modelling and the inversion. The converted absolute z is shown in the log (e.g., `z=    -0.00100 ->     1.28612 [km]` for site A02 in Joint_test/fwd_active/, whose ground surface is at about 1.287 km). When [itopofile](#flag_itopofile) = 0, the ground surface is at z = 0, so the given z is equal to the absolute z.
 - Mesh generation does not read the items after `Electric current [A]` (conductivity), while forward modelling reads all items. Mesh parameters (`west bound` - `A_src`) must also be written in the forward control file, but they are not used in the forward calculation (except for `west bound` - `north bound` when `ixyflg = 1`).
 
 #### 7.1.2 Items <a id="sec7_1_2"></a>
@@ -472,25 +477,25 @@ The items are read in the following order. "Used by" shows the programs which us
 
 | # | Label (example) | Condition | Description | Used by |
 |---|---|---|---|---|
-| 1 | `itopofile` | | 0: no topography file (flat surface at z = 0; coordinates of observatories and sources must be given by xyz). 1: topography file(s) are given. | M, F |
-| 2 | `iflag_map` | itopofile = 1 | Map projection for lon/lat. 1: Equidistant Cylindrical Projection (ECP), 2: UTM. | M, F |
-| 3 | `UTM zone` | iflag_map = 2 | UTM zone (e.g., `52S`). | M, F |
-| 4 | `lonlatorigin` | itopofile = 1 | Longitude and latitude [deg] of the origin of x, y. | M, F |
-| 5 | `# of topo file` | itopofile = 1 | Number of topography files, nfile. Give files from the narrowest area to the widest area. | M |
-| 6 | `topofile` | itopofile = 1, repeated nfile times with #7 | Topography file (lon, lat, altitude). | M |
-| 7 | `lon lat shift` | itopofile = 1, repeated nfile times with #6 | Shift of lon, lat [deg] applied to the topography file. | M |
+| 1 | `itopofile` <a id="flag_itopofile"></a> | | 0: no topography file (flat surface at z = 0; coordinates of observatories and sources must be given by xyz). 1: topography file(s) are given. | M, F |
+| 2 | `iflag_map` <a id="flag_iflag_map"></a> | [itopofile](#flag_itopofile) = 1 | Map projection for lon/lat. 1: Equidistant Cylindrical Projection (ECP), 2: UTM. | M, F |
+| 3 | `UTM zone` | [iflag_map](#flag_iflag_map) = 2 | UTM zone (e.g., `52S`). | M, F |
+| 4 | `lonlatorigin` | [itopofile](#flag_itopofile) = 1 | Longitude and latitude [deg] of the origin of x, y. | M, F |
+| 5 | `# of topo file` | [itopofile](#flag_itopofile) = 1 | Number of topography files, nfile. Give files from the narrowest area to the widest area. | M |
+| 6 | `topofile` | [itopofile](#flag_itopofile) = 1, repeated nfile times with #7 | Topography file (lon, lat, altitude). | M |
+| 7 | `lon lat shift` | [itopofile](#flag_itopofile) = 1, repeated nfile times with #6 | Shift of lon, lat [deg] applied to the topography file. | M |
 | 8 | `mesh file` | | 3-D mesh file used in the forward calculation (`<header3d>.msh` generated by mesh generation). | F |
 | 9 | `2d triangle z file` | | 2-D surface mesh with topography (`<header2d>z.msh`). Used to convert the altitude of observatories and sources. | F |
 | 10 | `local line file` | | Edge information file (`lineinfo.dat` generated by mkline.exe). | F |
 | 11 | `angle` | | Rotation angle [deg] (N deg E) of the x axis, which originally points east. Usually 0.0. | M, F |
-| 12 | `water level` | | 0: no water level control, 1: water level control file is given in the next line (see [7.1.4](#sec7_1_4)). | M |
+| 12 | `water level` <a id="flag_water_level"></a> | | 0: no water level control, 1: water level control file is given in the next line (see [7.1.4](#sec7_1_4)). | M |
 | 13 | `water level file` | water level = 1 | Water level control file. | M |
 | 14 | `output folder` | | Output folder for the forward results (end with `/`, e.g., `./result/`). Not used in mesh generation (any string, e.g., `-`). | F |
 | 15 | `header2d` | | Header of the 2-D mesh files generated by mesh generation (`<header2d>.geo`, `.pos`, `.msh`, `<header2d>z.msh`, etc.). | M |
 | 16 | `header3d` | | Header of the 3-D mesh files (`<header3d>.geo`, `.pos`, `.msh`). | M |
 | 17 | `# of frequency` | | Number of frequencies, nfreq. | F |
 | 18 | `Frequency [Hz]` | repeated nfreq times | Frequency [Hz]. | F |
-| 19-22 | `west bound`, `east bound`, `south bound`, `north bound` | | x of the west and east, and y of the south and north boundaries [km] of the inner (focus) area. | M (F for ixyflg = 1) |
+| 19-22 | `west bound`, `east bound`, `south bound`, `north bound` | | x of the west and east, and y of the south and north boundaries [km] of the inner (focus) area. | M (F for [ixyflg](#flag_ixyflg) = 1) |
 | 23 | `lenout [km]` | | Horizontal distance [km] from the inner area to the outer boundary. The outer boundary is at x = west bound - lenout and x = -(west bound - lenout) (same for y). | M |
 | 24 | `upz in [km]` | | Upper z [km] of the inner area. | M |
 | 25 | `downz in [km]` | | Lower z [km] of the inner area. | M |
@@ -504,20 +509,20 @@ The items are read in the following order. "Used by" shows the programs which us
 | 33 | `sigma_src [km]` | | Radius [km] of mesh refinement around each refinement point of sources. | M |
 | 34 | `A_src [km]` | | Element size [km] at each refinement point of sources. | M |
 | 35 | `# of observatory` | | Number of observatories, nobs. | M, F |
-| 36 | `lonlat(1),xyz (2)` | | Coordinate format of observatories and sources. 1: lon lat z (itopofile = 1 is required), 2: x y z [km]. In both cases, z is the height [km] relative to the ground surface (see [7.1.1](#sec7_1_1)). | M, F |
+| 36 | `lonlat(1),xyz (2)` <a id="flag_lonlatflag"></a> | | Coordinate format of observatories and sources. 1: lon lat z ([itopofile](#flag_itopofile) = 1 is required), 2: x y z [km]. In both cases, z is the height [km] relative to the ground surface (see [7.1.1](#sec7_1_1)). | M, F |
 | 37 | `Name` | repeated nobs times with #38 | Name of the observatory (used in output file names). | M, F |
 | 38 | `xyz` | repeated nobs times with #37 | Coordinates of the observatory (format of #36; z is relative to the ground surface). | M, F |
-| 39 | `ixyflg` | | 0: nothing, 1: field values are also calculated on nx × ny grid points in the inner area (west - east, south - north bounds). | F |
-| 40 | `xy file header` | ixyflg = 1 | Header of the output files for the grid points. | F |
-| 41 | `nx ny` | ixyflg = 1 | Number of grid points in x and y. | F |
+| 39 | `ixyflg` <a id="flag_ixyflg"></a> | | 0: nothing, 1: field values are also calculated on nx × ny grid points in the inner area (west - east, south - north bounds). | F |
+| 40 | `xy file header` | [ixyflg](#flag_ixyflg) = 1 | Header of the output files for the grid points. | F |
+| 41 | `nx ny` | [ixyflg](#flag_ixyflg) = 1 | Number of grid points in x and y. | F |
 | 42 | `# of sources` | | Number of sources, nsource. | M, F |
 | 43 | `Source Name` | repeated nsource times | Name of the source (used in output file names), followed by the source geometry: two lines of start and end points, or one line of `File:<source point file>` (see [7.2](#Source_definition)). | M, F |
 | 44 | `Electric current [A]` | | Electric current [A] through the source wire (common to all sources). | F |
 | 45 | `sigma_air [S/m]` | forward only | Conductivity of the air [S/m]. | F |
-| 46 | `condflag` | forward only | 0: (partitioned) homogeneous earth given by #47-48, 1: conductivity file given by #49. | F |
-| 47 | `nvolume` | condflag = 0 | Number of physical volumes in the land region, nvolume. | F |
-| 48 | `cond` | condflag = 0, repeated nvolume times | Conductivity [S/m] of each volume. | F |
-| 49 | `condfile` | condflag = 1 | Conductivity file (see [9](#Generation_of_resistivity_model)). | F |
+| 46 | `condflag` <a id="flag_condflag"></a> | forward only | 0: (partitioned) homogeneous earth given by #47-48, 1: conductivity file given by #49. | F |
+| 47 | `nvolume` | [condflag](#flag_condflag) = 0 | Number of physical volumes in the land region, nvolume. | F |
+| 48 | `cond` | [condflag](#flag_condflag) = 0, repeated nvolume times | Conductivity [S/m] of each volume. | F |
+| 49 | `condfile` | [condflag](#flag_condflag) = 1 | Conductivity file (see [9](#Generation_of_resistivity_model)). | F |
 
 Mesh refinement: in the inner area, the element size at a horizontal distance r from an observatory (or a refinement point of a source) is given by sizein - (sizein - A) exp(-r² / 2σ²) for r ≤ 3σ, where A and σ are A_obs and sigma_obs (A_src and sigma_src for sources). The smallest value among all observatories and refinement points is used.
 
@@ -591,7 +596,7 @@ cond               !0.01
 The mesh control file Fwd_test/mesh_flat/aso.ctl has the same structure. In mesh generation, `mesh file`, `2d triangle z file`, `local line file`, `output folder` and the frequencies are read but not used. Observatories and sources in the mesh control file determine where the mesh is refined, so they should include all observatories and sources used in the forward calculation (additional points, e.g., points below the crater, can be added only for refinement, as in Joint_test/mesh_joint/aso.ctl). Note that the outputs of mesh generation are written in the current folder with the names given by `header2d` and `header3d`, and `lineinfo.dat` (mkline.exe) and `faceinfo.dat` (mkface.exe) are also written there. Note that `faceinfo.dat` is not read in the current version: the inversion code reads the path of `face info file` in its control file, but generates the face information internally.
 
 #### 7.1.4 Water level control file <a id="sec7_1_4"></a>
-When `water level` is 1, the water level control file given in the next line is read in mesh generation. Its format is (the first 20 columns of each line are a label):
+When [`water level`](#flag_water_level) is 1, the water level control file given in the next line is read in mesh generation. Its format is (the first 20 columns of each line are a label):
 ```
 header line
 # of water levels  |1
@@ -625,13 +630,130 @@ The source point file has the following format:
 131.086490  32.877356  -0.001
 ```
 - Points are connected in order, and dipole *j* is defined from point *j* to point *j*+1, i.e., `npoint` points give `npoint - 1` dipoles connected in series (a polyline wire). The same electric current `Elcetric current[A]` flows through all dipoles.
-- The coordinate format of each point follows the `lonlat(1),xyz (2)` flag of the observatory block: `lon lat z` for 1, and `x y z` [km] for 2. In both cases, z [km] is the height relative to the ground surface (see [7.1.1](#sec7_1_1)). Lon/lat are converted with the projection given by `iflag_map` (ECP or UTM).
+- The coordinate format of each point follows the [`lonlat(1),xyz (2)`](#flag_lonlatflag) flag of the observatory block: `lon lat z` for 1, and `x y z` [km] for 2. In both cases, z [km] is the height relative to the ground surface (see [7.1.1](#sec7_1_1)). Lon/lat are converted with the projection given by [`iflag_map`](#flag_iflag_map) (ECP or UTM).
 - If the last point coincides with the first point (within 1 mm), the source is regarded as a **closed loop**.
 - The `File:` keyword is case-sensitive and must be at the head of the value (leading spaces are allowed). In the source point file, write coordinates only (one point per line, no labels).
 - In mesh generation, refinement points (`dlen_source`, `sigma_src`, `A_src`) are placed along every dipole; the duplicated points at the junctions of consecutive dipoles (and at the start point of a closed loop) are automatically removed.
 - Both input styles are available in the ACTIVE forward code (ebfem_bxyz.exe), the mesh generation codes (src/src_mesh) and the joint inversion code (ebfem_inv_joint.exe, used in Joint_test/inv_act/, inv_joint/, etc.). In the inversion, `<source name>_site.dat` in the output folder lists all vertices of the source (start points of all dipoles and the end point of the last dipole). src/solver_mpi/ is not updated for this format.
 
 Example: Fwd_test/active_loop/ (active.ctl, S1.dat, S2.dat); see [3.5](#sec3_5) for how to run it.
+
+### 7.3 Inversion control file <a id="Inversion_control"></a>
+The inversion code ebfem_inv_joint.exe (src/src_inv_joint) reads three or four inputs from the standard input: `ijoint` <a id="flag_ijoint"></a> (1: ACTIVE, 2: MT (impedance and/or tipper), 3: ACTIVE + MT), the forward control file(s) (active.ctl for ACTIVE, mt.ctl for MT, both for ijoint = 3; see [7.1](#Control_files)) and the inversion control file, e.g.,
+```bash
+$ mpiexec -n 6 ebfem_inv_joint.exe <<EOF
+3
+active.ctl
+mt.ctl
+joint.ctl
+EOF
+```
+The inversion control file is read by `READPARAJOINTINV` (src/src_inv_joint/m_param_jointinv.f90) and `readmodelpara` (src/common/m_modelpart.f90). Examples are inv_act.ctl, inv_mt.ctl, joint.ctl, inv_mt_tip.ctl and inv_tip.ctl in Joint_test/inv_*/ (see [4.5](#sec4_5)).
+
+#### 7.3.1 General rules <a id="sec7_3_1"></a>
+- Lines starting with `##` are comment lines.
+- As in [7.1](#Control_files), columns 1-20 are a label and the value is read from column 21, and the items are read in the fixed order shown in 7.3.2. Integer values are read in columns 21-30 and real values in columns 21-35, so keep each value within these columns.
+- In the lines of data files, the site index (columns 21-25) is followed by the file name, e.g., `MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat`. The site index refers to the site in the forward control file (active.ctl or mt.ctl); the sites used in the inversion can be any subset of them, in any order (see [4.5](#sec4_5)).
+- The lines of the model block division (item 25-26) have no label; each value is written from column 1 in its own line.
+- The ACTIVE items (12-15) are read only for [ijoint](#flag_ijoint) = 1 or 3, and the MT items (16-23) only for [ijoint](#flag_ijoint) = 2 or 3.
+
+#### 7.3.2 Items <a id="sec7_3_2"></a>
+| # | Label (example) | Condition | Description |
+|---|---|---|---|
+| 1 | `face info file` | | Face information file (faceinfo.dat). Read but not used in the current version. |
+| 2 | `1:cond,2:model` <a id="flag_icondflag"></a> | | Type of the reference model (`icondflag_ref`). 0: homogeneous, 1: conductivity file (cond.msh type, see [9.1](#sec9_1)), 2: model connect file and model file of an inversion result. |
+| 3 | `ref cond file` | | Reference model: conductivity [S/m] for 0, conductivity file for 1, or two lines of model_connect.dat and modelNN.dat for 2. |
+| 4 | [`1:cond,2:model`](#flag_icondflag) | | Type of the initial model (`icondflag_ini`), as in #2. |
+| 5 | `init cond file` | | Initial model, as in #3. |
+| 6 | `output folder` | | Output folder (end with `/`, e.g., `./result_inv/`). |
+| 7 | `Roughness type` <a id="flag_roughness"></a> | | Regularization. 1: smoothest model, 2: minimum support, 3: minimum support gradient, 4: minimum gradient support. |
+| 8 | `beta` | Roughness type ≥ 2 | Parameter β of the roughness. |
+| 9 | `1:L,2:Cl,3:Mi,4:Gr` <a id="flag_ialphaflag"></a> | | How to determine the trade-off parameter α (`ialphaflag`). 1: L-curve, 2: cooling strategy with a given α, 3: cooling strategy with α from the ratio of spectral radii (Minami), 4: modified version of Grayver et al. (2013). |
+| 10-1 | `# of alpha`, `alpha` | [ialphaflag](#flag_ialphaflag) = 1 | Number of α, followed by the α values (one per line). |
+| 10-2 | `alpha init` <a id="flag_alpha_init"></a> | [ialphaflag](#flag_ialphaflag) = 2 | Initial α. |
+| 10-3 | `factor(10^factor)` <a id="flag_factor"></a> | [ialphaflag](#flag_ialphaflag) = 2 | α is multiplied by 10^factor (factor < 0) when any normalized RMS misfit decreases by less than 10% from the previous iteration while it is still above [`final rms`](#flag_final_rms). |
+| 10-4 | `iflag_replace 0,1` <a id="flag_iflag_replace"></a> | [ialphaflag](#flag_ialphaflag) = 2 | 0: nothing, 1: replace the reference model when the RMS misfit becomes larger than the previous one. |
+| 10-5 | `gamma` | [ialphaflag](#flag_ialphaflag) = 3 or 4 | Parameter γ (see Grayver et al., 2013). |
+| 11 | `iboundflag` <a id="flag_iboundflag"></a> | | Bounds of the model parameter. 0: off (recommended for the smoothest model), 1: upper and lower bounds by cutting, 2: transformed model variable which satisfies the bounds. |
+| 11-1 | upper, lower | [iboundflag](#flag_iboundflag) = 1 | Upper and lower bounds of log10(resistivity [Ohm.m]) (two lines). |
+| 11-2 | p, upper, lower, BMIdenomflag | [iboundflag](#flag_iboundflag) = 2 | Parameter p, upper and lower bounds of log10(resistivity [Ohm.m]), and the denominator of BMI (1: model, 2: transformed model) (four lines). |
+| 12 | `# of srces for inv` | ACTIVE | Number of sources used in the inversion, nsr_inv. |
+| 13 | `Bx,By,Bz,Ex,Ey(5i2)` <a id="flag_iflag_comp"></a> | ACTIVE | 0 or 1 for the use of Bx, By, Bz, Ex and Ey (format 5i2, e.g., `0 0 1 0 0` for Bz only). |
+| 14 | `Act err floor [0-1]` <a id="flag_errfloor_act"></a> | ACTIVE | Error floor of the ACTIVE amplitude relative to the amplitude (the phase error floor is asin(error floor) in degree). |
+| 15 | `index of source(S1)`, `# of obesrvatories`, data files | ACTIVE, repeated nsr_inv times | Source index in active.ctl, number of sites nobs_s for this source, and for each component used: nobs_s amplitude files and then nobs_s phase files, each with the site index in active.ctl. |
+| 16 | `imp: 0, 1:amp,pha` <a id="flag_imp"></a> | MT | Use of impedance (`mt_imp_ap_flag`). -1: no impedance (tipper only), 0: impedance. (1: amplitude and phase is not supported.) |
+| 17 | `unit:1Ohm,2mV/km/nT` <a id="flag_mt_unit"></a> | MT, imp = 0 | Unit of the impedance data. 1: Ohm, 2: mV/km/nT. |
+| 18 | `MT errfloor SSQ*` <a id="flag_errfloor_mt"></a> | MT, imp = 0 | Error floor of the impedance relative to the SSQ impedance sqrt((Zxx² + Zxy² + Zyx² + Zyy²)/2). |
+| 19 | `# of observatories` | MT | Number of MT sites used in the inversion (≤ number of sites in mt.ctl). |
+| 20 | impedance files, impedance error files | MT, imp = 0 | Impedance files and then impedance error files, each with the site index in mt.ctl (the indices of the two lists must be the same). |
+| 21 | `iflag_tipper` <a id="flag_iflag_tipper"></a> | MT | 0: tipper is not used, 1: tipper is used. |
+| 22 | `errorfloor` <a id="flag_errfloor_tip"></a> | MT, [iflag_tipper](#flag_iflag_tipper) = 1 | Error floor of the tipper relative to its absolute value. Too small values (e.g., 0.01) may make the inversion unstable (see [4.5](#sec4_5)). |
+| 23 | tipper files | MT, [iflag_tipper](#flag_iflag_tipper) = 1 | Tipper files (with errors), each with the site index in mt.ctl. |
+| 24 | `icombine` <a id="flag_icombine"></a> | | Model parameterization. 0: normal (all blocks of #25 are model parameters), 1: the outside blocks (the outermost blocks of #25) are integrated into one model parameter, 2: the outside blocks are integrated into one and fixed to the initial model, -1: inner / outer mode (the blocks of #25 and finer inner blocks of #26). |
+| 25 | (no label) | | Block division: nxdiv followed by nxdiv x coordinates [km] of block boundaries, then nydiv and y coordinates, and nzdiv and z coordinates (elevation [km]), one value per line. With the edges of the calculation domain, (nxdiv+1)×(nydiv+1)×(nzdiv+1) blocks are made, and each block is a model parameter. |
+| 26 | (no label) | [icombine](#flag_icombine) = -1 | Inner blocks: start, end and increment of x [km] (three lines), the same for y, and nzdiv_in followed by nzdiv_in z coordinates [km]. |
+| 27 | `ioutlevel` <a id="flag_ioutlevel"></a> | | 0: normal output, 1: the Jacobian is also output. |
+| 28 | `final rms` <a id="flag_final_rms"></a> | | Normalized RMS misfit for convergence. |
+
+<img src="./images/v1.5_icombine.png" width="95%">
+
+Figure. Schematic of the model parameterization for each [`icombine`](#flag_icombine) (plan view). The lines are the block boundaries given by #25, and each color is one model parameter. For icombine = 1 and 2, the outermost blocks (orange / gray) are integrated into one model parameter, which is estimated (1) or fixed to the initial model (2). For icombine = -1, the elements in the inner region (blue frame, #26) belong to the fine inner blocks, and the other elements belong to the blocks of #25. The same applies to the vertical (z) direction; for icombine = 1 and 2, the top and bottom layers of blocks are also outer blocks.
+
+#### 7.3.3 Data files <a id="sec7_3_3"></a>
+The data files are prepared by the scripts in Joint_test/fwd_active/ and Joint_test/fwd_3DMT/ (see [4.3](#sec4_3) and [4.4](#sec4_4)). Each line corresponds to one frequency (in the order of the frequencies in the forward control file):
+- ACTIVE amplitude / phase file (e.g., A02_S1_amp.dat): frequency [Hz], flag (1: used), value (amplitude [nT/A] or phase [deg]), error.
+- MT impedance file (e.g., MT1_MT_imp.dat): frequency [Hz], real and imaginary parts of Zxx, Zxy, Zyx and Zyy.
+- MT impedance error file (e.g., MT1_MT_imp_err.dat): frequency [Hz], four flags (Zxx, Zxy, Zyx, Zyy; 1: used), errors of the real and imaginary parts of the four components.
+- Tipper file (e.g., MT1_TIP_err.dat): frequency [Hz], two flags (Tx, Ty), real and imaginary parts of Tx and Ty, and their errors.
+
+#### 7.3.4 Example <a id="sec7_3_4"></a>
+Joint_test/inv_joint/joint.ctl (ACTIVE + MT; comment lines and some lines of the block division are omitted):
+```
+face info file     !../../mesh_joint/faceinfo.dat
+1:cond,2:model     !1
+ref  cond file     !../structure/cond_homo.msh
+1:cond,2:model     !1
+init cond file     !../structure/cond_homo.msh
+output folder      |./result_inv/
+Roughness type     |1
+1:L,2:Cl,3:Mi,4:Gr !2
+alpha init         !100.
+factor(10^factor)  !-1.0
+iflag_replace 0,1  |0
+ iboundflag =      !0
+# of srces for inv !2
+Bx,By,Bz,Ex,Ey(5i2)!0 0 1 0 0
+Act err floor [0-1]!0.01
+index of source(S1)!1
+# of obesrvatories !4
+A02 amp data       !   1 ../fwd_active/data/A02_S1_amp.dat
+A04 amp data       !   2 ../fwd_active/data/A04_S1_amp.dat
+A01 amp data       !   3 ../fwd_active/data/A01_S1_amp.dat
+A03 amp data       !   4 ../fwd_active/data/A03_S1_amp.dat
+A02 pha data       !   1 ../fwd_active/data/A02_S1_pha.dat
+A04 pha data       !   2 ../fwd_active/data/A04_S1_pha.dat
+A01 pha data       !   3 ../fwd_active/data/A01_S1_pha.dat
+A03 pha data       !   4 ../fwd_active/data/A03_S1_pha.dat
+index of source(S2)!2
+# of obesrvatories !4
+(... the same for S2 ...)
+imp: 0, 1:amp,pha  !0
+unit:1Ohm,2mV/km/nT!2
+MT errfloor SSQ*   !0.01
+# of observatories |5
+MT1 impedance      !   1 ../fwd_3DMT/result/MT1_MT_imp.dat
+(... MT2 - MT5 ...)
+MT1 impedance err  !   1 ../fwd_3DMT/mt_err/MT1_MT_imp_err.dat
+(... MT2 - MT5 ...)
+iflag_tipper       !0
+icombine:0,1,2:fix !1
+19
+-1.5
+-1.2
+(... 19 x coordinates, then nydiv and y coordinates, nzdiv and z coordinates ...)
+ioutlevel:0,1:Jacob|0
+final rms          |1.0
+```
 
 ## 8 Mesh generation tutorial <a id="Mesh_generation_tutorial"></a>
 The mesh generation for FEM modelling is one of the toughest works for forward/inversion preparation. This section explains how 3-D tetrahedral meshes are generated in ActFEM and how to adjust them. The format of the mesh control file is described in [7.1](#Control_files).
@@ -751,12 +873,12 @@ The control file of change_model2cond.exe is as follows. As in [7.1](#Control_fi
 |---|---|---|---|
 | 1 | `!------10!-------20!` | | Header line (skipped). |
 | 2 | `input 3d mshfile` | | 3-D mesh file (e.g., ../mesh_joint/nakadake3d.msh). |
-| 3 | `0homo,1cond,2model` | | Base model. 0: homogeneous, 1: existing resistivity file, 2: inversion result. |
+| 3 | `0homo,1cond,2model` <a id="flag_cm2c_base"></a> | | Base model. 0: homogeneous, 1: existing resistivity file, 2: inversion result. |
 | 4 | `homo resistivity` | base = 0 | Resistivity [Ohm.m] of the homogeneous model. |
 | 4 | `input cond` | base = 1 | Resistivity file (cond.msh type). |
 | 4-5 | `model connect file`, `input model` | base = 2 | model_connect.dat and modelNN.dat in the output folder of the inversion. |
 | 6 | `output cond` | | Output resistivity file. |
-| 7 | `0:elevation,1:depth` | | z range of the cuboids. 0: elevation [km], 1: depth from the ground surface [km] (negative values, e.g., -0.3 and -0.1). |
+| 7 | `0:elevation,1:depth` <a id="flag_cm2c_z"></a> | | z range of the cuboids. 0: elevation [km], 1: depth from the ground surface [km] (negative values, e.g., -0.3 and -0.1). |
 | 8 | `2d topo file` | z range = 1 | 2-D surface mesh with topography (e.g., ../mesh_joint/nakadake2dz.msh). |
 | 9 | `# of cuboid` | | Number of cuboids, ncuboid (0 for no change). |
 | 10-13 | `xminmax [km]`, `yminmax [km]`, `zminmax [km]`, `rho [Ohm.m]` | repeated ncuboid times | Range of x, y and z [km] (two values each) and the resistivity [Ohm.m] of the cuboid. |
@@ -799,7 +921,7 @@ view_slice.sh runs slice.exe (src/src_post) to cut the slices out of the resisti
 ## 10 Version notes <a id="Version_notes"></a>
 
 #### Version 1.5
-Nov 25, 2026: The manual is largely revised. The description of the control files for mesh generation and forward modelling ([7.1](#Control_files)) is updated to the current format (items, conditions, programs using each item, and an example), and the water level control file is described. The mesh generation tutorial ([8](#Mesh_generation_tutorial)) is rewritten for the current mesh folders (Fwd_test/mesh_flat/, Joint_test/mesh_joint/ and Joint_test/mesh_light/), and the generation of resistivity models ([9](#Generation_of_resistivity_model)) is rewritten for the current procedure with change_model2cond.exe. The inversion codes are integrated into src/src_inv_joint/ and the source folder tree ([5](#Source_folder_tree)) is updated. Anchors are added to all sections and subsections, the references to sections in the text are linked, and the contents list the subsections.
+Nov 25, 2026: The manual is largely revised. The description of the control files for mesh generation and forward modelling ([7.1](#Control_files)) is updated to the current format (items, conditions, programs using each item, and an example), and the water level control file is described. The mesh generation tutorial ([8](#Mesh_generation_tutorial)) is rewritten for the current mesh folders (Fwd_test/mesh_flat/, Joint_test/mesh_joint/ and Joint_test/mesh_light/), and the generation of resistivity models ([9](#Generation_of_resistivity_model)) is rewritten for the current procedure with change_model2cond.exe. The inversion codes are integrated into src/src_inv_joint/ and the source folder tree ([5](#Source_folder_tree)) is updated. Anchors are added to all sections and subsections, the references to sections in the text are linked, and the contents list the subsections. The inversion control file is described ([7.3](#Inversion_control)), and the flags in the text (e.g., `icombine`) are linked to their descriptions.
 
 #### Version 1.4
 Nov 23, 2026: Polyline (multi-dipole) sources are now available for ACTIVE forward modelling, mesh generation and the joint inversion (ebfem_inv_joint.exe). Each source can be given either by start/end points (single dipole, conventional format) or by a source point file with `File:` (multiple dipoles connected in series, including closed loops) (see [7.2](#Source_definition)). A test for loop sources (Fwd_test/active_loop/) and its comparison script with the analytical solution (compana_loop.py) are added (see [3.5](#sec3_5)).

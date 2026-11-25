@@ -1,13 +1,15 @@
 #!/bin/bash
 
 inmt=result_inv/rms_mt.dat
+intip=result_inv/rms_tip.dat # tipper 2026.11.25 CC
 inact=result_inv/rms.dat
 nite=`wc $inmt | awk -F" " '{print($1 -1)}'`
 echo $nite
 gmt begin rms pdf
 
-gmt basemap -JX5/5 -R0/${nite}/0/20 -Bxa1+l"Iteration" -Bya1+l"Normalized RMS misfit"
+gmt basemap -JX5/5 -R0/${nite}/0/6 -Bxa1+l"Iteration" -Bya1+l"Normalized RMS misfit" # y range 0-20 -> 0-6 2026.11.25 CC
 #tail -$nite $inact | awk -F" " '{print($1, $2)}' | gmt plot -W1,green -l"nrms_act"
+tail -$nite $intip | awk -F" " '{print($1, $2)}' | gmt plot -W1,green -l"nrms_tip" # tipper 2026.11.25 CC
 tail -$nite $inmt | awk -F" " '{print($1, $2)}' | gmt plot -W1,red -l"nrms_mt"
 gmt plot -W1,gray,- <<EOF
 0 1
